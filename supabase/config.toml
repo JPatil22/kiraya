@@ -1,0 +1,48 @@
+# Supabase local config. Regenerate with `supabase init` if your CLI version
+# rejects any field here. Migrations in ./migrations are applied by `db reset`.
+project_id = "kiraya"
+
+[api]
+enabled = true
+port = 54321
+schemas = ["public", "graphql_public"]
+extra_search_path = ["public", "extensions"]
+max_rows = 1000
+
+[db]
+port = 54322
+shadow_port = 54320
+major_version = 15
+
+[studio]
+enabled = true
+port = 54323
+
+# Local mail/OTP catcher — read signup OTPs here in dev.
+[inbucket]
+enabled = true
+port = 54324
+
+[auth]
+enabled = true
+site_url = "http://localhost:3000"
+additional_redirect_urls = ["http://localhost:3000"]
+jwt_expiry = 3600
+enable_signup = true
+
+# Phone OTP (MVP1). In LOCAL dev we don't call a real SMS provider — we use
+# fixed test OTPs below. In PRODUCTION you MUST configure a DLT-registered
+# provider in the Supabase Dashboard (India/TRAI). See docs/PRD.md §8.
+[auth.sms]
+enable_signup = true
+enable_confirmations = false
+
+# Magic test numbers → fixed codes for local development only. These are the
+# same identities `npm run db:seed` creates, so they keep working when open mode
+# is switched off and the OTP gate comes back.
+[auth.sms.test_otp]
+"919000000001" = "123456"
+"919000000002" = "123456"
+"919000000003" = "123456"
+"919000000004" = "123456"
+"919000000005" = "123456"
