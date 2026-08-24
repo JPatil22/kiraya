@@ -27,6 +27,12 @@ export async function SiteHeader() {
             <Link href="/listings">Listings</Link>
           </Button>
 
+          {user ? (
+            <Button asChild variant="ghost" size="sm">
+              <Link href="/shortlist">Saved</Link>
+            </Button>
+          ) : null}
+
           {role === "tenant" ? (
             <Button asChild variant="ghost" size="sm">
               <Link href="/suggestions">Suggestions</Link>

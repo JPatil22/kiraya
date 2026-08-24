@@ -23,12 +23,14 @@ import { getDataClient, getSessionUser } from "@/lib/auth";
 import { getPublicListing } from "@/lib/listings";
 import { getMyOpenReport, getPropertyUpdates } from "@/lib/history";
 import { getCounterparty, getMyExchange } from "@/lib/contact";
+import { isShortlisted } from "@/lib/shortlist";
 import { getPhotos } from "@/lib/photos";
 import { UpdateTimeline } from "@/components/listings/update-timeline";
 import { PhotoGallery } from "@/components/listings/photo-gallery";
 import { ReportMismatch } from "./report-mismatch";
 import { OwnerControls } from "./owner-controls";
 import { ContactOwner } from "./contact-owner";
+import { SaveButton } from "@/components/listings/save-button";
 import {
   AVAILABILITY_OPTIONS,
   BHK_OPTIONS,
@@ -59,15 +61,16 @@ export default async function ListingDetailPage({
     getPhotos(supabase, id),
     getSessionUser(supabase).then(async (u) => {
       const isOther = Boolean(u) && u!.id !== listing.posted_by;
-      const [report, exchange] = await Promise.all([
+      const [report, exchange, saved] = await Promise.all([
         isOther ? getMyOpenReport(supabase, id, u!.id) : null,
         isOther ? getMyExchange(supabase, id, u!.id) : null,
+        u ? isShortlisted(supabase, u.id, id) : false,
       ]);
-      return { user: u, report, exchange };
+      return { user: u, report, exchange, saved };
     }),
   ]);
 
-  const { user, report: existingReport, exchange } = userWithReport;
+  const { user, report: existingReport, exchange, saved } = userWithReport;
   const isOwnListing = user?.id === listing.posted_by;
 
   // The number is only fetched once an exchange exists — 0010's policy is what
@@ -109,6 +112,7 @@ export default async function ListingDetailPage({
               name={listing.posted_by_name}
               showName
             />
+            {user ? <SaveButton propertyId={listing.id} saved={saved} variant="inline" /> : null}
           </div>
 
           {/* Who stamped the freshness clock. An owner's word and a Kiraya

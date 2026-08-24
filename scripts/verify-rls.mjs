@@ -235,6 +235,48 @@ async function main() {
     await admin.from("contact_exchanges").delete().eq("tenant_id", tenantId).eq("property_id", ownerListing.id);
   }
 
+  // --- shortlists (0011) ----------------------------------------------------
+  // A shortlist is private: not even the listing's owner learns who saved it,
+  // because that would turn a tenant's private "maybe" into a lead they never
+  // offered. Contact (0010) is the deliberate step for that.
+  console.log("\nshortlists (0011)");
+  {
+    await admin.from("shortlists").delete().eq("user_id", tenantId);
+
+    await mustSucceed("tenant can save a live listing",
+      tenant.from("shortlists").insert({ user_id: tenantId, property_id: live.id }));
+
+    await mustFail("cannot save the same listing twice",
+      tenant.from("shortlists").insert({ user_id: tenantId, property_id: live.id }));
+
+    await mustFail("cannot save a listing that isn't live",
+      tenant.from("shortlists").insert({ user_id: tenantId, property_id: pending.id }));
+
+    await mustFail("cannot save on someone else's behalf",
+      tenant.from("shortlists").insert({ user_id: ownerId, property_id: live.id }));
+
+    await mustSee("tenant sees their own save",
+      tenant.from("shortlists").select("id"), 1);
+
+    // The owner of the saved listing must not be able to see who saved it.
+    await mustSee("the listing's owner cannot see who saved it",
+      owner.from("shortlists").select("id"), 0);
+    await mustSee("an unrelated broker cannot see it either",
+      sessions.broker.client.from("shortlists").select("id"), 0);
+
+    // Even an admin is out — admins moderate listings, not private lists.
+    await mustSee("admin cannot read someone's shortlist",
+      sessions.admin.client.from("shortlists").select("id"), 0);
+
+    await mustSee("cannot delete someone else's save",
+      owner.from("shortlists").delete().eq("user_id", tenantId).select("id"), 0);
+
+    await mustSucceed("tenant can remove their own save",
+      tenant.from("shortlists").delete().eq("user_id", tenantId));
+
+    await admin.from("shortlists").delete().eq("user_id", tenantId);
+  }
+
   // --- broker ---------------------------------------------------------------
   console.log("\nbroker");
   const { client: broker, userId: brokerId } = sessions.broker;

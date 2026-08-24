@@ -232,6 +232,14 @@ export type ContactExchange = {
   created_at: string;
 };
 
+/** `shortlists` — a private "come back to this", per person per listing (0011). */
+export type Shortlist = {
+  id: string;
+  user_id: string;
+  property_id: string;
+  created_at: string;
+};
+
 /** `v_locality_health` — the MVP5 operator dashboard, computed in SQL. */
 export type LocalityHealth = {
   locality_id: string;
@@ -291,6 +299,10 @@ export interface Database {
         ModerationAction,
         Partial<Omit<ModerationAction, "id" | "created_at">> &
           Pick<ModerationAction, "admin_id" | "target_table" | "target_id" | "kind">
+      >;
+      shortlists: TableDef<
+        Shortlist,
+        Partial<Omit<Shortlist, "id" | "created_at">> & Pick<Shortlist, "user_id" | "property_id">
       >;
       contact_exchanges: TableDef<
         ContactExchange,

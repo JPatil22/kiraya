@@ -4,6 +4,7 @@ import { roomsRequiredForBhk } from "@/lib/rooms";
 import type {
   BrokerSuggestion,
   ContactExchange,
+  Shortlist,
   ListingPublic,
   Locality,
   LocalityHealth,
@@ -418,6 +419,7 @@ type FixtureStore = {
   profiles: Profile[];
   photos: PropertyPhoto[];
   contacts: ContactExchange[];
+  shortlists: Shortlist[];
 };
 
 const globalRef = globalThis as unknown as { __kirayaFixtures?: FixtureStore };
@@ -435,6 +437,7 @@ const seedStore = (): FixtureStore => ({
   // Starts empty on purpose: an exchange is something a person does, and the
   // sandbox should show the "not yet unlocked" state first.
   contacts: [],
+  shortlists: [],
 });
 
 function store(): FixtureStore {
@@ -458,6 +461,7 @@ export const getModerations = (): ModerationAction[] => store().moderations;
 export const getProfiles = (): Profile[] => store().profiles;
 export const getPhotos = (): PropertyPhoto[] => store().photos;
 export const getContacts = (): ContactExchange[] => store().contacts;
+export const getShortlists = (): Shortlist[] => store().shortlists;
 
 export function addPhoto(row: PropertyPhoto): void {
   store().photos.push(row);
@@ -465,6 +469,10 @@ export function addPhoto(row: PropertyPhoto): void {
 
 export function addContact(row: ContactExchange): void {
   store().contacts.unshift(row);
+}
+
+export function addShortlist(row: Shortlist): void {
+  store().shortlists.unshift(row);
 }
 
 export function addModeration(row: ModerationAction): void {

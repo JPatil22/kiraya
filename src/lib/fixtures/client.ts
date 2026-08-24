@@ -4,6 +4,7 @@ import type {
   BrokerSuggestion,
   ContactExchange,
   Database,
+  Shortlist,
   MismatchReport,
   ModerationAction,
   Property,
@@ -14,6 +15,7 @@ import type {
 import {
   LOCALITY,
   addContact,
+  addShortlist,
   addIntent,
   addMismatch,
   addModeration,
@@ -28,6 +30,7 @@ import {
   getPhotos,
   getProfiles,
   getProperties,
+  getShortlists,
   getSuggestions,
   getUpdates,
   listingsPublic,
@@ -365,6 +368,27 @@ function insertContact(row: Row): Row {
   return created as unknown as Row;
 }
 
+function insertShortlist(row: Row): Row {
+  // Stands in for unique (user_id, property_id) in 0011.
+  const duplicate = getShortlists().some(
+    (x) => x.user_id === row.user_id && x.property_id === row.property_id,
+  );
+  if (duplicate) {
+    throw Object.assign(new Error("duplicate key value violates unique constraint"), {
+      code: "23505",
+    });
+  }
+
+  const created = {
+    id: `sl-${Math.random().toString(36).slice(2, 10)}`,
+    created_at: iso(),
+    ...row,
+  } as Shortlist;
+
+  addShortlist(created);
+  return created as unknown as Row;
+}
+
 function insertModeration(row: Row): Row {
   const created = {
     id: `mod-${Math.random().toString(36).slice(2, 10)}`,
@@ -506,6 +530,12 @@ export function createFixtureClient(): SupabaseClient<Database> {
             getPhotos().map((p) => ({ ...p })),
             insertPhoto,
             getPhotos as () => Row[],
+          );
+        case "shortlists":
+          return new FixtureQuery(
+            getShortlists().map((x) => ({ ...x })),
+            insertShortlist,
+            getShortlists as () => Row[],
           );
         case "contact_exchanges":
           return new FixtureQuery(

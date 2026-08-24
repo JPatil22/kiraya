@@ -4,7 +4,8 @@ import { SiteHeader } from "@/components/site-header";
 import { ListingCard } from "@/components/listings/listing-card";
 import { ListingFilterBar } from "@/components/listings/listing-filters";
 import { Button } from "@/components/ui/button";
-import { getDataClient } from "@/lib/auth";
+import { getDataClient, getSessionUser } from "@/lib/auth";
+import { getShortlistIds } from "@/lib/shortlist";
 import { getActiveLocality } from "@/lib/locality";
 import { getPublicListings } from "@/lib/listings";
 import { listingFilterSchema } from "@/lib/validators";
@@ -35,10 +36,15 @@ export default async function ListingsPage({
   });
 
   const supabase = await getDataClient();
-  const [locality, listings] = await Promise.all([
+  const [locality, listings, user] = await Promise.all([
     getActiveLocality(supabase),
     getPublicListings(supabase, filters),
+    getSessionUser(supabase),
   ]);
+
+  // Only signed-in people get a save affordance, and it costs one extra query
+  // for the whole page rather than one per card.
+  const savedIds = user ? await getShortlistIds(supabase, user.id) : null;
 
   const freshCount = listings.filter((l) => !l.is_stale).length;
 
@@ -77,7 +83,11 @@ export default async function ListingsPage({
         ) : (
           <div className="grid gap-4">
             {listings.map((listing) => (
-              <ListingCard key={listing.id} listing={listing} />
+              <ListingCard
+                key={listing.id}
+                listing={listing}
+                saved={savedIds ? savedIds.has(listing.id) : undefined}
+              />
             ))}
           </div>
         )}

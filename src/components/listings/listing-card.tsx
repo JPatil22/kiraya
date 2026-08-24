@@ -7,14 +7,27 @@ import { PostedByBadge } from "./posted-by-badge";
 import { AVAILABILITY_OPTIONS, BHK_OPTIONS, FURNISHING_OPTIONS, labelFor } from "@/lib/constants";
 import { photoAgeWarning, photoUrl } from "@/lib/photos";
 import { formatINR } from "@/lib/utils";
+import { SaveButton } from "./save-button";
 import type { ListingPublic } from "@/types/database";
 
-export function ListingCard({ listing }: { listing: ListingPublic }) {
+export function ListingCard({
+  listing,
+  saved,
+}: {
+  listing: ListingPublic;
+  /** Omitted when nobody is signed in — no save affordance for a stranger. */
+  saved?: boolean;
+}) {
   const photoWarning = listing.cover_photo_path
     ? photoAgeWarning(listing.cover_photo_captured_at, listing.last_verified_at)
     : null;
 
   return (
+    <div className="relative">
+      {saved === undefined ? null : (
+        <SaveButton propertyId={listing.id} saved={saved} />
+      )}
+
     <Link
       href={`/listings/${listing.id}`}
       className="group block overflow-hidden rounded-xl border bg-card shadow-sm transition-colors hover:border-primary focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
@@ -98,5 +111,6 @@ export function ListingCard({ listing }: { listing: ListingPublic }) {
       </p>
       </div>
     </Link>
+    </div>
   );
 }
