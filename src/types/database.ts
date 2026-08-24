@@ -29,6 +29,7 @@ export type VisitOutcome =
   | "unreachable"
   /** Carries no signal about the listing — excluded from accuracy (0015). */
   | "did_not_visit";
+export type VisitStatus = "proposed" | "confirmed" | "declined" | "cancelled";
 export type NotificationKind =
   | "contact_received"
   | "suggestion_received"
@@ -36,7 +37,9 @@ export type NotificationKind =
   | "saved_listing_changed"
   | "mismatch_reported"
   | "listing_reviewed"
-  | "listing_matched";
+  | "listing_matched"
+  | "visit_proposed"
+  | "visit_answered";
 export type ModerationKind =
   | "approve"
   | "reject"
@@ -333,6 +336,36 @@ export type Notification = {
   created_at: string;
 };
 
+/** `visits` — an arranged viewing (0020). The exchange is what gives standing. */
+export type Visit = {
+  id: string;
+  property_id: string;
+  tenant_id: string;
+  host_id: string;
+  contact_exchange_id: string;
+  scheduled_for: string;
+  status: VisitStatus;
+  proposed_by: string;
+  note: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+/** `v_possible_duplicates` — candidate pairs for a human to judge (0021). */
+export type DuplicateCandidate = {
+  property_id: string;
+  other_id: string;
+  title: string;
+  other_title: string;
+  posted_by: string;
+  other_posted_by: string;
+  all_in_monthly: number;
+  other_all_in_monthly: number;
+  area_name: string | null;
+  address_similarity: number;
+  different_posters: boolean;
+};
+
 /** `v_locality_health` — the MVP5 operator dashboard, computed in SQL. */
 export type LocalityHealth = {
   locality_id: string;
@@ -399,6 +432,11 @@ export interface Database {
         Partial<Omit<Notification, "id" | "created_at">> &
           Pick<Notification, "user_id" | "kind" | "body">
       >;
+      visits: TableDef<
+        Visit,
+        Partial<Omit<Visit, "id" | "created_at" | "updated_at">> &
+          Pick<Visit, "property_id" | "tenant_id" | "host_id" | "contact_exchange_id" | "scheduled_for" | "proposed_by">
+      >;
       visit_feedback: TableDef<
         VisitFeedback,
         Partial<Omit<VisitFeedback, "id" | "created_at" | "updated_at">> &
@@ -420,6 +458,7 @@ export interface Database {
       v_listing_accuracy: { Row: ListingAccuracy; Relationships: [] };
       v_listing_price_context: { Row: PriceContext; Relationships: [] };
       v_listing_engagement: { Row: ListingEngagement; Relationships: [] };
+      v_possible_duplicates: { Row: DuplicateCandidate; Relationships: [] };
     };
     Functions: {
       [key: string]: { Args: Record<string, unknown>; Returns: unknown };
@@ -440,6 +479,7 @@ export interface Database {
       contact_source: ContactSource;
       notification_kind: NotificationKind;
       visit_outcome: VisitOutcome;
+      visit_status: VisitStatus;
       moderation_kind: ModerationKind;
       room_type: RoomType;
     };

@@ -437,6 +437,8 @@ async function main() {
 
       await admin.from("visit_feedback").delete().eq("tenant_id", tenantId);
       await admin.from("contact_exchanges").delete().eq("tenant_id", tenantId);
+      await admin.from("notifications").delete().eq("user_id", tenantId);
+      await admin.from("notifications").delete().eq("user_id", ownerId);
     }
   }
 
@@ -461,6 +463,73 @@ async function main() {
       await mustSee("a broker cannot delete one",
         sessions.broker.client.from("areas").delete().eq("id", area.id).select("id"), 0);
     }
+  }
+
+  // --- visits (0020) ---------------------------------------------------------
+  // The contact exchange is the standing to schedule. Without the guard this
+  // would be a channel for proposing meetings to strangers.
+  console.log("\nvisits (0020)");
+  {
+    const ownerLive4 = props.find((p) => p.posted_by === ownerId && p.status === "live");
+    if (!ownerLive4) {
+      record(false, "0020: a live listing exists", "none in seed");
+    } else {
+      await admin.from("visits").delete().eq("tenant_id", tenantId);
+      await admin.from("contact_exchanges").delete().eq("tenant_id", tenantId);
+
+      const soon = new Date(Date.now() + 2 * 86_400_000).toISOString();
+      const past = new Date(Date.now() - 86_400_000).toISOString();
+
+      // No exchange yet: scheduling must be refused outright.
+      await mustFail("cannot schedule without contact details",
+        tenant.from("visits").insert({ property_id: ownerLive4.id, tenant_id: tenantId, host_id: ownerId, contact_exchange_id: "00000000-0000-0000-0000-000000000000", scheduled_for: soon, proposed_by: tenantId }));
+
+      const { data: ex2 } = await admin.from("contact_exchanges").insert({
+        property_id: ownerLive4.id, tenant_id: tenantId,
+        counterparty_id: ownerId, source: "listing",
+      }).select("id").single();
+
+      await mustFail("cannot schedule in the past",
+        tenant.from("visits").insert({ property_id: ownerLive4.id, tenant_id: tenantId, host_id: ownerId, contact_exchange_id: ex2.id, scheduled_for: past, proposed_by: tenantId }));
+
+      await mustFail("cannot propose on someone else's behalf",
+        tenant.from("visits").insert({ property_id: ownerLive4.id, tenant_id: tenantId, host_id: ownerId, contact_exchange_id: ex2.id, scheduled_for: soon, proposed_by: ownerId }));
+
+      await mustSucceed("tenant can propose a visit",
+        tenant.from("visits").insert({ property_id: ownerLive4.id, tenant_id: tenantId, host_id: ownerId, contact_exchange_id: ex2.id, scheduled_for: soon, proposed_by: tenantId }));
+
+      await mustSee("the host can see it",
+        owner.from("visits").select("id").eq("property_id", ownerLive4.id), 1);
+      await mustSee("an unrelated broker cannot",
+        sessions.broker.client.from("visits").select("id").eq("property_id", ownerLive4.id), 0);
+
+      await mustSucceed("the host can confirm it",
+        owner.from("visits").update({ status: "confirmed" }).eq("contact_exchange_id", ex2.id));
+
+      // mustFail, not mustSee: the guard raises rather than quietly matching
+      // zero rows, which is the stronger of the two behaviours.
+      await mustFail("neither side can reassign a visit",
+        tenant.from("visits").update({ host_id: sessions.broker.userId }).eq("contact_exchange_id", ex2.id));
+
+      await admin.from("visits").delete().eq("tenant_id", tenantId);
+      await admin.from("contact_exchanges").delete().eq("tenant_id", tenantId);
+      // Those writes fire notification triggers; leave none behind.
+      await admin.from("notifications").delete().eq("user_id", tenantId);
+      await admin.from("notifications").delete().eq("user_id", ownerId);
+    }
+  }
+
+  // --- possible duplicates (0021) --------------------------------------------
+  // A moderation queue. A view runs with its owner's rights and bypasses RLS on
+  // the tables underneath, so the admin check lives in the view's own WHERE —
+  // a grant alone would hand every signed-in user a map of which listings
+  // resemble which.
+  console.log("\npossible duplicates (0021)");
+  {
+    await mustSee("a tenant sees no duplicate candidates",
+      tenant.from("v_possible_duplicates").select("property_id"), 0);
+    await mustSee("a broker sees none either",
+      sessions.broker.client.from("v_possible_duplicates").select("property_id"), 0);
   }
 
   // --- broker ---------------------------------------------------------------

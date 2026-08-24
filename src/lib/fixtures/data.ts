@@ -17,6 +17,7 @@ import type {
   PropertyPhoto,
   PropertyUpdate,
   TenantIntent,
+  Visit,
   VisitFeedback,
 } from "@/types/database";
 
@@ -475,6 +476,7 @@ type FixtureStore = {
   shortlists: Shortlist[];
   notifications: Notification[];
   visits: VisitFeedback[];
+  viewings: Visit[];
 };
 
 const globalRef = globalThis as unknown as { __kirayaFixtures?: FixtureStore };
@@ -498,6 +500,7 @@ const seedStore = (): FixtureStore => ({
   // render. Against real Postgres these arrive on their own.
   notifications: [...SEED_NOTIFICATIONS],
   visits: [],
+  viewings: [],
 });
 
 function store(): FixtureStore {
@@ -524,6 +527,7 @@ export const getContacts = (): ContactExchange[] => store().contacts;
 export const getShortlists = (): Shortlist[] => store().shortlists;
 export const getNotifications = (): Notification[] => store().notifications;
 export const getVisits = (): VisitFeedback[] => store().visits;
+export const getViewings = (): Visit[] => store().viewings;
 
 export function addPhoto(row: PropertyPhoto): void {
   store().photos.push(row);
@@ -539,6 +543,10 @@ export function addShortlist(row: Shortlist): void {
 
 export function addVisit(row: VisitFeedback): void {
   store().visits.unshift(row);
+}
+
+export function addViewing(row: Visit): void {
+  store().viewings.unshift(row);
 }
 
 export function addModeration(row: ModerationAction): void {

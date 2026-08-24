@@ -5,6 +5,8 @@ import {
   Bell,
   BellOff,
   Bookmark,
+  CalendarCheck,
+  CalendarClock,
   CheckCircle2,
   Flag,
   MessageSquareQuote,
@@ -31,6 +33,8 @@ const ICON: Record<NotificationKind, typeof Bell> = {
   mismatch_reported: Flag,
   listing_reviewed: CheckCircle2,
   listing_matched: Sparkles,
+  visit_proposed: CalendarClock,
+  visit_answered: CalendarCheck,
 };
 
 export default async function NotificationsPage() {

@@ -25,6 +25,8 @@ import { getMyOpenReport, getPropertyUpdates } from "@/lib/history";
 import { getCounterparty, getMyExchange } from "@/lib/contact";
 import { isShortlisted } from "@/lib/shortlist";
 import { ASK_AFTER_DAYS, getMyFeedback } from "@/lib/visits";
+import { getVisitForListing, isVisitDone } from "@/lib/visit-scheduling";
+import { VisitScheduler } from "@/components/visits/visit-scheduler";
 import { getPriceContext } from "@/lib/insights";
 import { getReportsForProperty } from "@/lib/history";
 import { OwnerReply } from "./owner-reply";
@@ -87,12 +89,20 @@ export default async function ListingDetailPage({
   const poster = exchange ? await getCounterparty(supabase, listing.posted_by) : null;
 
   // Already answered? Then don't ask again on this page.
-  const myFeedback =
-    exchange && user ? await getMyFeedback(supabase, user.id, listing.id) : null;
+  const [myFeedback, visit] = exchange && user
+    ? await Promise.all([
+        getMyFeedback(supabase, user.id, listing.id),
+        getVisitForListing(supabase, user.id, listing.id),
+      ])
+    : [null, null];
+
+  // A confirmed visit whose time has passed is a far better prompt than "you
+  // asked for a number three days ago" — it knows a viewing actually happened.
   const askAboutVisit =
     Boolean(exchange) &&
     !myFeedback &&
-    Date.parse(exchange!.created_at) <= Date.now() - ASK_AFTER_DAYS * 86_400_000;
+    (isVisitDone(visit) ||
+      Date.parse(exchange!.created_at) <= Date.now() - ASK_AFTER_DAYS * 86_400_000);
 
   // Posting your own listing doesn't entitle you to report it.
   const canReport = Boolean(user) && !isOwnListing;
@@ -273,6 +283,14 @@ export default async function ListingDetailPage({
             posterRole={listing.posted_by_role}
             unlocked={Boolean(exchange)}
             phone={poster?.phone ?? null}
+          />
+        ) : null}
+
+        {exchange && user && !isOwnListing && listing.availability !== "rented" ? (
+          <VisitScheduler
+            contactExchangeId={exchange.id}
+            visit={visit}
+            viewerId={user.id}
           />
         ) : null}
 

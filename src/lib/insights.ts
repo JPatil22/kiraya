@@ -1,5 +1,10 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { Database, ListingEngagement, PriceContext } from "@/types/database";
+import type {
+  Database,
+  DuplicateCandidate,
+  ListingEngagement,
+  PriceContext,
+} from "@/types/database";
 
 /**
  * Read-side helpers for the two things the product knew but never said:
@@ -56,4 +61,23 @@ export async function getEngagementFor(
     .eq("posted_by", posterId);
 
   return new Map((data ?? []).map((row) => [row.property_id, row]));
+}
+
+/**
+ * Candidate duplicate pairs (0021).
+ *
+ * Flagged, never merged. Two genuinely different flats in the same society at
+ * the same rent are common, and auto-collapsing them would silently delete a
+ * real landlord's listing on a heuristic.
+ */
+export async function getDuplicateCandidates(
+  supabase: SupabaseClient<Database>,
+): Promise<DuplicateCandidate[]> {
+  const { data } = await supabase
+    .from("v_possible_duplicates")
+    .select("*")
+    .order("address_similarity", { ascending: false })
+    .limit(50);
+
+  return data ?? [];
 }
