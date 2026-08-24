@@ -390,6 +390,56 @@ async function main() {
     }
   }
 
+  // --- visit feedback (0015) -------------------------------------------------
+  // The exchange is the standing to answer. Without the guard, the insert policy
+  // alone would let a tenant file feedback against any listing they liked — so
+  // the forgery paths matter more than the happy one.
+  console.log("\nvisit feedback (0015)");
+  {
+    const ownerLive3 = props.find((p) => p.posted_by === ownerId && p.status === "live");
+    const otherLive = props.find((p) => p.posted_by !== ownerId && p.status === "live");
+
+    if (!ownerLive3) {
+      record(false, "0015: a live listing exists to enquire on", "none in seed");
+    } else {
+      await admin.from("visit_feedback").delete().eq("tenant_id", tenantId);
+      await admin.from("contact_exchanges").delete().eq("tenant_id", tenantId);
+
+      const { data: ex } = await admin.from("contact_exchanges").insert({
+        property_id: ownerLive3.id, tenant_id: tenantId,
+        counterparty_id: ownerId, source: "listing",
+      }).select("id").single();
+
+      await mustFail("cannot answer for an enquiry that isn't yours",
+        owner.from("visit_feedback").insert({ contact_exchange_id: ex.id, property_id: ownerLive3.id, tenant_id: ownerId, outcome: "as_described" }));
+
+      if (otherLive) {
+        await mustFail("cannot point feedback at a different listing",
+          tenant.from("visit_feedback").insert({ contact_exchange_id: ex.id, property_id: otherLive.id, tenant_id: tenantId, outcome: "did_not_match" }));
+      }
+
+      await mustSucceed("tenant can answer their own enquiry",
+        tenant.from("visit_feedback").insert({ contact_exchange_id: ex.id, property_id: ownerLive3.id, tenant_id: tenantId, outcome: "as_described" }));
+
+      await mustFail("cannot answer the same enquiry twice",
+        tenant.from("visit_feedback").insert({ contact_exchange_id: ex.id, property_id: ownerLive3.id, tenant_id: tenantId, outcome: "did_not_match" }));
+
+      await mustSucceed("can correct their own answer",
+        tenant.from("visit_feedback").update({ outcome: "did_not_match" }).eq("contact_exchange_id", ex.id));
+
+      // Closed for now: the poster does not see individual answers.
+      await mustSee("the listing's owner cannot read the feedback",
+        owner.from("visit_feedback").select("id"), 0);
+      await mustSee("an unrelated broker cannot either",
+        sessions.broker.client.from("visit_feedback").select("id"), 0);
+      await mustSee("cannot withdraw an answer",
+        tenant.from("visit_feedback").delete().eq("contact_exchange_id", ex.id).select("id"), 0);
+
+      await admin.from("visit_feedback").delete().eq("tenant_id", tenantId);
+      await admin.from("contact_exchanges").delete().eq("tenant_id", tenantId);
+    }
+  }
+
   // --- broker ---------------------------------------------------------------
   console.log("\nbroker");
   const { client: broker, userId: brokerId } = sessions.broker;

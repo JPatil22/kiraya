@@ -24,6 +24,8 @@ import { getPublicListing } from "@/lib/listings";
 import { getMyOpenReport, getPropertyUpdates } from "@/lib/history";
 import { getCounterparty, getMyExchange } from "@/lib/contact";
 import { isShortlisted } from "@/lib/shortlist";
+import { ASK_AFTER_DAYS, getMyFeedback } from "@/lib/visits";
+import { VisitAsk } from "@/components/visits/visit-ask";
 import { getPhotos } from "@/lib/photos";
 import { UpdateTimeline } from "@/components/listings/update-timeline";
 import { PhotoGallery } from "@/components/listings/photo-gallery";
@@ -76,6 +78,14 @@ export default async function ListingDetailPage({
   // The number is only fetched once an exchange exists — 0010's policy is what
   // makes the row readable at all, so this returns null rather than leaking.
   const poster = exchange ? await getCounterparty(supabase, listing.posted_by) : null;
+
+  // Already answered? Then don't ask again on this page.
+  const myFeedback =
+    exchange && user ? await getMyFeedback(supabase, user.id, listing.id) : null;
+  const askAboutVisit =
+    Boolean(exchange) &&
+    !myFeedback &&
+    Date.parse(exchange!.created_at) <= Date.now() - ASK_AFTER_DAYS * 86_400_000;
 
   // Posting your own listing doesn't entitle you to report it.
   const canReport = Boolean(user) && !isOwnListing;
@@ -219,6 +229,10 @@ export default async function ListingDetailPage({
             unlocked={Boolean(exchange)}
             phone={poster?.phone ?? null}
           />
+        ) : null}
+
+        {askAboutVisit && exchange ? (
+          <VisitAsk contactExchangeId={exchange.id} propertyTitle={listing.title} />
         ) : null}
 
         <Card>

@@ -23,6 +23,12 @@ export type MismatchType =
 export type ReportStatus = "open" | "resolved" | "dismissed";
 export type RoomType = "hall" | "kitchen" | "bedroom" | "bathroom" | "balcony" | "exterior";
 export type ContactSource = "listing" | "suggestion";
+export type VisitOutcome =
+  | "as_described"
+  | "did_not_match"
+  | "unreachable"
+  /** Carries no signal about the listing — excluded from accuracy (0015). */
+  | "did_not_visit";
 export type NotificationKind =
   | "contact_received"
   | "suggestion_received"
@@ -240,6 +246,32 @@ export type ContactExchange = {
   created_at: string;
 };
 
+/**
+ * `visit_feedback` — what actually happened after contact was exchanged (0015).
+ * The answer to "did you go, and was it as described?", which is what turns
+ * "verified" from asserted into measured.
+ */
+export type VisitFeedback = {
+  id: string;
+  contact_exchange_id: string;
+  property_id: string;
+  tenant_id: string;
+  outcome: VisitOutcome;
+  note: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+/** `v_listing_accuracy` — visit outcomes tallied per listing. */
+export type ListingAccuracy = {
+  property_id: string;
+  answered: number;
+  matched: number;
+  mismatched: number;
+  unreachable: number;
+  did_not_visit: number;
+};
+
 /** `shortlists` — a private "come back to this", per person per listing (0011). */
 export type Shortlist = {
   id: string;
@@ -328,6 +360,11 @@ export interface Database {
         Partial<Omit<Notification, "id" | "created_at">> &
           Pick<Notification, "user_id" | "kind" | "body">
       >;
+      visit_feedback: TableDef<
+        VisitFeedback,
+        Partial<Omit<VisitFeedback, "id" | "created_at" | "updated_at">> &
+          Pick<VisitFeedback, "contact_exchange_id" | "property_id" | "tenant_id" | "outcome">
+      >;
       shortlists: TableDef<
         Shortlist,
         Partial<Omit<Shortlist, "id" | "created_at">> & Pick<Shortlist, "user_id" | "property_id">
@@ -341,6 +378,7 @@ export interface Database {
     Views: {
       v_listings_public: { Row: ListingPublic; Relationships: [] };
       v_locality_health: { Row: LocalityHealth; Relationships: [] };
+      v_listing_accuracy: { Row: ListingAccuracy; Relationships: [] };
     };
     Functions: {
       [key: string]: { Args: Record<string, unknown>; Returns: unknown };
@@ -360,6 +398,7 @@ export interface Database {
       suggestion_status: SuggestionStatus;
       contact_source: ContactSource;
       notification_kind: NotificationKind;
+      visit_outcome: VisitOutcome;
       moderation_kind: ModerationKind;
       room_type: RoomType;
     };

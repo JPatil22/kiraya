@@ -11,11 +11,13 @@ import type {
   PropertyPhoto,
   PropertyUpdate,
   TenantIntent,
+  VisitFeedback,
 } from "@/types/database";
 import {
   LOCALITY,
   addContact,
   addShortlist,
+  addVisit,
   addIntent,
   addMismatch,
   addModeration,
@@ -33,6 +35,7 @@ import {
   getProperties,
   getShortlists,
   getSuggestions,
+  getVisits,
   getUpdates,
   listingsPublic,
   localityHealth,
@@ -393,6 +396,19 @@ function insertContact(row: Row): Row {
   return created as unknown as Row;
 }
 
+function insertVisit(row: Row): Row {
+  const created = {
+    id: `vf-${Math.random().toString(36).slice(2, 10)}`,
+    note: null,
+    created_at: iso(),
+    updated_at: iso(),
+    ...row,
+  } as VisitFeedback;
+
+  addVisit(created);
+  return created as unknown as Row;
+}
+
 function insertShortlist(row: Row): Row {
   // Stands in for unique (user_id, property_id) in 0011.
   const duplicate = getShortlists().some(
@@ -555,6 +571,12 @@ export function createFixtureClient(): SupabaseClient<Database> {
             getPhotos().map((p) => ({ ...p })),
             insertPhoto,
             getPhotos as () => Row[],
+          );
+        case "visit_feedback":
+          return new FixtureQuery(
+            getVisits().map((v) => ({ ...v })),
+            insertVisit,
+            getVisits as () => Row[],
           );
         case "notifications":
           return new FixtureQuery(

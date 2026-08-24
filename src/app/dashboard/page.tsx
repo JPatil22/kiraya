@@ -15,6 +15,8 @@ import { OPEN_MODE } from "@/lib/open-mode";
 import { getActiveLocality } from "@/lib/locality";
 import { getMyListings } from "@/lib/listings";
 import { getLeads, telHref } from "@/lib/contact";
+import { getPendingAsks } from "@/lib/visits";
+import { VisitAsk } from "@/components/visits/visit-ask";
 import { setIntentStatus } from "@/app/intent/actions";
 import { SiteHeader } from "@/components/site-header";
 import { OpenModeSeedHint } from "@/components/open-mode-seed-hint";
@@ -59,7 +61,7 @@ export default async function DashboardPage({
   const isPoster = canPost(role);
   const locality = await getActiveLocality(supabase);
 
-  const [intent, myListings, leads] = await Promise.all([
+  const [intent, myListings, leads, pendingAsks] = await Promise.all([
     role === "tenant"
       ? supabase
           .from("tenant_intents")
@@ -72,6 +74,7 @@ export default async function DashboardPage({
       : Promise.resolve(null),
     isPoster ? getMyListings(supabase, user.id) : Promise.resolve([]),
     isPoster ? getLeads(supabase, user.id) : Promise.resolve([]),
+    role === "tenant" ? getPendingAsks(supabase, user.id) : Promise.resolve([]),
   ]);
 
   return (
@@ -122,6 +125,18 @@ export default async function DashboardPage({
                 Suggestions land in your inbox. They never see your number until you accept one.
               </p>
             </div>
+          </div>
+        ) : null}
+
+        {pendingAsks.length > 0 ? (
+          <div className="space-y-3">
+            {pendingAsks.slice(0, 3).map((ask) => (
+              <VisitAsk
+                key={ask.contactExchangeId}
+                contactExchangeId={ask.contactExchangeId}
+                propertyTitle={ask.propertyTitle}
+              />
+            ))}
           </div>
         ) : null}
 
