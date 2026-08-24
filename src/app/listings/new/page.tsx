@@ -5,6 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { canPost, getDataClient, getDevRole, getSessionUser } from "@/lib/auth";
 import { OPEN_MODE } from "@/lib/open-mode";
 import { ListingForm } from "@/components/listings/listing-form";
+import { getAreas } from "@/lib/areas";
 import { createListing } from "./actions";
 
 export const dynamic = "force-dynamic";
@@ -30,6 +31,8 @@ export default async function NewListingPage() {
   // switch the acting role in the header to reach this page.)
   if (!canPost(user.role)) redirect("/listings");
 
+  const areas = await getAreas(supabase);
+
   return (
     <div className="min-h-dvh">
       <SiteHeader />
@@ -47,6 +50,7 @@ export default async function NewListingPage() {
           <CardContent className="pt-6">
             <ListingForm
               action={createListing}
+              areas={areas}
               submitLabel="Submit for review"
               pendingLabel="Submitting…"
               hint="Goes live after review, stamped with a verification date."

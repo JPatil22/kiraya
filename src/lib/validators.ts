@@ -179,6 +179,8 @@ export const listingFilterSchema = z.object({
   sort: z.enum(["verified", "recent", "price_asc", "price_desc"]).catch("verified"),
   /** Free text over title / description / address. Sanitised in listings.ts. */
   q: z.string().trim().max(80).optional().catch(undefined),
+  /** Area slug, or "any". Validated against the DB, not an enum — areas are data. */
+  area: z.string().trim().max(60).optional().catch(undefined),
   /** 1-based. Out-of-range values fall back to the first page rather than 404. */
   page: z.coerce.number().int().min(1).max(500).catch(1),
 });

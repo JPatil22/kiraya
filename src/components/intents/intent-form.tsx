@@ -13,6 +13,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { BHK_OPTIONS, FURNISHING_OPTIONS, OCCUPANCY_OPTIONS } from "@/lib/constants";
+import type { Area } from "@/types/database";
 
 /**
  * Shared by onboarding and the standalone /intent screen.
@@ -27,6 +28,7 @@ export type IntentFormState = {
 } | null;
 
 export type IntentFormInitial = {
+  areaId: string;
   budgetMin: string;
   budgetMax: string;
   bhk: string;
@@ -45,10 +47,12 @@ export function IntentForm({
   action: serverAction,
   initial,
   submitLabel,
+  areas,
 }: {
   action: (prev: IntentFormState, formData: FormData) => Promise<IntentFormState>;
   initial?: IntentFormInitial;
   submitLabel: string;
+  areas: Area[];
 }) {
   const [state, action, pending] = useActionState(serverAction, null);
   const err = (f: string) => state?.fieldErrors?.[f];
@@ -59,6 +63,26 @@ export function IntentForm({
 
   return (
     <form action={action} className="space-y-5">
+      <div className="space-y-2">
+        <Label htmlFor="areaId">Area</Label>
+        <select
+          id="areaId"
+          name="areaId"
+          defaultValue={initial?.areaId ?? ""}
+          className="flex h-9 w-full items-center rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+        >
+          <option value="">Anywhere in the city</option>
+          {areas.map((a) => (
+            <option key={a.id} value={a.id}>
+              {a.name}
+            </option>
+          ))}
+        </select>
+        <p className="text-xs text-muted-foreground">
+          Narrowing this means new matches are actually near you.
+        </p>
+      </div>
+
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label htmlFor="budgetMin">Min budget (₹/mo)</Label>

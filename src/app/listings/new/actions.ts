@@ -69,6 +69,7 @@ export async function createListing(
   const { error } = await supabase.from("properties").insert({
     posted_by: user.id,
     locality_id: locality.id,
+    area_id: areaIdFrom(formData),
     title: v.title,
     description: v.description ? v.description : null,
     address_line: v.addressLine ? v.addressLine : null,
@@ -88,4 +89,10 @@ export async function createListing(
 
   revalidatePath("/dashboard");
   redirect("/dashboard?posted=1");
+}
+
+/** Empty select value means "not set", which is a legitimate answer. */
+function areaIdFrom(formData: FormData): string | null {
+  const raw = formData.get("areaId");
+  return typeof raw === "string" && raw ? raw : null;
 }

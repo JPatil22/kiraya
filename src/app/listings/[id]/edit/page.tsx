@@ -7,6 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { ListingForm } from "@/components/listings/listing-form";
 import { getDataClient, getSessionUser } from "@/lib/auth";
 import { OPEN_MODE } from "@/lib/open-mode";
+import { getAreas } from "@/lib/areas";
 import { updateListing } from "../actions";
 
 export const dynamic = "force-dynamic";
@@ -30,6 +31,8 @@ export default async function EditListingPage({
     if (!OPEN_MODE) redirect("/login");
     return notFound();
   }
+
+  const areas = await getAreas(supabase);
 
   const { data: listing } = await supabase
     .from("properties")
@@ -67,12 +70,14 @@ export default async function EditListingPage({
           <CardContent className="pt-6">
             <ListingForm
               action={updateListing}
+              areas={areas}
               hiddenFields={{ propertyId: id }}
               submitLabel="Save changes"
               pendingLabel="Saving…"
               hint="Saving re-stamps the freshness date in your name."
               initial={{
                 title: listing.title,
+                areaId: listing.area_id ?? "",
                 description: listing.description ?? "",
                 addressLine: listing.address_line ?? "",
                 bhk: listing.bhk,

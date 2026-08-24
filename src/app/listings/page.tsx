@@ -6,6 +6,7 @@ import { ListingFilterBar } from "@/components/listings/listing-filters";
 import { Button } from "@/components/ui/button";
 import { getDataClient, getSessionUser } from "@/lib/auth";
 import { getShortlistIds } from "@/lib/shortlist";
+import { getAreas } from "@/lib/areas";
 import { getActiveLocality } from "@/lib/locality";
 import { getPublicListings, PAGE_SIZE } from "@/lib/listings";
 import { listingFilterSchema } from "@/lib/validators";
@@ -33,14 +34,16 @@ export default async function ListingsPage({
     freshOnly: raw.freshOnly ?? "",
     sort: raw.sort ?? "verified",
     q: raw.q ?? undefined,
+    area: raw.area ?? undefined,
     page: raw.page ?? 1,
   });
 
   const supabase = await getDataClient();
-  const [locality, result, user] = await Promise.all([
+  const [locality, result, user, areas] = await Promise.all([
     getActiveLocality(supabase),
     getPublicListings(supabase, filters),
     getSessionUser(supabase),
+    getAreas(supabase),
   ]);
 
   // Only signed-in people get a save affordance, and it costs one extra query
@@ -68,7 +71,7 @@ export default async function ListingsPage({
           </p>
         </div>
 
-        <ListingFilterBar filters={filters} />
+        <ListingFilterBar filters={filters} areas={areas} />
 
         <div className="flex items-baseline justify-between">
           <p className="text-sm text-muted-foreground">
@@ -166,6 +169,7 @@ function Pager({
 function hasActiveFilters(f: ReturnType<typeof listingFilterSchema.parse>) {
   return (
     f.bhk !== "any" ||
+    Boolean(f.area && f.area !== "any") ||
     f.availability !== "any" ||
     f.furnishing !== "any" ||
     f.occupancy !== "any" ||

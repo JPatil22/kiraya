@@ -16,6 +16,7 @@ import type {
   FurnishingType,
   ListingStatus,
   MismatchReport,
+  ModerationAction,
   OccupancyType,
   PropertyUpdate,
   UserRole,
@@ -108,4 +109,33 @@ export function updateAuthor(
   if (!changedBy) return "System";
   if (changedBy === postedBy) return postedByRole === "broker" ? "the broker" : "the owner";
   return "Kiraya";
+}
+
+/** Open reports against a listing, for the poster to answer (0017). */
+export async function getReportsForProperty(
+  supabase: SupabaseClient<Database>,
+  propertyId: string,
+): Promise<MismatchReport[]> {
+  const { data } = await supabase
+    .from("mismatch_reports")
+    .select("*")
+    .eq("property_id", propertyId)
+    .eq("status", "open")
+    .order("created_at", { ascending: false });
+
+  return data ?? [];
+}
+
+/** The moderation log, newest first — rows 0005 has always written (⑧). */
+export async function getModerationHistory(
+  supabase: SupabaseClient<Database>,
+  limit = 100,
+): Promise<ModerationAction[]> {
+  const { data } = await supabase
+    .from("moderation_actions")
+    .select("*")
+    .order("created_at", { ascending: false })
+    .limit(limit);
+
+  return data ?? [];
 }

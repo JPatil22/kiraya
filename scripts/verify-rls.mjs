@@ -440,6 +440,29 @@ async function main() {
     }
   }
 
+  // --- areas (0019) ----------------------------------------------------------
+  // Reference data: everyone reads, only admins curate. Worth asserting because
+  // a writable area list would let anyone rename the neighbourhoods every
+  // listing and every tenant intent is filed under.
+  console.log("\nareas (0019)");
+  {
+    const { data: areaRows } = await admin.from("areas").select("id, name").limit(1);
+    const area = (areaRows ?? [])[0];
+
+    if (!area) {
+      record(false, "0019: areas are seeded", "none found — did 0019 run?");
+    } else {
+      await mustSee("anyone signed in can read the area list",
+        tenant.from("areas").select("id"), 12);
+      await mustFail("a tenant cannot invent an area",
+        tenant.from("areas").insert({ locality_id: locality.id, slug: "fake-area", name: "Fake Area" }));
+      await mustSee("a tenant cannot rename one",
+        tenant.from("areas").update({ name: "Renamed" }).eq("id", area.id).select("id"), 0);
+      await mustSee("a broker cannot delete one",
+        sessions.broker.client.from("areas").delete().eq("id", area.id).select("id"), 0);
+    }
+  }
+
   // --- broker ---------------------------------------------------------------
   console.log("\nbroker");
   const { client: broker, userId: brokerId } = sessions.broker;

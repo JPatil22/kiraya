@@ -12,6 +12,7 @@ import {
   OCCUPANCY_OPTIONS,
 } from "@/lib/constants";
 import { formatINR } from "@/lib/utils";
+import type { Area } from "@/types/database";
 
 /**
  * Shared by "post a property" and "edit listing". The two differ only in which
@@ -26,6 +27,7 @@ export type ListingFormState = {
 
 export type ListingFormInitial = {
   title: string;
+  areaId: string;
   description: string;
   addressLine: string;
   bhk: string;
@@ -60,6 +62,7 @@ export function ListingForm({
   pendingLabel,
   hint,
   hiddenFields,
+  areas,
 }: {
   action: (prev: ListingFormState, formData: FormData) => Promise<ListingFormState>;
   initial?: ListingFormInitial;
@@ -67,6 +70,7 @@ export function ListingForm({
   pendingLabel: string;
   hint: string;
   hiddenFields?: Record<string, string>;
+  areas: Area[];
 }) {
   const [state, action, pending] = useActionState(serverAction, null);
   const err = (f: string) => state?.fieldErrors?.[f];
@@ -135,6 +139,27 @@ export function ListingForm({
             </select>
             <FieldError message={err("occupancy")} />
           </div>
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="areaId">Area</Label>
+          <select
+            id="areaId"
+            name="areaId"
+            defaultValue={initial?.areaId ?? ""}
+            className={selectClass}
+          >
+            <option value="">Not sure / not listed</option>
+            {areas.map((a) => (
+              <option key={a.id} value={a.id}>
+                {a.name}
+              </option>
+            ))}
+          </select>
+          <p className="text-xs text-muted-foreground">
+            Tenants filter by this, so a listing without one is much harder to find.
+          </p>
+          <FieldError message={err("areaId")} />
         </div>
 
         <div className="space-y-2">

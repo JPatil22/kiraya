@@ -64,6 +64,7 @@ export async function saveIntent(_prev: IntentState, formData: FormData): Promis
 
   const v = parsed.data;
   const fields = {
+    area_id: areaIdFrom(formData),
     budget_min: v.budgetMin,
     budget_max: v.budgetMax,
     bhk: v.bhk,
@@ -130,4 +131,10 @@ export async function setIntentStatus(formData: FormData) {
 
   revalidatePath("/dashboard");
   revalidatePath("/intent");
+}
+
+/** Empty select value means "not set", which is a legitimate answer. */
+function areaIdFrom(formData: FormData): string | null {
+  const raw = formData.get("areaId");
+  return typeof raw === "string" && raw ? raw : null;
 }

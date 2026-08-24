@@ -69,6 +69,15 @@ export type Locality = {
   created_at: string;
 };
 
+/** `areas` — neighbourhoods inside the launch locality (0019). */
+export type Area = {
+  id: string;
+  locality_id: string;
+  slug: string;
+  name: string;
+  created_at: string;
+};
+
 export type Profile = {
   id: string;
   phone: string | null;
@@ -85,6 +94,8 @@ export type TenantIntent = {
   id: string;
   tenant_id: string;
   locality_id: string;
+  /** Null means "anywhere in the locality". */
+  area_id: string | null;
   budget_min: number;
   budget_max: number;
   bhk: BhkType;
@@ -102,6 +113,8 @@ export type Property = {
   id: string;
   posted_by: string;
   locality_id: string;
+  /** Null means the area was never set — legitimate for pre-0019 rows. */
+  area_id: string | null;
   title: string;
   description: string | null;
   address_line: string | null;
@@ -131,6 +144,9 @@ export type ListingPublic = {
   id: string;
   locality_id: string;
   locality_slug: string;
+  area_id: string | null;
+  area_slug: string | null;
+  area_name: string | null;
   title: string;
   description: string | null;
   address_line: string | null;
@@ -186,6 +202,9 @@ export type MismatchReport = {
   status: ReportStatus;
   resolved_by: string | null;
   resolved_at: string | null;
+  /** The poster's side of it (0017). Only they may write this. */
+  owner_response: string | null;
+  owner_responded_at: string | null;
   created_at: string;
 };
 
@@ -272,6 +291,25 @@ export type ListingAccuracy = {
   did_not_visit: number;
 };
 
+/** `v_listing_price_context` — how this listing's cost sits against comparable
+ * live listings. `sample` counts OTHER listings, never this one (0016). */
+export type PriceContext = {
+  property_id: string;
+  all_in_monthly: number;
+  sample: number;
+  median_all_in: number | null;
+  pct_vs_median: number | null;
+};
+
+/** `v_listing_engagement` — counts only, never who (0017). */
+export type ListingEngagement = {
+  property_id: string;
+  posted_by: string;
+  saves: number;
+  enquiries: number;
+  visits_answered: number;
+};
+
 /** `shortlists` — a private "come back to this", per person per listing (0011). */
 export type Shortlist = {
   id: string;
@@ -319,6 +357,7 @@ export interface Database {
   public: {
     Tables: {
       localities: TableDef<Locality>;
+      areas: TableDef<Area>;
       profiles: TableDef<Profile>;
       tenant_intents: TableDef<
         TenantIntent,
@@ -379,6 +418,8 @@ export interface Database {
       v_listings_public: { Row: ListingPublic; Relationships: [] };
       v_locality_health: { Row: LocalityHealth; Relationships: [] };
       v_listing_accuracy: { Row: ListingAccuracy; Relationships: [] };
+      v_listing_price_context: { Row: PriceContext; Relationships: [] };
+      v_listing_engagement: { Row: ListingEngagement; Relationships: [] };
     };
     Functions: {
       [key: string]: { Args: Record<string, unknown>; Returns: unknown };

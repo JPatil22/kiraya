@@ -69,10 +69,16 @@ export function ListingCard({
         </div>
       </div>
 
-      {listing.address_line ? (
+      {listing.area_name || listing.address_line ? (
         <p className="mt-3 flex items-center gap-1.5 text-sm text-muted-foreground">
           <MapPin className="size-3.5 shrink-0" />
-          <span className="truncate">{listing.address_line}</span>
+          <span className="truncate">
+            {listing.area_name ? (
+              <span className="font-medium text-foreground">{listing.area_name}</span>
+            ) : null}
+            {listing.area_name && listing.address_line ? " · " : null}
+            {listing.address_line}
+          </span>
         </p>
       ) : null}
 

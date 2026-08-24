@@ -4,6 +4,7 @@ import { roomsRequiredForBhk } from "@/lib/rooms";
 import type {
   BrokerSuggestion,
   ContactExchange,
+  Area,
   Shortlist,
   ListingPublic,
   Locality,
@@ -71,6 +72,21 @@ function profile(
   };
 }
 
+/** Mirrors the areas 0019 seeds. Slugs match so fixture URLs behave the same. */
+export const AREAS: Area[] = [
+  ["aundh", "Aundh"], ["balewadi", "Balewadi"], ["baner", "Baner"],
+  ["hadapsar", "Hadapsar"], ["hinjewadi", "Hinjewadi"], ["kharadi", "Kharadi"],
+  ["koregaon-park", "Koregaon Park"], ["kothrud", "Kothrud"],
+  ["magarpatta", "Magarpatta"], ["pimple-saudagar", "Pimple Saudagar"],
+  ["viman-nagar", "Viman Nagar"], ["wakad", "Wakad"],
+].map(([slug, name]) => ({
+  id: `area-${slug}`,
+  locality_id: LOCALITY.id,
+  slug,
+  name,
+  created_at: daysAgo(120),
+}));
+
 export const PROFILES: Profile[] = [
   profile("u-tenant", DEV_PHONES.tenant, "Ananya Rao", "tenant"),
   profile("u-owner", DEV_PHONES.owner, "Suresh Kamath", "owner"),
@@ -84,6 +100,8 @@ const SEED_INTENTS: TenantIntent[] = [
     id: "int-1",
     tenant_id: "u-tenant",
     locality_id: LOCALITY.id,
+    // Named an area, so matching is exercised rather than trivially passing.
+    area_id: "area-baner",
     budget_min: 20000,
     budget_max: 35000,
     bhk: "2bhk",
@@ -108,6 +126,9 @@ const SEED_MISMATCHES: MismatchReport[] = [
     status: "open",
     resolved_by: null,
     resolved_at: null,
+    // One answered, one not — so the UI shows both states.
+    owner_response: "The ₹14,000 quote included two months' maintenance up front. Rent is ₹12,000.",
+    owner_responded_at: daysAgo(2),
     created_at: daysAgo(3),
   },
   {
@@ -119,6 +140,8 @@ const SEED_MISMATCHES: MismatchReport[] = [
     status: "open",
     resolved_by: null,
     resolved_at: null,
+    owner_response: null,
+    owner_responded_at: null,
     created_at: daysAgo(1),
   },
 ];
@@ -281,6 +304,7 @@ const SEED_SUGGESTIONS: BrokerSuggestion[] = [
 function property(p: Partial<Property> & Pick<Property, "id" | "posted_by" | "title">): Property {
   return {
     locality_id: LOCALITY.id,
+    area_id: null,
     description: null,
     address_line: null,
     bhk: "2bhk",
@@ -310,6 +334,7 @@ const SEED_PROPERTIES: Property[] = [
     description:
       "East-facing, corner unit on the 3rd floor. Covered parking for one car. Walk to Balewadi High Street.",
     address_line: "Balewadi, Baner",
+    area_id: "area-balewadi",
     bhk: "2bhk",
     furnishing: "semi",
     occupancy_pref: "family",
@@ -330,6 +355,7 @@ const SEED_PROPERTIES: Property[] = [
     title: "Spacious 3BHK in Kharadi, near EON IT Park",
     description: "Two balconies, 24x7 water and backup. Society has a gym and lift.",
     address_line: "Nyati Estate Road, Kharadi",
+    area_id: "area-kharadi",
     bhk: "3bhk",
     furnishing: "full",
     occupancy_pref: "any",
@@ -350,6 +376,7 @@ const SEED_PROPERTIES: Property[] = [
     title: "Compact 1BHK on Paud Road, Kothrud",
     description: "Independent floor, separate entrance. Ideal for a couple or single tenant.",
     address_line: "Paud Road, Kothrud",
+    area_id: "area-kothrud",
     bhk: "1bhk",
     furnishing: "unfurnished",
     occupancy_pref: "any",
@@ -370,6 +397,7 @@ const SEED_PROPERTIES: Property[] = [
     title: "Semi-furnished 2BHK in Wakad",
     description: "Wardrobes and modular kitchen included. Two-wheeler parking only.",
     address_line: "Datta Mandir Road, Wakad",
+    area_id: "area-wakad",
     bhk: "2bhk",
     furnishing: "semi",
     occupancy_pref: "bachelors_male",
@@ -389,6 +417,7 @@ const SEED_PROPERTIES: Property[] = [
     title: "1RK studio near Viman Nagar Phoenix",
     description: "Compact studio with attached bath. Water and maintenance included.",
     address_line: "Nagar Road, Viman Nagar",
+    area_id: "area-viman-nagar",
     bhk: "1rk",
     furnishing: "semi",
     occupancy_pref: "bachelors_female",
@@ -409,6 +438,7 @@ const SEED_PROPERTIES: Property[] = [
     description:
       "Top-floor duplex with a private terrace. Available after the current tenant exits.",
     address_line: "Lane 6, Koregaon Park",
+    area_id: "area-koregaon-park",
     bhk: "3bhk",
     furnishing: "full",
     occupancy_pref: "family",
@@ -599,6 +629,9 @@ export function listingsPublic(): ListingPublic[] {
       id: p.id,
       locality_id: p.locality_id,
       locality_slug: LOCALITY.slug,
+      area_id: p.area_id,
+      area_slug: p.area_id ? p.area_id.replace("area-", "") : null,
+      area_name: AREAS.find((a) => a.id === p.area_id)?.name ?? null,
       title: p.title,
       description: p.description,
       address_line: p.address_line,

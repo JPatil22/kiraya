@@ -16,6 +16,7 @@ import { getActiveLocality } from "@/lib/locality";
 import { getMyListings } from "@/lib/listings";
 import { getLeads, telHref } from "@/lib/contact";
 import { getPendingAsks } from "@/lib/visits";
+import { getEngagementFor } from "@/lib/insights";
 import { VisitAsk } from "@/components/visits/visit-ask";
 import { setIntentStatus } from "@/app/intent/actions";
 import { SiteHeader } from "@/components/site-header";
@@ -61,7 +62,7 @@ export default async function DashboardPage({
   const isPoster = canPost(role);
   const locality = await getActiveLocality(supabase);
 
-  const [intent, myListings, leads, pendingAsks] = await Promise.all([
+  const [intent, myListings, leads, pendingAsks, engagement] = await Promise.all([
     role === "tenant"
       ? supabase
           .from("tenant_intents")
@@ -75,6 +76,7 @@ export default async function DashboardPage({
     isPoster ? getMyListings(supabase, user.id) : Promise.resolve([]),
     isPoster ? getLeads(supabase, user.id) : Promise.resolve([]),
     role === "tenant" ? getPendingAsks(supabase, user.id) : Promise.resolve([]),
+    isPoster ? getEngagementFor(supabase, user.id) : Promise.resolve(new Map()),
   ]);
 
   return (
@@ -282,6 +284,7 @@ export default async function DashboardPage({
                               ? ` · verified ${format(new Date(l.last_verified_at), "d MMM")}`
                               : " · not verified yet"}
                           </div>
+                          <Engagement stats={engagement.get(l.id)} />
                         </div>
                         <div className="flex shrink-0 items-center gap-2">
                           <Button asChild size="sm" variant="ghost">
@@ -380,6 +383,31 @@ export default async function DashboardPage({
         </Card>
       </main>
     </div>
+  );
+}
+
+/** Counts only — never who. A shortlist is private, and 0011 keeps it that way. */
+function Engagement({ stats }: { stats?: { saves: number; enquiries: number; visits_answered: number } }) {
+  if (!stats || (stats.saves === 0 && stats.enquiries === 0)) {
+    return (
+      <p className="mt-0.5 text-xs text-muted-foreground">
+        No saves or enquiries yet.
+      </p>
+    );
+  }
+
+  return (
+    <p className="mt-0.5 text-xs text-muted-foreground">
+      <span className="font-medium text-foreground">{stats.saves}</span> saved ·{" "}
+      <span className="font-medium text-foreground">{stats.enquiries}</span> asked for your
+      number
+      {stats.visits_answered > 0 ? (
+        <>
+          {" "}· <span className="font-medium text-foreground">{stats.visits_answered}</span>{" "}
+          reported back after visiting
+        </>
+      ) : null}
+    </p>
   );
 }
 

@@ -10,6 +10,7 @@ import {
   SORT_OPTIONS,
 } from "@/lib/constants";
 import type { ListingFilters } from "@/lib/validators";
+import type { Area } from "@/types/database";
 import { cn } from "@/lib/utils";
 
 const selectClass =
@@ -19,7 +20,13 @@ const selectClass =
  * Plain GET form — filters live in the URL, so the feed stays a server
  * component, results are shareable, and back/forward just works.
  */
-export function ListingFilterBar({ filters }: { filters: ListingFilters }) {
+export function ListingFilterBar({
+  filters,
+  areas,
+}: {
+  filters: ListingFilters;
+  areas: Area[];
+}) {
   return (
     <form method="get" action="/listings" className="rounded-xl border bg-card p-4">
       <div className="mb-4 space-y-1.5">
@@ -35,6 +42,18 @@ export function ListingFilterBar({ filters }: { filters: ListingFilters }) {
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="space-y-1.5">
+          <Label htmlFor="area">Area</Label>
+          <select id="area" name="area" defaultValue={filters.area ?? "any"} className={selectClass}>
+            <option value="any">Anywhere in the city</option>
+            {areas.map((a) => (
+              <option key={a.id} value={a.slug}>
+                {a.name}
+              </option>
+            ))}
+          </select>
+        </div>
+
         <div className="space-y-1.5">
           <Label htmlFor="bhk">Configuration</Label>
           <select id="bhk" name="bhk" defaultValue={filters.bhk} className={selectClass}>

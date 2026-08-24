@@ -235,6 +235,7 @@ export async function updateListing(_prev: EditState, formData: FormData): Promi
     .from("properties")
     .update({
       title: v.title,
+      area_id: areaIdFrom(formData),
       description: v.description ? v.description : null,
       address_line: v.addressLine ? v.addressLine : null,
       bhk: v.bhk,
@@ -357,4 +358,68 @@ export async function requestContact(
   revalidatePath(`/listings/${propertyId}`);
   revalidatePath("/dashboard");
   return { ok: true };
+}
+
+export type ReplyState = { error?: string; ok?: boolean } | null;
+
+/**
+ * The poster answers a mismatch report about their listing.
+ *
+ * 0017's trigger is what actually constrains this — an RLS policy can't limit
+ * which columns an update touches, so without it a policy generous enough to
+ * permit a reply would also let the accused rewrite the accusation or close the
+ * report against themselves.
+ */
+export async function replyToReport(
+  _prev: ReplyState,
+  formData: FormData,
+): Promise<ReplyState> {
+  const reportId = formData.get("reportId");
+  if (typeof reportId !== "string") return { error: "Missing report." };
+
+  const raw = formData.get("response");
+  const response = typeof raw === "string" ? raw.trim().slice(0, 1000) : "";
+  if (!response) return { error: "Write something first." };
+
+  const supabase = await getDataClient();
+  const user = await getSessionUser(supabase);
+  if (!user) {
+    if (!OPEN_MODE) redirect("/login");
+    return { error: "Open mode isn't seeded yet — run `npm run db:seed`." };
+  }
+
+  const { data: report } = await supabase
+    .from("mismatch_reports")
+    .select("id, property_id")
+    .eq("id", reportId)
+    .maybeSingle();
+  if (!report) return { error: "That report no longer exists." };
+
+  // Open mode is service-role and skips RLS, so ownership is checked here too.
+  const { data: property } = await supabase
+    .from("properties")
+    .select("posted_by")
+    .eq("id", report.property_id)
+    .maybeSingle();
+
+  if (!property || (property.posted_by !== user.id && user.role !== "admin")) {
+    return { error: "That isn't your listing." };
+  }
+
+  const { error } = await supabase
+    .from("mismatch_reports")
+    .update({ owner_response: response })
+    .eq("id", reportId);
+
+  if (error) return { error: friendlyDbError(error) };
+
+  revalidatePath(`/listings/${report.property_id}`);
+  revalidatePath("/admin/reports");
+  return { ok: true };
+}
+
+/** Empty select value means "not set", which is a legitimate answer. */
+function areaIdFrom(formData: FormData): string | null {
+  const raw = formData.get("areaId");
+  return typeof raw === "string" && raw ? raw : null;
 }

@@ -9,6 +9,7 @@ import { IntentForm } from "@/components/intents/intent-form";
 import { getDataClient, getDevRole, getSessionUser } from "@/lib/auth";
 import { OPEN_MODE } from "@/lib/open-mode";
 import { getActiveLocality } from "@/lib/locality";
+import { getAreas } from "@/lib/areas";
 import { saveIntent } from "./actions";
 
 export const dynamic = "force-dynamic";
@@ -41,8 +42,9 @@ export default async function IntentPage() {
 
   if (user.role !== "tenant") redirect("/dashboard");
 
-  const [locality, { data: intent }] = await Promise.all([
+  const [locality, areas, { data: intent }] = await Promise.all([
     getActiveLocality(supabase),
+    getAreas(supabase),
     supabase
       .from("tenant_intents")
     .select("*")
@@ -77,10 +79,12 @@ export default async function IntentPage() {
           <CardContent className="pt-6">
             <IntentForm
               action={saveIntent}
+              areas={areas}
               submitLabel={intent ? "Save changes" : "Save and continue"}
               initial={
                 intent
                   ? {
+                      areaId: intent.area_id ?? "",
                       budgetMin: String(intent.budget_min),
                       budgetMax: String(intent.budget_max),
                       bhk: intent.bhk,

@@ -7,6 +7,7 @@ const TABS = [
   { href: "/admin/listings", label: "Listings" },
   { href: "/admin/reports", label: "Mismatches" },
   { href: "/admin/people", label: "People" },
+  { href: "/admin/history", label: "Log" },
 ];
 
 /** Shared chrome for the admin cockpit. */

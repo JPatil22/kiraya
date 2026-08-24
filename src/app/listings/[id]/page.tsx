@@ -25,6 +25,10 @@ import { getMyOpenReport, getPropertyUpdates } from "@/lib/history";
 import { getCounterparty, getMyExchange } from "@/lib/contact";
 import { isShortlisted } from "@/lib/shortlist";
 import { ASK_AFTER_DAYS, getMyFeedback } from "@/lib/visits";
+import { getPriceContext } from "@/lib/insights";
+import { getReportsForProperty } from "@/lib/history";
+import { OwnerReply } from "./owner-reply";
+import { PriceContext } from "@/components/listings/price-context";
 import { VisitAsk } from "@/components/visits/visit-ask";
 import { getPhotos } from "@/lib/photos";
 import { UpdateTimeline } from "@/components/listings/update-timeline";
@@ -37,6 +41,7 @@ import {
   AVAILABILITY_OPTIONS,
   BHK_OPTIONS,
   FURNISHING_OPTIONS,
+  MISMATCH_OPTIONS,
   OCCUPANCY_OPTIONS,
   labelFor,
 } from "@/lib/constants";
@@ -58,9 +63,11 @@ export default async function ListingDetailPage({
 
   // One round trip, not four. `getMyOpenReport` needs the user id, so it's
   // resolved off getSessionUser rather than after the whole batch.
-  const [updates, photos, userWithReport] = await Promise.all([
+  const [updates, photos, priceContext, reports, userWithReport] = await Promise.all([
     getPropertyUpdates(supabase, id),
     getPhotos(supabase, id),
+    getPriceContext(supabase, id),
+    getReportsForProperty(supabase, id),
     getSessionUser(supabase).then(async (u) => {
       const isOther = Boolean(u) && u!.id !== listing.posted_by;
       const [report, exchange, saved] = await Promise.all([
@@ -185,6 +192,37 @@ export default async function ListingDetailPage({
               daysSinceVerified={listing.days_since_verified}
               isStale={listing.is_stale}
             />
+
+            {reports.length > 0 ? (
+              <Card className="border-destructive/40">
+                <CardHeader>
+                  <CardTitle className="text-base">
+                    {reports.length} open{" "}
+                    {reports.length === 1 ? "report" : "reports"} about this listing
+                  </CardTitle>
+                  <CardDescription>
+                    Your reply goes to the admin reviewing it, and sits next to the report.
+                    Answering doesn&apos;t close it — but being on the record is better than
+                    the accusation standing alone.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {reports.map((r) => (
+                    <div key={r.id} className="rounded-lg border p-3">
+                      <p className="text-sm font-medium">
+                        {labelFor(MISMATCH_OPTIONS, r.type)}
+                      </p>
+                      {r.description ? (
+                        <p className="mt-0.5 text-sm text-muted-foreground">
+                          &ldquo;{r.description}&rdquo;
+                        </p>
+                      ) : null}
+                      <OwnerReply reportId={r.id} existing={r.owner_response} />
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
+            ) : null}
           </>
         ) : null}
 
@@ -216,8 +254,15 @@ export default async function ListingDetailPage({
               Every component, itemised. No &ldquo;brokerage negotiable&rdquo; surprises on site.
             </CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="space-y-4">
             <CostBreakdown costs={listing} />
+            {priceContext ? (
+              <PriceContext
+                context={priceContext}
+                bhkLabel={labelFor(BHK_OPTIONS, listing.bhk)}
+                localityName={listing.area_name ?? "this part of the city"}
+              />
+            ) : null}
           </CardContent>
         </Card>
 
@@ -251,6 +296,10 @@ export default async function ListingDetailPage({
             {listing.address_line ? (
               <div className="flex items-center gap-2 text-sm">
                 <MapPin className="size-4 shrink-0 text-muted-foreground" />
+                {listing.area_name ? (
+                  <span className="font-medium">{listing.area_name}</span>
+                ) : null}
+                {listing.area_name && listing.address_line ? " · " : null}
                 {listing.address_line}
               </div>
             ) : null}

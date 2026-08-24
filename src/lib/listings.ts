@@ -54,6 +54,13 @@ export async function getPublicListings(
 
   if (filters.bhk !== "any") query = query.eq("bhk", filters.bhk);
 
+  // The whole point of 0019: a tenant in Kothrud should not have to scroll
+  // past Kharadi. Filtering on the slug rather than the id keeps URLs readable
+  // and shareable ("/listings?area=baner").
+  if (filters.area && filters.area !== "any") {
+    query = query.eq("area_slug", filters.area);
+  }
+
   // A rented flat is the thing this product exists to stop showing people, so
   // it leaves the feed the moment the owner says so (0009). It's hidden, not
   // deleted: the detail page still resolves, so shared links and the change
