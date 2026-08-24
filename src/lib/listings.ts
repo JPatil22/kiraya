@@ -9,6 +9,27 @@ import { ACTIVE_LOCALITY_SLUG } from "@/lib/locality";
  * Budget filters apply to `all_in_monthly` (rent + maintenance) — the honest
  * number — not to bare rent.
  */
+/**
+ * Make a user's words safe to drop into a PostgREST `or()` filter.
+ *
+ * `or()` takes a *filter string*, not a bound parameter: commas separate
+ * conditions, dots separate column.operator.value, and parens group. A tenant
+ * typing "2bhk, baner" would otherwise produce a malformed condition, and a
+ * deliberate `)` could reshape the filter entirely. So the characters that
+ * carry meaning in that grammar are stripped rather than escaped — nobody
+ * searching for a flat needs them, and stripping can't be got wrong the way
+ * escaping can.
+ */
+const SEARCH_COLUMNS = ["title", "description", "address_line"] as const;
+
+function sanitiseSearch(raw: string): string {
+  return raw
+    .replace(/[,()*%\\"':.]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 80);
+}
+
 export async function getPublicListings(
   supabase: SupabaseClient<Database>,
   filters: ListingFilters,
@@ -46,6 +67,24 @@ export async function getPublicListings(
     query = query.lte("all_in_monthly", filters.maxBudget);
   }
   if (filters.freshOnly) query = query.eq("is_stale", false);
+
+  // Substring match across the three fields a tenant actually types into: the
+  // title, the free-text description, and the street/landmark. Deliberately NOT
+  // the poster's name — that's theirs, not a search key.
+  //
+  // Every word must match SOMETHING, rather than the whole phrase matching one
+  // field: "baner parking" should find the Balewadi flat whose address says
+  // Baner and whose description mentions parking. Treating the phrase as a
+  // single substring returned nothing for any two-word search.
+  //
+  // Chained `or()` calls AND together in PostgREST, which is exactly the shape
+  // that gives: (w1 in any column) AND (w2 in any column).
+  const words = filters.q ? sanitiseSearch(filters.q).split(" ").filter(Boolean).slice(0, 6) : [];
+  for (const word of words) {
+    query = query.or(
+      SEARCH_COLUMNS.map((col) => `${col}.ilike.*${word}*`).join(","),
+    );
+  }
 
   switch (filters.sort) {
     case "price_asc":

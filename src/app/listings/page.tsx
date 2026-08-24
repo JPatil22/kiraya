@@ -31,6 +31,7 @@ export default async function ListingsPage({
     maxBudget: raw.maxBudget || undefined,
     freshOnly: raw.freshOnly ?? "",
     sort: raw.sort ?? "verified",
+    q: raw.q ?? undefined,
   });
 
   const supabase = await getDataClient();
@@ -89,7 +90,10 @@ function hasActiveFilters(f: ReturnType<typeof listingFilterSchema.parse>) {
   return (
     f.bhk !== "any" ||
     f.availability !== "any" ||
+    f.furnishing !== "any" ||
+    f.occupancy !== "any" ||
     f.freshOnly ||
+    Boolean(f.q) ||
     typeof f.minBudget === "number" ||
     typeof f.maxBudget === "number"
   );

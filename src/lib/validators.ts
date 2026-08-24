@@ -177,6 +177,8 @@ export const listingFilterSchema = z.object({
     .transform((v) => v === "1" || v === "on")
     .catch(false),
   sort: z.enum(["verified", "recent", "price_asc", "price_desc"]).catch("verified"),
+  /** Free text over title / description / address. Sanitised in listings.ts. */
+  q: z.string().trim().max(80).optional().catch(undefined),
 });
 
 export type ListingFilters = z.output<typeof listingFilterSchema>;

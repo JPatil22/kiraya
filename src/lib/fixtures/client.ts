@@ -75,6 +75,27 @@ class FixtureQuery<T extends Row> implements PromiseLike<Result<T[]>> {
     return this;
   }
 
+  /**
+   * Minimal stand-in for PostgREST's `or()`. Understands only the shape the app
+   * actually builds — `col.ilike.*term*` joined by commas — and throws on
+   * anything else rather than quietly matching everything, which is the failure
+   * mode that would make fixture mode disagree with Postgres.
+   */
+  or(filters: string): this {
+    const clauses = filters.split(",").map((clause) => {
+      const match = /^([a-z_]+)\.ilike\.\*(.*)\*$/.exec(clause);
+      if (!match) throw new Error(`Fixture client: unsupported or() clause "${clause}"`);
+      const [, column, term] = match;
+      const needle = term.toLowerCase();
+      return (r: Row) => String(r[column] ?? "").toLowerCase().includes(needle);
+    });
+
+    const anyMatch = (r: Row) => clauses.some((c) => c(r));
+    this.predicates.push(anyMatch);
+    this.rows = this.rows.filter(anyMatch);
+    return this;
+  }
+
   /** Needed by the occupancy filter, which matches a value OR "any". */
   in(column: string, values: readonly unknown[]): this {
     this.predicates.push((r) => values.includes(r[column]));

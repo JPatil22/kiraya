@@ -22,6 +22,18 @@ const selectClass =
 export function ListingFilterBar({ filters }: { filters: ListingFilters }) {
   return (
     <form method="get" action="/listings" className="rounded-xl border bg-card p-4">
+      <div className="mb-4 space-y-1.5">
+        <Label htmlFor="q">Search</Label>
+        <Input
+          id="q"
+          name="q"
+          type="search"
+          placeholder="Area, landmark or anything in the listing — e.g. Baner, Kothrud, parking"
+          defaultValue={filters.q ?? ""}
+          maxLength={80}
+        />
+      </div>
+
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <div className="space-y-1.5">
           <Label htmlFor="bhk">Configuration</Label>
