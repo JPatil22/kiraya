@@ -9,6 +9,7 @@ import {
   Flag,
   MessageSquareQuote,
   PhoneCall,
+  Sparkles,
 } from "lucide-react";
 import { SiteHeader } from "@/components/site-header";
 import { OpenModeSeedHint } from "@/components/open-mode-seed-hint";
@@ -29,6 +30,7 @@ const ICON: Record<NotificationKind, typeof Bell> = {
   saved_listing_changed: Bookmark,
   mismatch_reported: Flag,
   listing_reviewed: CheckCircle2,
+  listing_matched: Sparkles,
 };
 
 export default async function NotificationsPage() {

@@ -322,6 +322,74 @@ async function main() {
     await admin.from("notifications").delete().eq("user_id", ownerId);
   }
 
+  // --- intent matching (0014) ------------------------------------------------
+  // A listing going live should reach whoever is actively looking for exactly
+  // that. Asserted against the seeded tenant intent, whose criteria the fixture
+  // listing is built to satisfy — and then against one that misses on budget,
+  // because a match that fires too eagerly is spam in the channel five other
+  // features now depend on.
+  console.log("\nintent matching (0014)");
+  {
+    const { data: intents2 } = await admin
+      .from("tenant_intents").select("*").eq("status", "active").limit(1);
+    const ti = (intents2 ?? [])[0];
+
+    if (!ti) {
+      record(false, "0014: an active intent exists to match against", "none seeded");
+    } else {
+      await admin.from("notifications").delete().eq("user_id", ti.tenant_id);
+
+      const base = {
+        posted_by: ownerId,
+        locality_id: ti.locality_id,
+        bhk: ti.bhk,
+        occupancy_pref: "any",
+        available_from: ti.move_in_date,
+        maintenance_monthly: 0,
+        status: "live",
+      };
+
+      // Exactly at the stated ceiling -> should notify (the range is inclusive).
+      const { data: hit } = await admin.from("properties").insert({
+        ...base, title: "RLS harness - match hit", rent: ti.budget_max,
+      }).select("id").single();
+
+      await mustSee("a matching listing notifies the tenant",
+        admin.from("notifications").select("id")
+          .eq("user_id", ti.tenant_id).eq("kind", "listing_matched"), 1);
+
+      // ...and about THAT listing. Counting alone would pass even if the
+      // notification pointed at the wrong property.
+      await mustSee("the match names the listing that matched",
+        admin.from("notifications").select("id")
+          .eq("user_id", ti.tenant_id).eq("kind", "listing_matched")
+          .eq("property_id", hit?.id ?? "00000000-0000-0000-0000-000000000000"), 1);
+
+      // ₹50,000 over the ceiling -> must NOT notify. This is the half that
+      // matters: a matcher which fires too eagerly turns the notification
+      // channel five other features depend on into noise.
+      const { data: miss } = await admin.from("properties").insert({
+        ...base, title: "RLS harness - match miss", rent: ti.budget_max + 50000,
+      }).select("id").single();
+
+      await mustSee("an over-budget listing notifies nobody",
+        admin.from("notifications").select("id")
+          .eq("user_id", ti.tenant_id).eq("kind", "listing_matched")
+          .eq("property_id", miss?.id ?? "00000000-0000-0000-0000-000000000000"), 0);
+
+      await mustSee("still exactly one match in total",
+        admin.from("notifications").select("id")
+          .eq("user_id", ti.tenant_id).eq("kind", "listing_matched"), 1);
+
+      await mustSee("the tenant can read their own match",
+        tenant.from("notifications").select("id").eq("kind", "listing_matched"), 1);
+
+      if (hit) await admin.from("properties").delete().eq("id", hit.id);
+      if (miss) await admin.from("properties").delete().eq("id", miss.id);
+      await admin.from("notifications").delete().eq("user_id", ti.tenant_id);
+    }
+  }
+
   // --- broker ---------------------------------------------------------------
   console.log("\nbroker");
   const { client: broker, userId: brokerId } = sessions.broker;

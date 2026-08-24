@@ -29,7 +29,8 @@ export type NotificationKind =
   | "suggestion_answered"
   | "saved_listing_changed"
   | "mismatch_reported"
-  | "listing_reviewed";
+  | "listing_reviewed"
+  | "listing_matched";
 export type ModerationKind =
   | "approve"
   | "reject"
