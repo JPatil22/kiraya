@@ -49,13 +49,16 @@ import {
 type Row = Record<string, unknown>;
 /** Mirrors supabase-js: constraint failures come back as data, never as throws. */
 type QueryError = { code: string; message: string };
-type Result<T> = { data: T | null; error: QueryError | null };
+/** PostgREST also returns `count` when the caller asks for it. */
+type Result<T> = { data: T | null; error: QueryError | null; count?: number | null };
 
-const ok = <T>(data: T): Result<T> => ({ data, error: null });
+const ok = <T>(data: T, count?: number | null): Result<T> => ({ data, error: null, count });
 
 class FixtureQuery<T extends Row> implements PromiseLike<Result<T[]>> {
   /** Filters accumulated so far, replayed by `update()` against the live store. */
   private predicates: ((row: Row) => boolean)[] = [];
+  private wantsCount = false;
+  private total: number | null = null;
   private patch: Row | null = null;
   private removing = false;
   private failure: QueryError | null = null;
@@ -68,7 +71,19 @@ class FixtureQuery<T extends Row> implements PromiseLike<Result<T[]>> {
     private readonly onUpdate?: (row: Row, before: Row) => void,
   ) {}
 
-  select(): this {
+  /**
+   * `select("*", { count: "exact" })` — the count is taken AFTER filters but
+   * BEFORE range/limit, which is what PostgREST does and what pagination needs:
+   * "showing 1-20 of 47" is meaningless if the total is the page size.
+   */
+  select(_columns?: string, options?: { count?: "exact" | "planned" | "estimated" }): this {
+    if (options?.count) this.wantsCount = true;
+    return this;
+  }
+
+  range(from: number, to: number): this {
+    if (this.wantsCount) this.total = this.rows.length;
+    this.rows = this.rows.slice(from, to + 1);
     return this;
   }
 
@@ -145,6 +160,7 @@ class FixtureQuery<T extends Row> implements PromiseLike<Result<T[]>> {
   }
 
   limit(n: number): this {
+    if (this.wantsCount && this.total === null) this.total = this.rows.length;
     this.rows = this.rows.slice(0, n);
     return this;
   }
@@ -231,7 +247,7 @@ class FixtureQuery<T extends Row> implements PromiseLike<Result<T[]>> {
     this.applyUpdate();
     const result: Result<T[]> = this.failure
       ? { data: null, error: this.failure }
-      : ok(this.rows);
+      : ok(this.rows, this.wantsCount ? (this.total ?? this.rows.length) : undefined);
     return Promise.resolve(result).then(onfulfilled, onrejected);
   }
 }

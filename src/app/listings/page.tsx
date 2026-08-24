@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { getDataClient, getSessionUser } from "@/lib/auth";
 import { getShortlistIds } from "@/lib/shortlist";
 import { getActiveLocality } from "@/lib/locality";
-import { getPublicListings } from "@/lib/listings";
+import { getPublicListings, PAGE_SIZE } from "@/lib/listings";
 import { listingFilterSchema } from "@/lib/validators";
 
 export const dynamic = "force-dynamic";
@@ -33,10 +33,11 @@ export default async function ListingsPage({
     freshOnly: raw.freshOnly ?? "",
     sort: raw.sort ?? "verified",
     q: raw.q ?? undefined,
+    page: raw.page ?? 1,
   });
 
   const supabase = await getDataClient();
-  const [locality, listings, user] = await Promise.all([
+  const [locality, result, user] = await Promise.all([
     getActiveLocality(supabase),
     getPublicListings(supabase, filters),
     getSessionUser(supabase),
@@ -45,6 +46,10 @@ export default async function ListingsPage({
   // Only signed-in people get a save affordance, and it costs one extra query
   // for the whole page rather than one per card.
   const savedIds = user ? await getShortlistIds(supabase, user.id) : null;
+
+  const { listings, total, page, pageCount } = result;
+  const firstOnPage = total === 0 ? 0 : (page - 1) * PAGE_SIZE + 1;
+  const lastOnPage = Math.min(page * PAGE_SIZE, total);
 
   const freshCount = listings.filter((l) => !l.is_stale).length;
 
@@ -67,14 +72,18 @@ export default async function ListingsPage({
 
         <div className="flex items-baseline justify-between">
           <p className="text-sm text-muted-foreground">
-            {listings.length} listing{listings.length === 1 ? "" : "s"}
-            {listings.length > 0 ? (
+            {total === 0 ? (
+              "No listings"
+            ) : (
               <>
-                {" "}
-                · <span className="font-medium text-foreground">{freshCount}</span> verified
-                recently
+                Showing{" "}
+                <span className="font-medium text-foreground">
+                  {firstOnPage}–{lastOnPage}
+                </span>{" "}
+                of {total} · <span className="font-medium text-foreground">{freshCount}</span>{" "}
+                on this page verified recently
               </>
-            ) : null}
+            )}
           </p>
         </div>
 
@@ -91,8 +100,66 @@ export default async function ListingsPage({
             ))}
           </div>
         )}
+
+        {pageCount > 1 ? (
+          <Pager page={page} pageCount={pageCount} params={raw} />
+        ) : null}
       </main>
     </div>
+  );
+}
+
+/**
+ * Prev/next links that carry the current filters forward. Plain anchors, not a
+ * client component — the feed is a server component and the filters already
+ * live in the URL, so paging is just another URL.
+ */
+function Pager({
+  page,
+  pageCount,
+  params,
+}: {
+  page: number;
+  pageCount: number;
+  params: Record<string, string | string[] | undefined>;
+}) {
+  const href = (n: number) => {
+    const next = new URLSearchParams();
+    for (const [key, value] of Object.entries(params)) {
+      if (key === "page" || value === undefined) continue;
+      next.set(key, Array.isArray(value) ? (value[0] ?? "") : value);
+    }
+    if (n > 1) next.set("page", String(n));
+    const qs = next.toString();
+    return qs ? `/listings?${qs}` : "/listings";
+  };
+
+  return (
+    <nav className="flex items-center justify-between gap-4" aria-label="Pagination">
+      {page > 1 ? (
+        <Button asChild variant="outline" size="sm">
+          <Link href={href(page - 1)} rel="prev">
+            ← Previous
+          </Link>
+        </Button>
+      ) : (
+        <span />
+      )}
+
+      <span className="text-sm text-muted-foreground">
+        Page {page} of {pageCount}
+      </span>
+
+      {page < pageCount ? (
+        <Button asChild variant="outline" size="sm">
+          <Link href={href(page + 1)} rel="next">
+            Next →
+          </Link>
+        </Button>
+      ) : (
+        <span />
+      )}
+    </nav>
   );
 }
 

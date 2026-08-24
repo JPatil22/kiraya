@@ -30,13 +30,26 @@ function sanitiseSearch(raw: string): string {
     .slice(0, 80);
 }
 
+export const PAGE_SIZE = 20;
+
+export type ListingPage = {
+  listings: ListingPublic[];
+  /** Total matching the filters, before paging — needed for "1-20 of 47". */
+  total: number;
+  page: number;
+  pageCount: number;
+};
+
 export async function getPublicListings(
   supabase: SupabaseClient<Database>,
   filters: ListingFilters,
-): Promise<ListingPublic[]> {
+): Promise<ListingPage> {
   let query = supabase
     .from("v_listings_public")
-    .select("*")
+    // `exact` counts rows matching the filters but before the range, which is
+    // the number a person needs: "47 listings" then paged 20 at a time. The
+    // feed used to hard-stop at 60 with no indication anything was cut.
+    .select("*", { count: "exact" })
     .eq("locality_slug", ACTIVE_LOCALITY_SLUG);
 
   if (filters.bhk !== "any") query = query.eq("bhk", filters.bhk);
@@ -103,9 +116,27 @@ export async function getPublicListings(
       break;
   }
 
-  const { data, error } = await query.limit(60);
-  if (error) throw error;
-  return data ?? [];
+  const from = (filters.page - 1) * PAGE_SIZE;
+  const { data, error, count } = await query.range(from, from + PAGE_SIZE - 1);
+
+  if (error) {
+    // PostgREST refuses a range past the end of the result set rather than
+    // returning nothing (PGRST103). A hand-edited or bookmarked `?page=99`
+    // would therefore 500 the whole feed. Fall back to the first page, which
+    // always exists and comes with a working pager, instead of an error screen.
+    if (error.code === "PGRST103" && filters.page > 1) {
+      return getPublicListings(supabase, { ...filters, page: 1 });
+    }
+    throw error;
+  }
+
+  const total = count ?? (data ?? []).length;
+  return {
+    listings: data ?? [],
+    total,
+    page: filters.page,
+    pageCount: Math.max(1, Math.ceil(total / PAGE_SIZE)),
+  };
 }
 
 /** A single live listing for the public detail page. */
