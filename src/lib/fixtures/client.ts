@@ -27,6 +27,7 @@ import {
   getIntents,
   getMismatches,
   getModerations,
+  getNotifications,
   getPhotos,
   getProfiles,
   getProperties,
@@ -118,6 +119,14 @@ class FixtureQuery<T extends Row> implements PromiseLike<Result<T[]>> {
   in(column: string, values: readonly unknown[]): this {
     this.predicates.push((r) => values.includes(r[column]));
     this.rows = this.rows.filter((r) => values.includes(r[column]));
+    return this;
+  }
+
+  /** Only the null form is used (`is("read_at", null)`), so only that is honoured. */
+  is(column: string, value: null | boolean): this {
+    const test = (r: Row) => (value === null ? r[column] == null : r[column] === value);
+    this.predicates.push(test);
+    this.rows = this.rows.filter(test);
     return this;
   }
 
@@ -546,6 +555,12 @@ export function createFixtureClient(): SupabaseClient<Database> {
             getPhotos().map((p) => ({ ...p })),
             insertPhoto,
             getPhotos as () => Row[],
+          );
+        case "notifications":
+          return new FixtureQuery(
+            getNotifications().map((n) => ({ ...n })),
+            undefined,
+            getNotifications as () => Row[],
           );
         case "shortlists":
           return new FixtureQuery(

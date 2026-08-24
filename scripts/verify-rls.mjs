@@ -277,6 +277,51 @@ async function main() {
     await admin.from("shortlists").delete().eq("user_id", tenantId);
   }
 
+  // --- notifications (0012) --------------------------------------------------
+  // Rows come only from triggers: there is no insert policy at all, so nobody
+  // can manufacture a notice for someone else. The update policy exists purely
+  // so you can mark your own as read.
+  console.log("\nnotifications (0012)");
+  {
+    await admin.from("notifications").delete().eq("user_id", tenantId);
+    await admin.from("notifications").delete().eq("user_id", ownerId);
+
+    await mustFail("nobody can insert a notification, not even for themselves",
+      tenant.from("notifications").insert({ user_id: tenantId, kind: "contact_received", body: "self-issued" }));
+
+    await mustFail("cannot fabricate one for someone else",
+      tenant.from("notifications").insert({ user_id: ownerId, kind: "contact_received", body: "spoofed" }));
+
+    // Provoke a real one through the trigger path: a tenant enquiry notifies
+    // whoever posted the listing.
+    const ownerLive2 = props.find((p) => p.posted_by === ownerId && p.status === "live");
+    if (ownerLive2) {
+      await admin.from("contact_exchanges").delete().eq("tenant_id", tenantId).eq("property_id", ownerLive2.id);
+      await mustSucceed("enquiry insert succeeds",
+        tenant.from("contact_exchanges").insert({ property_id: ownerLive2.id, tenant_id: tenantId, counterparty_id: ownerId, source: "listing" }));
+
+      await mustSee("the trigger notified the listing's owner",
+        owner.from("notifications").select("id").eq("kind", "contact_received"), 1);
+      await mustSee("the tenant was not notified of their own action",
+        tenant.from("notifications").select("id"), 0);
+
+      await mustSucceed("owner can mark their own notification read",
+        owner.from("notifications").update({ read_at: new Date().toISOString() }).eq("user_id", ownerId));
+
+      await mustSee("tenant cannot read the owner's notifications",
+        tenant.from("notifications").select("id").eq("user_id", ownerId), 0);
+      await mustSee("tenant cannot mark the owner's notification read",
+        tenant.from("notifications").update({ read_at: null }).eq("user_id", ownerId).select("id"), 0);
+      await mustSee("cannot delete a notification",
+        owner.from("notifications").delete().eq("user_id", ownerId).select("id"), 0);
+
+      await admin.from("contact_exchanges").delete().eq("tenant_id", tenantId).eq("property_id", ownerLive2.id);
+    }
+
+    await admin.from("notifications").delete().eq("user_id", tenantId);
+    await admin.from("notifications").delete().eq("user_id", ownerId);
+  }
+
   // --- broker ---------------------------------------------------------------
   console.log("\nbroker");
   const { client: broker, userId: brokerId } = sessions.broker;

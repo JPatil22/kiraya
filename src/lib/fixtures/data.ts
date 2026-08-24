@@ -10,6 +10,7 @@ import type {
   LocalityHealth,
   MismatchReport,
   ModerationAction,
+  Notification,
   Profile,
   Property,
   PropertyPhoto,
@@ -239,6 +240,27 @@ const SEED_PHOTOS: PropertyPhoto[] = [
   photo("pho-9", "prop-3", "bathroom", 1, "Bathroom", 20),
 ];
 
+const SEED_NOTIFICATIONS: Notification[] = [
+  {
+    id: "ntf-1",
+    user_id: "u-owner",
+    kind: "contact_received",
+    body: 'Ananya Rao asked for your number about "Bright 2BHK off Balewadi High Street"',
+    property_id: "prop-1",
+    read_at: null,
+    created_at: daysAgo(1),
+  },
+  {
+    id: "ntf-2",
+    user_id: "u-tenant",
+    kind: "suggestion_received",
+    body: 'A broker suggested "Spacious 3BHK in Kharadi, near EON IT Park" for you',
+    property_id: "prop-2",
+    read_at: null,
+    created_at: daysAgo(2),
+  },
+];
+
 /** One broker suggestion already waiting in the tenant's inbox. */
 const SEED_SUGGESTIONS: BrokerSuggestion[] = [
   {
@@ -420,6 +442,7 @@ type FixtureStore = {
   photos: PropertyPhoto[];
   contacts: ContactExchange[];
   shortlists: Shortlist[];
+  notifications: Notification[];
 };
 
 const globalRef = globalThis as unknown as { __kirayaFixtures?: FixtureStore };
@@ -438,6 +461,10 @@ const seedStore = (): FixtureStore => ({
   // sandbox should show the "not yet unlocked" state first.
   contacts: [],
   shortlists: [],
+  // Fixtures cannot run the 0012 triggers — same limitation as RLS and the
+  // audit trigger — so two are seeded purely so the screens have something to
+  // render. Against real Postgres these arrive on their own.
+  notifications: [...SEED_NOTIFICATIONS],
 });
 
 function store(): FixtureStore {
@@ -462,6 +489,7 @@ export const getProfiles = (): Profile[] => store().profiles;
 export const getPhotos = (): PropertyPhoto[] => store().photos;
 export const getContacts = (): ContactExchange[] => store().contacts;
 export const getShortlists = (): Shortlist[] => store().shortlists;
+export const getNotifications = (): Notification[] => store().notifications;
 
 export function addPhoto(row: PropertyPhoto): void {
   store().photos.push(row);

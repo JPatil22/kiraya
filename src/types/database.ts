@@ -23,6 +23,13 @@ export type MismatchType =
 export type ReportStatus = "open" | "resolved" | "dismissed";
 export type RoomType = "hall" | "kitchen" | "bedroom" | "bathroom" | "balcony" | "exterior";
 export type ContactSource = "listing" | "suggestion";
+export type NotificationKind =
+  | "contact_received"
+  | "suggestion_received"
+  | "suggestion_answered"
+  | "saved_listing_changed"
+  | "mismatch_reported"
+  | "listing_reviewed";
 export type ModerationKind =
   | "approve"
   | "reject"
@@ -240,6 +247,21 @@ export type Shortlist = {
   created_at: string;
 };
 
+/**
+ * `notifications` — written only by the 0012 triggers, never by the app. `body`
+ * is composed at insert time so what a notice said can't change later because
+ * the underlying row did.
+ */
+export type Notification = {
+  id: string;
+  user_id: string;
+  kind: NotificationKind;
+  body: string;
+  property_id: string | null;
+  read_at: string | null;
+  created_at: string;
+};
+
 /** `v_locality_health` — the MVP5 operator dashboard, computed in SQL. */
 export type LocalityHealth = {
   locality_id: string;
@@ -300,6 +322,11 @@ export interface Database {
         Partial<Omit<ModerationAction, "id" | "created_at">> &
           Pick<ModerationAction, "admin_id" | "target_table" | "target_id" | "kind">
       >;
+      notifications: TableDef<
+        Notification,
+        Partial<Omit<Notification, "id" | "created_at">> &
+          Pick<Notification, "user_id" | "kind" | "body">
+      >;
       shortlists: TableDef<
         Shortlist,
         Partial<Omit<Shortlist, "id" | "created_at">> & Pick<Shortlist, "user_id" | "property_id">
@@ -331,6 +358,7 @@ export interface Database {
       report_status: ReportStatus;
       suggestion_status: SuggestionStatus;
       contact_source: ContactSource;
+      notification_kind: NotificationKind;
       moderation_kind: ModerationKind;
       room_type: RoomType;
     };

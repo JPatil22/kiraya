@@ -1,9 +1,11 @@
 import Link from "next/link";
+import { Bell } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { DevRoleSwitcher } from "@/components/dev-role-switcher";
 import { canPost, getDataClient, getDevRole, getSessionUser } from "@/lib/auth";
 import { OPEN_MODE } from "@/lib/open-mode";
+import { getUnreadCount } from "@/lib/notifications";
 import { signOut } from "@/app/(auth)/actions";
 
 /** Shared top bar. Renders auth-aware actions without blocking the page. */
@@ -14,6 +16,10 @@ export async function SiteHeader() {
   // In open mode the switcher, not the profile row, is the source of truth for
   // the acting role — so it still works before the sandbox has been seeded.
   const role = OPEN_MODE ? await getDevRole() : (user?.role ?? null);
+
+  // The badge is the only thing that makes the six trigger-fed flows visible
+  // without opening a page to look for them.
+  const unread = user ? await getUnreadCount(supabase, user.id) : 0;
 
   return (
     <header className="border-b">
@@ -28,9 +34,23 @@ export async function SiteHeader() {
           </Button>
 
           {user ? (
-            <Button asChild variant="ghost" size="sm">
-              <Link href="/shortlist">Saved</Link>
-            </Button>
+            <>
+              <Button asChild variant="ghost" size="sm">
+                <Link href="/shortlist">Saved</Link>
+              </Button>
+              <Button asChild variant="ghost" size="sm" className="relative">
+                <Link href="/notifications" aria-label={
+                  unread > 0 ? `Activity, ${unread} unread` : "Activity"
+                }>
+                  <Bell className="size-4" />
+                  {unread > 0 ? (
+                    <span className="absolute -right-0.5 -top-0.5 flex size-4 items-center justify-center rounded-full bg-primary text-[10px] font-medium text-primary-foreground">
+                      {unread > 9 ? "9+" : unread}
+                    </span>
+                  ) : null}
+                </Link>
+              </Button>
+            </>
           ) : null}
 
           {role === "tenant" ? (
