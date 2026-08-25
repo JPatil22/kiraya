@@ -569,6 +569,61 @@ async function main() {
     record(true, "cannot read another tenant's intent", "skipped — only one tenant has an intent");
   }
 
+  // --- brokerage disclosure (0023) ------------------------------------------
+  // Not an RLS rule: `properties_brokerage_guard` has no auth.uid() passthrough
+  // precisely so it also binds the service-role writes open mode makes.
+  console.log("\nbrokerage disclosure (0023)");
+  {
+    const base = {
+      locality_id: locality.id,
+      bhk: "2bhk",
+      rent: 20000,
+      available_from: "2026-12-01",
+    };
+
+    await mustFail("broker cannot post a listing with the brokerage unstated",
+      broker.from("properties").insert({ ...base, posted_by: brokerId, title: "RLS harness — silent fee", brokerage: 0, brokerage_disclosed: false }));
+
+    await mustSucceed("broker can post zero brokerage when they say so",
+      broker.from("properties").insert({ ...base, posted_by: brokerId, title: "RLS harness — stated no fee", brokerage: 0, brokerage_disclosed: true }));
+
+    await mustFail("owner cannot post a listing carrying a brokerage fee",
+      owner.from("properties").insert({ ...base, posted_by: ownerId, title: "RLS harness — owner charging brokerage", brokerage: 30000, brokerage_disclosed: true }));
+
+    // An owner listing states "no brokerage" by construction, so the flag is
+    // derived rather than left to whoever wrote the row.
+    const { error: ownerInsertError } = await owner
+      .from("properties")
+      .insert({ ...base, posted_by: ownerId, title: "RLS harness — owner zero fee", brokerage: 0, brokerage_disclosed: false });
+    if (ownerInsertError) {
+      record(false, "owner's zero is recorded as stated", `insert blocked: ${ownerInsertError.message}`);
+    } else {
+      const { data: row } = await admin
+        .from("properties")
+        .select("brokerage_disclosed")
+        .eq("title", "RLS harness — owner zero fee")
+        .maybeSingle();
+      record(row?.brokerage_disclosed === true, "owner's zero is recorded as stated",
+        row?.brokerage_disclosed === true ? null : "brokerage_disclosed stayed false");
+    }
+
+    if (brokerLive) {
+      await mustFail("broker cannot un-state the fee on an existing listing",
+        broker.from("properties").update({ brokerage_disclosed: false }).eq("id", brokerLive.id));
+    } else {
+      record(true, "broker cannot un-state the fee on an existing listing", "skipped — no live broker listing seeded");
+    }
+
+    const { data: viewRow, error: viewError } = await anon
+      .from("v_listings_public")
+      .select("brokerage, brokerage_disclosed")
+      .limit(1)
+      .maybeSingle();
+    record(!viewError && viewRow?.brokerage_disclosed !== undefined,
+      "v_listings_public exposes the disclosure to tenants",
+      viewError ? `errored: ${viewError.message}` : null);
+  }
+
   // --- admin ----------------------------------------------------------------
   console.log("\nadmin");
   const { client: adminUser } = sessions.admin;

@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { canPost, getDataClient, getSessionUser } from "@/lib/auth";
 import { OPEN_MODE } from "@/lib/open-mode";
 import { getActiveLocality } from "@/lib/locality";
+import { checkboxOn, resolveBrokerage } from "@/lib/brokerage";
 import { listingSchema } from "@/lib/validators";
 
 export type ListingState = {
@@ -66,6 +67,11 @@ export async function createListing(
   }
 
   const v = parsed.data;
+
+  // 0023: what the poster's role permits them to claim about the fee.
+  const fee = resolveBrokerage(user.role, v.brokerage, checkboxOn(formData.get("brokerageNone")));
+  if (!fee.ok) return { fieldErrors: { brokerage: fee.message } };
+
   const { error } = await supabase.from("properties").insert({
     posted_by: user.id,
     locality_id: locality.id,
@@ -79,7 +85,8 @@ export async function createListing(
     rent: v.rent,
     deposit: v.deposit,
     maintenance_monthly: v.maintenanceMonthly,
-    brokerage: v.brokerage,
+    brokerage: fee.amount,
+    brokerage_disclosed: fee.disclosed,
     one_time_charges: v.oneTimeCharges,
     available_from: v.availableFrom,
     availability: v.availability,

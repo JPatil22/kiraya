@@ -8,6 +8,7 @@ import { ListingForm } from "@/components/listings/listing-form";
 import { getDataClient, getSessionUser } from "@/lib/auth";
 import { OPEN_MODE } from "@/lib/open-mode";
 import { getAreas } from "@/lib/areas";
+import { getPosterRole } from "@/lib/brokerage";
 import { updateListing } from "../actions";
 
 export const dynamic = "force-dynamic";
@@ -47,6 +48,10 @@ export default async function EditListingPage({
     redirect(`/listings/${id}`);
   }
 
+  // 0023 judges the fee by whose listing it is, not who is editing it.
+  const posterRole =
+    listing.posted_by === user.id ? user.role : await getPosterRole(supabase, listing.posted_by);
+
   return (
     <div className="min-h-dvh">
       <SiteHeader />
@@ -71,6 +76,7 @@ export default async function EditListingPage({
             <ListingForm
               action={updateListing}
               areas={areas}
+              posterRole={posterRole}
               hiddenFields={{ propertyId: id }}
               submitLabel="Save changes"
               pendingLabel="Saving…"
@@ -87,6 +93,7 @@ export default async function EditListingPage({
                 deposit: String(listing.deposit),
                 maintenanceMonthly: String(listing.maintenance_monthly),
                 brokerage: String(listing.brokerage),
+                brokerageDisclosed: listing.brokerage_disclosed,
                 oneTimeCharges: String(listing.one_time_charges),
                 availableFrom: listing.available_from,
                 availability: listing.availability,

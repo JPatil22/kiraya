@@ -128,6 +128,8 @@ export type Property = {
   deposit: number;
   maintenance_monthly: number;
   brokerage: number;
+  /** 0023 — false means that 0 is an unset default, never a stated "no fee". */
+  brokerage_disclosed: boolean;
   one_time_charges: number;
   available_from: string;
   availability: AvailabilityStatus;
@@ -160,6 +162,8 @@ export type ListingPublic = {
   deposit: number;
   maintenance_monthly: number;
   brokerage: number;
+  /** 0023 — false means that 0 is an unset default, never a stated "no fee". */
+  brokerage_disclosed: boolean;
   one_time_charges: number;
   all_in_monthly: number;
   move_in_cost: number;

@@ -51,6 +51,7 @@ export default async function NewListingPage() {
             <ListingForm
               action={createListing}
               areas={areas}
+              posterRole={user.role}
               submitLabel="Submit for review"
               pendingLabel="Submitting…"
               hint="Goes live after review, stamped with a verification date."

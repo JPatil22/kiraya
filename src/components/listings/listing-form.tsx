@@ -12,7 +12,7 @@ import {
   OCCUPANCY_OPTIONS,
 } from "@/lib/constants";
 import { formatINR } from "@/lib/utils";
-import type { Area } from "@/types/database";
+import type { Area, UserRole } from "@/types/database";
 
 /**
  * Shared by "post a property" and "edit listing". The two differ only in which
@@ -37,6 +37,7 @@ export type ListingFormInitial = {
   deposit: string;
   maintenanceMonthly: string;
   brokerage: string;
+  brokerageDisclosed: boolean;
   oneTimeCharges: string;
   availableFrom: string;
   availability: string;
@@ -63,6 +64,7 @@ export function ListingForm({
   hint,
   hiddenFields,
   areas,
+  posterRole,
 }: {
   action: (prev: ListingFormState, formData: FormData) => Promise<ListingFormState>;
   initial?: ListingFormInitial;
@@ -71,6 +73,8 @@ export function ListingForm({
   hint: string;
   hiddenFields?: Record<string, string>;
   areas: Area[];
+  /** Whose listing this is, which decides what may be claimed about the fee (0023). */
+  posterRole: UserRole | null;
 }) {
   const [state, action, pending] = useActionState(serverAction, null);
   const err = (f: string) => state?.fieldErrors?.[f];
@@ -81,6 +85,11 @@ export function ListingForm({
   const [deposit, setDeposit] = useState(initial?.deposit ?? "");
   const [brokerage, setBrokerage] = useState(initial?.brokerage ?? "");
   const [oneTime, setOneTime] = useState(initial?.oneTimeCharges ?? "");
+  // Ticked only when the listing already says "zero, on purpose" — an existing
+  // undisclosed 0 must stay unticked, because that is the thing being fixed.
+  const [noBrokerage, setNoBrokerage] = useState(
+    Boolean(initial?.brokerageDisclosed) && toInt(initial?.brokerage ?? "") === 0,
+  );
 
   const allInMonthly = toInt(rent) + toInt(maintenance);
   const moveInCost = toInt(deposit) + toInt(brokerage) + toInt(oneTime);
@@ -229,21 +238,51 @@ export function ListingForm({
             />
             <FieldError message={err("deposit")} />
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="brokerage">Brokerage (₹)</Label>
-            <Input
-              id="brokerage"
-              name="brokerage"
-              type="number"
-              inputMode="numeric"
-              min={0}
-              step={1000}
-              placeholder="0"
-              value={brokerage}
-              onChange={(e) => setBrokerage(e.target.value)}
-            />
-            <FieldError message={err("brokerage")} />
-          </div>
+          {posterRole === "owner" ? (
+            // 0023: an owner listing carries no brokerage by definition, so
+            // there is nothing to type. Stating it beats an empty box the
+            // tenant can't distinguish from an unanswered one.
+            <div className="space-y-2">
+              <Label>Brokerage</Label>
+              <div className="flex h-9 items-center rounded-md border border-dashed px-3 text-sm text-muted-foreground">
+                None — you&apos;re posting as the owner.
+              </div>
+              <input type="hidden" name="brokerage" value="0" />
+            </div>
+          ) : (
+            <div className="space-y-2">
+              <Label htmlFor="brokerage">Brokerage (₹)</Label>
+              <Input
+                id="brokerage"
+                name="brokerage"
+                type="number"
+                inputMode="numeric"
+                min={0}
+                step={1000}
+                placeholder="0"
+                // readOnly rather than disabled: a disabled input is left out
+                // of FormData entirely, and the server would see no answer at
+                // all for the field the tick box exists to answer.
+                value={noBrokerage ? "0" : brokerage}
+                readOnly={noBrokerage}
+                onChange={(e) => setBrokerage(e.target.value)}
+              />
+              <label className="flex items-center gap-2 text-sm text-muted-foreground">
+                <input
+                  type="checkbox"
+                  name="brokerageNone"
+                  className="size-4 rounded border-input"
+                  checked={noBrokerage}
+                  onChange={(e) => {
+                    setNoBrokerage(e.target.checked);
+                    if (e.target.checked) setBrokerage("0");
+                  }}
+                />
+                No brokerage on this listing
+              </label>
+              <FieldError message={err("brokerage")} />
+            </div>
+          )}
           <div className="space-y-2 sm:col-span-2">
             <Label htmlFor="oneTimeCharges">Other one-time charges (₹)</Label>
             <Input

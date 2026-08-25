@@ -8,6 +8,7 @@ import { availabilitySchema, listingSchema, mismatchSchema } from "@/lib/validat
 import { BEDROOMS_FOR_BHK } from "@/lib/rooms";
 import { friendlyDbError } from "@/lib/errors";
 import { CONTACT_DAILY_LIMIT, countRecentExchanges, getMyExchange } from "@/lib/contact";
+import { checkboxOn, getPosterRole, resolveBrokerage } from "@/lib/brokerage";
 import type { AvailabilityStatus, BhkType } from "@/types/database";
 
 export type MismatchState = { error?: string; ok?: boolean } | null;
@@ -107,7 +108,13 @@ async function requirePoster(propertyId: string, { liveOnly = false } = {}) {
     return { supabase, user: null, error: "That isn't your listing." };
   }
 
-  return { supabase, user, status: property.status, error: null };
+  return {
+    supabase,
+    user,
+    status: property.status,
+    postedBy: property.posted_by,
+    error: null,
+  };
 }
 
 /**
@@ -212,10 +219,17 @@ export async function updateListing(_prev: EditState, formData: FormData): Promi
     return { fieldErrors };
   }
 
-  const { supabase, user, status, error } = await requirePoster(propertyId);
-  if (error || !user) return { error: error ?? "Not allowed." };
+  const { supabase, user, status, postedBy, error } = await requirePoster(propertyId);
+  if (error || !user || !postedBy) return { error: error ?? "Not allowed." };
 
   const v = parsed.data;
+
+  const fee = resolveBrokerage(
+    postedBy === user.id ? user.role : await getPosterRole(supabase, postedBy),
+    v.brokerage,
+    checkboxOn(formData.get("brokerageNone")),
+  );
+  if (!fee.ok) return { fieldErrors: { brokerage: fee.message } };
 
   // Shrinking the configuration can strand photos: 0008's room rules are
   // checked when a photo is written, not when the property changes under it, so
@@ -244,7 +258,8 @@ export async function updateListing(_prev: EditState, formData: FormData): Promi
       rent: v.rent,
       deposit: v.deposit,
       maintenance_monthly: v.maintenanceMonthly,
-      brokerage: v.brokerage,
+      brokerage: fee.amount,
+      brokerage_disclosed: fee.disclosed,
       one_time_charges: v.oneTimeCharges,
       available_from: v.availableFrom,
       availability: v.availability,

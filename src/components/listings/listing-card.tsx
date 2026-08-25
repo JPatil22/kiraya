@@ -4,6 +4,7 @@ import { AlertTriangle, Camera, MapPin } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { FreshnessBadge } from "./freshness-badge";
 import { PostedByBadge } from "./posted-by-badge";
+import { brokerageClaim } from "@/lib/brokerage";
 import { AVAILABILITY_OPTIONS, BHK_OPTIONS, FURNISHING_OPTIONS, labelFor } from "@/lib/constants";
 import { photoAgeWarning, photoUrl } from "@/lib/photos";
 import { formatINR } from "@/lib/utils";
@@ -91,6 +92,21 @@ export function ListingCard({
           {labelFor(AVAILABILITY_OPTIONS, listing.availability)}
         </Badge>
         <PostedByBadge role={listing.posted_by_role} />
+        {/*
+          Only worth a chip on a broker's listing (0023). "Owner" already implies
+          no fee, and badging every owner listing would bury the signal in noise.
+        */}
+        {listing.posted_by_role === "broker" && brokerageClaim(listing) === "none" ? (
+          <Badge variant="outline" className="gap-1 text-success">
+            No brokerage
+          </Badge>
+        ) : null}
+        {brokerageClaim(listing) === "unstated" ? (
+          <Badge variant="outline" className="gap-1 text-warning">
+            <AlertTriangle className="size-3.5" />
+            Brokerage not stated
+          </Badge>
+        ) : null}
         {listing.has_warning ? (
           <Badge variant="destructive" className="gap-1">
             <AlertTriangle className="size-3.5" />
