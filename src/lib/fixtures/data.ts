@@ -63,6 +63,9 @@ function profile(
   return {
     id,
     phone,
+    // Sandbox identities are reachable by email the same way the RLS harness
+    // signs them in: <key>@kiraya.dev.
+    email: `${id.replace(/^u-/, "")}@kiraya.dev`,
     full_name,
     role,
     onboarding_step: "done",
@@ -273,6 +276,7 @@ const SEED_NOTIFICATIONS: Notification[] = [
     body: 'Ananya Rao asked for your number about "Bright 2BHK off Balewadi High Street"',
     property_id: "prop-1",
     read_at: null,
+    emailed_at: null,
     created_at: daysAgo(1),
   },
   {
@@ -282,6 +286,7 @@ const SEED_NOTIFICATIONS: Notification[] = [
     body: 'A broker suggested "Spacious 3BHK in Kharadi, near EON IT Park" for you',
     property_id: "prop-2",
     read_at: null,
+    emailed_at: null,
     created_at: daysAgo(2),
   },
 ];

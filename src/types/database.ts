@@ -86,6 +86,8 @@ export type Area = {
 export type Profile = {
   id: string;
   phone: string | null;
+  /** 0026 — optional delivery address. Phone is still the identity bar. */
+  email: string | null;
   full_name: string | null;
   role: UserRole | null;
   onboarding_step: OnboardingStep;
@@ -336,6 +338,8 @@ export type Notification = {
   id: string;
   user_id: string;
   kind: NotificationKind;
+  /** 0026 — when this went out by email. Null means still queued. */
+  emailed_at: string | null;
   body: string;
   property_id: string | null;
   read_at: string | null;

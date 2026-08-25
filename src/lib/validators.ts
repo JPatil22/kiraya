@@ -31,6 +31,17 @@ export const otpSchema = z
 
 export const roleSchema = z.enum(["tenant", "owner", "broker"]);
 
+/**
+ * Delivery address, not identity (0026). Blank is a real answer — it is how
+ * somebody turns emails off — so this permits it rather than demanding one.
+ */
+export const emailSchema = z
+  .string()
+  .trim()
+  .max(200, "That address is too long")
+  .refine((v) => v === "" || /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(v), "That doesn't look like an email address")
+  .transform((v) => v.toLowerCase());
+
 export const bhkSchema = z.enum(["1rk", "1bhk", "2bhk", "3bhk", "4plus"]);
 export const furnishingSchema = z.enum(["unfurnished", "semi", "full"]);
 export const occupancySchema = z.enum([

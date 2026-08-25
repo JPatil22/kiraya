@@ -569,6 +569,41 @@ async function main() {
     record(true, "cannot read another tenant's intent", "skipped — only one tenant has an intent");
   }
 
+  // --- email delivery (0026) -------------------------------------------------
+  // emailed_at is the queue marker, so it is the one column worth lying about:
+  // clearing it would make the next run re-send someone's entire history.
+  console.log("\nemail delivery (0026)");
+  {
+    const { data: notice } = await admin.from("notifications").insert({
+      user_id: tenantId, kind: "contact_received", body: "RLS harness — delivery",
+    }).select("id").single();
+
+    await mustSucceed("a tenant can add their own delivery address",
+      tenant.from("profiles").update({ email: "tenant@kiraya.test" }).eq("id", tenantId));
+
+    await mustFail("a malformed address is refused",
+      tenant.from("profiles").update({ email: "not-an-address" }).eq("id", tenantId));
+
+    await mustSee("a tenant cannot set someone else's address",
+      tenant.from("profiles").update({ email: "hijack@kiraya.test" }).eq("id", ownerId).select("id"), 0);
+
+    await mustSucceed("marking read is still allowed",
+      tenant.from("notifications").update({ read_at: new Date().toISOString() }).eq("id", notice.id));
+
+    await mustFail("a tenant cannot claim their notice was emailed",
+      tenant.from("notifications").update({ emailed_at: new Date().toISOString() }).eq("id", notice.id));
+
+    await admin.from("notifications").update({ emailed_at: new Date().toISOString() }).eq("id", notice.id);
+    await mustFail("nor un-send one to make it repeat",
+      tenant.from("notifications").update({ emailed_at: null }).eq("id", notice.id));
+
+    await mustFail("nor rewrite what a notice said",
+      tenant.from("notifications").update({ body: "something else entirely" }).eq("id", notice.id));
+
+    await admin.from("notifications").delete().eq("id", notice.id);
+    await admin.from("profiles").update({ email: null }).eq("id", tenantId);
+  }
+
   // --- the clock (0025) ------------------------------------------------------
   // These functions write notifications for OTHER people, so who may call them
   // matters as much as what they do.

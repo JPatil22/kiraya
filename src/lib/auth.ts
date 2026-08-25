@@ -22,6 +22,8 @@ import type { Database, OnboardingStep, UserRole } from "@/types/database";
 export type SessionUser = {
   id: string;
   phone: string | null;
+  /** 0026 — where notifications are emailed, if they asked for that. */
+  email: string | null;
   fullName: string | null;
   role: UserRole | null;
   onboardingStep: OnboardingStep;
@@ -75,6 +77,7 @@ export const getSessionUser = cache(async function getSessionUser(
     return {
       id: data.id,
       phone: data.phone,
+      email: data.email,
       fullName: data.full_name,
       // Trust the cookie over the stored role: the switcher is the control.
       role,
@@ -98,6 +101,7 @@ export const getSessionUser = cache(async function getSessionUser(
   return {
     id: user.id,
     phone: profile?.phone ?? user.phone ?? null,
+    email: profile?.email ?? user.email ?? null,
     fullName: profile?.full_name ?? null,
     role: profile?.role ?? null,
     onboardingStep: profile?.onboarding_step ?? "role",

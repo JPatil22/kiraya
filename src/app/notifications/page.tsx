@@ -21,6 +21,7 @@ import { getDataClient, getDevRole, getSessionUser } from "@/lib/auth";
 import { OPEN_MODE } from "@/lib/open-mode";
 import { getNotifications } from "@/lib/notifications";
 import type { NotificationKind } from "@/types/database";
+import { EmailPreference } from "@/components/notifications/email-preference";
 import { markAllRead } from "./actions";
 import { cn } from "@/lib/utils";
 
@@ -84,6 +85,8 @@ export default async function NotificationsPage() {
             </form>
           ) : null}
         </div>
+
+        <EmailPreference current={user.email} />
 
         {notifications.length === 0 ? (
           <div className="rounded-xl border border-dashed p-10 text-center">
