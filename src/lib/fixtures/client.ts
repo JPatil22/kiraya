@@ -15,6 +15,7 @@ import type {
   VisitFeedback,
 } from "@/types/database";
 import {
+  AREAS,
   LOCALITY,
   addContact,
   addShortlist,
@@ -549,6 +550,8 @@ export function createFixtureClient(): SupabaseClient<Database> {
       switch (table) {
         case "localities":
           return new FixtureQuery([{ ...LOCALITY }]);
+        case "areas":
+          return new FixtureQuery(AREAS.map((a) => ({ ...a })));
         case "profiles":
           return new FixtureQuery(
             getProfiles().map((p) => ({ ...p })),
