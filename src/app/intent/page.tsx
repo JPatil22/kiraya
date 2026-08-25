@@ -40,8 +40,6 @@ export default async function IntentPage() {
     );
   }
 
-  if (user.role !== "tenant") redirect("/dashboard");
-
   const [locality, areas, { data: intent }] = await Promise.all([
     getActiveLocality(supabase),
     getAreas(supabase),

@@ -569,6 +569,42 @@ async function main() {
     record(true, "cannot read another tenant's intent", "skipped — only one tenant has an intent");
   }
 
+  // --- intents are not tenant-only (0024) -----------------------------------
+  // 0001 never gated these policies on role; the restriction was three redirects
+  // in the app. This proves the database was always willing.
+  console.log("\nintents for any role (0024)");
+  {
+    const intentRow = (holderId) => ({
+      tenant_id: holderId,
+      locality_id: locality.id,
+      budget_min: 10000,
+      budget_max: 30000,
+      bhk: "2bhk",
+      move_in_date: "2026-12-01",
+      notes: "RLS harness",
+    });
+
+    await mustSucceed("an owner may hold a rental intent",
+      owner.from("tenant_intents").insert(intentRow(ownerId)));
+
+    const { data: brokerIntent, error: brokerIntentError } = await broker
+      .from("tenant_intents")
+      .insert(intentRow(brokerId))
+      .select("id")
+      .maybeSingle();
+
+    if (brokerIntentError || !brokerIntent) {
+      record(false, "a broker may hold a rental intent", brokerIntentError?.message ?? "no row returned");
+      record(false, "cannot suggest a listing to your own intent", "no broker intent to target");
+    } else {
+      record(true, "a broker may hold a rental intent", null);
+      await mustFail("cannot suggest a listing to your own intent",
+        broker.from("broker_suggestions").insert({ broker_id: brokerId, tenant_intent_id: brokerIntent.id, property_id: brokerLive?.id ?? live.id }));
+    }
+
+    await admin.from("tenant_intents").delete().eq("notes", "RLS harness");
+  }
+
   // --- brokerage disclosure (0023) ------------------------------------------
   // Not an RLS rule: `properties_brokerage_guard` has no auth.uid() passthrough
   // precisely so it also binds the service-role writes open mode makes.

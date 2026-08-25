@@ -6,6 +6,7 @@ import { DevRoleSwitcher } from "@/components/dev-role-switcher";
 import { canPost, getDataClient, getDevRole, getSessionUser } from "@/lib/auth";
 import { OPEN_MODE } from "@/lib/open-mode";
 import { getUnreadCount } from "@/lib/notifications";
+import { hasIntent } from "@/lib/suggestions";
 import { signOut } from "@/app/(auth)/actions";
 
 /** Shared top bar. Renders auth-aware actions without blocking the page. */
@@ -20,6 +21,13 @@ export async function SiteHeader() {
   // The badge is the only thing that makes the six trigger-fed flows visible
   // without opening a page to look for them.
   const unread = user ? await getUnreadCount(supabase, user.id) : 0;
+
+  // Since 0024 anyone may hold an intent, so the inbox link follows the intent
+  // rather than the role. Tenants short-circuit — theirs is the tenant flow
+  // whether or not they have filled it in yet.
+  const showSuggestions = user
+    ? role === "tenant" || (await hasIntent(supabase, user.id))
+    : false;
 
   return (
     <header className="border-b">
@@ -53,7 +61,7 @@ export async function SiteHeader() {
             </>
           ) : null}
 
-          {role === "tenant" ? (
+          {showSuggestions ? (
             <Button asChild variant="ghost" size="sm">
               <Link href="/suggestions">Suggestions</Link>
             </Button>

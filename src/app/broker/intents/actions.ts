@@ -59,6 +59,18 @@ export async function sendSuggestion(
     return { error: "You can only suggest your own listings." };
   }
 
+  // 0024: a broker may hold an intent like anyone else. Answering their own
+  // would land their own listing in their own inbox.
+  const { data: target } = await supabase
+    .from("tenant_intents")
+    .select("tenant_id")
+    .eq("id", v.tenantIntentId)
+    .maybeSingle();
+
+  if (target?.tenant_id === user.id) {
+    return { error: "That's your own rental intent." };
+  }
+
   // And the demand has to still be open.
   const { data: intent } = await supabase
     .from("tenant_intents")

@@ -55,10 +55,6 @@ export async function saveIntent(_prev: IntentState, formData: FormData): Promis
     return { error: "Open mode isn't seeded yet — run `npm run db:seed`." };
   }
 
-  if (user.role !== "tenant") {
-    return { error: "Only a tenant has a rental intent." };
-  }
-
   const locality = await getActiveLocality(supabase);
   if (!locality) return { error: "Active locality is not configured. Contact support." };
 

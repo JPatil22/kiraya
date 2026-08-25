@@ -33,8 +33,6 @@ export default async function SuggestionsPage() {
     );
   }
 
-  if (user.role !== "tenant") redirect("/dashboard");
-
   const inbox = await getInbox(supabase, user.id);
 
   // 0010: an accepted suggestion exchanges contact, so resolve the broker's

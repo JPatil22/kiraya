@@ -45,7 +45,7 @@ export default async function BrokerIntentsPage() {
   if (!locality) redirect("/dashboard");
 
   const [intents, listings, sent] = await Promise.all([
-    getActiveIntents(supabase, locality.id),
+    getActiveIntents(supabase, locality.id, user.id),
     getSuggestableListings(supabase, user.id),
     getSentSuggestions(supabase, user.id),
   ]);

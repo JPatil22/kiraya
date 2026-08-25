@@ -32,6 +32,7 @@ import {
   labelFor,
 } from "@/lib/constants";
 import { formatINR } from "@/lib/utils";
+import type { TenantIntent } from "@/types/database";
 
 export const dynamic = "force-dynamic";
 
@@ -63,19 +64,17 @@ export default async function DashboardPage({
   const locality = await getActiveLocality(supabase);
 
   const [intent, myListings, leads, pendingAsks, engagement] = await Promise.all([
-    role === "tenant"
-      ? supabase
-          .from("tenant_intents")
-          .select("*")
-          .eq("tenant_id", user.id)
-          .order("created_at", { ascending: false })
-          .limit(1)
-          .maybeSingle()
-          .then((r) => r.data)
-      : Promise.resolve(null),
+    supabase
+      .from("tenant_intents")
+      .select("*")
+      .eq("tenant_id", user.id)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle()
+      .then((r) => r.data),
     isPoster ? getMyListings(supabase, user.id) : Promise.resolve([]),
     isPoster ? getLeads(supabase, user.id) : Promise.resolve([]),
-    role === "tenant" ? getPendingAsks(supabase, user.id) : Promise.resolve([]),
+    getPendingAsks(supabase, user.id),
     isPoster ? getEngagementFor(supabase, user.id) : Promise.resolve(new Map()),
   ]);
 
@@ -144,76 +143,7 @@ export default async function DashboardPage({
 
         {role === "tenant" ? (
           <>
-            <Card>
-              <CardHeader>
-                <div className="flex items-center justify-between gap-4">
-                  <div className="flex items-center gap-2">
-                    <Home className="size-5 text-primary" />
-                    <CardTitle>Your rental intent</CardTitle>
-                  </div>
-                  <Button asChild size="sm" variant={intent ? "outline" : "default"}>
-                    <Link href="/intent">{intent ? "Edit" : "Set it up"}</Link>
-                  </Button>
-                </div>
-                <CardDescription>
-                  This is what owners and brokers can see (never your contact details).
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                {intent ? (
-                  <dl className="grid grid-cols-2 gap-x-6 gap-y-4 sm:grid-cols-3">
-                    <Field label="Budget">
-                      {formatINR(intent.budget_min)} – {formatINR(intent.budget_max)}
-                    </Field>
-                    <Field label="Configuration">{labelFor(BHK_OPTIONS, intent.bhk)}</Field>
-                    <Field label="Move-in by">
-                      {format(new Date(intent.move_in_date), "d MMM yyyy")}
-                    </Field>
-                    <Field label="Furnishing">
-                      {labelFor(FURNISHING_OPTIONS, intent.furnishing)}
-                    </Field>
-                    <Field label="Occupancy">
-                      {labelFor(OCCUPANCY_OPTIONS, intent.occupancy)}
-                    </Field>
-                    <Field label="Status">
-                      <Badge variant="success" className="capitalize">
-                        {intent.status}
-                      </Badge>
-                    </Field>
-                    {intent.notes ? (
-                      <div className="col-span-full">
-                        <Field label="Notes">{intent.notes}</Field>
-                      </div>
-                    ) : null}
-                  </dl>
-                ) : (
-                  <p className="text-sm text-muted-foreground">
-                    No intent on file yet. Brokers can only suggest listings to people who
-                    have told them what they want.
-                  </p>
-                )}
-
-                {intent ? (
-                  <form action={setIntentStatus} className="mt-4 flex items-center gap-2 border-t pt-4">
-                    <input
-                      type="hidden"
-                      name="status"
-                      value={intent.status === "active" ? "fulfilled" : "active"}
-                    />
-                    <Button type="submit" size="sm" variant="ghost">
-                      {intent.status === "active"
-                        ? "I've found a place — stop suggestions"
-                        : "Start looking again"}
-                    </Button>
-                    <span className="text-xs text-muted-foreground">
-                      {intent.status === "active"
-                        ? "Brokers can see this right now."
-                        : "Hidden from brokers until you resume."}
-                    </span>
-                  </form>
-                ) : null}
-              </CardContent>
-            </Card>
+            <IntentCard intent={intent} />
 
             <Card>
               <CardHeader>
@@ -304,6 +234,37 @@ export default async function DashboardPage({
           </Card>
         )}
 
+        {/*
+          0024 — an intent is no longer a tenant-only object. An owner between
+          places is still somebody looking to rent, and 0014's matcher already
+          refuses to tell anyone about their own listing. Non-tenants who have
+          not set one get a line rather than a form: nagging every owner for a
+          rental budget would be noise.
+        */}
+        {role !== "tenant" ? (
+          intent ? (
+            <IntentCard intent={intent} />
+          ) : (
+            <Card>
+              <CardHeader>
+                <div className="flex items-center gap-2">
+                  <Home className="size-5 text-primary" />
+                  <CardTitle>Looking for a place yourself?</CardTitle>
+                </div>
+                <CardDescription>
+                  Say what you&apos;re after and brokers can suggest listings — the same
+                  inbox a tenant gets. Nothing you posted is ever suggested back to you.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Button asChild size="sm" variant="outline">
+                  <Link href="/intent">Set up a rental intent</Link>
+                </Button>
+              </CardContent>
+            </Card>
+          )
+        ) : null}
+
         {isPoster ? (
           <Card>
             <CardHeader>
@@ -383,6 +344,85 @@ export default async function DashboardPage({
         </Card>
       </main>
     </div>
+  );
+}
+
+/**
+ * What someone is looking for. Rendered for a tenant always, and for anyone
+ * else once they have actually set one (0024).
+ */
+function IntentCard({ intent }: { intent: TenantIntent | null }) {
+  return (
+    <Card>
+      <CardHeader>
+        <div className="flex items-center justify-between gap-4">
+          <div className="flex items-center gap-2">
+            <Home className="size-5 text-primary" />
+            <CardTitle>Your rental intent</CardTitle>
+          </div>
+          <Button asChild size="sm" variant={intent ? "outline" : "default"}>
+            <Link href="/intent">{intent ? "Edit" : "Set it up"}</Link>
+          </Button>
+        </div>
+        <CardDescription>
+          This is what owners and brokers can see (never your contact details).
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        {intent ? (
+          <dl className="grid grid-cols-2 gap-x-6 gap-y-4 sm:grid-cols-3">
+            <Field label="Budget">
+              {formatINR(intent.budget_min)} – {formatINR(intent.budget_max)}
+            </Field>
+            <Field label="Configuration">{labelFor(BHK_OPTIONS, intent.bhk)}</Field>
+            <Field label="Move-in by">
+              {format(new Date(intent.move_in_date), "d MMM yyyy")}
+            </Field>
+            <Field label="Furnishing">
+              {labelFor(FURNISHING_OPTIONS, intent.furnishing)}
+            </Field>
+            <Field label="Occupancy">
+              {labelFor(OCCUPANCY_OPTIONS, intent.occupancy)}
+            </Field>
+            <Field label="Status">
+              <Badge variant="success" className="capitalize">
+                {intent.status}
+              </Badge>
+            </Field>
+            {intent.notes ? (
+              <div className="col-span-full">
+                <Field label="Notes">{intent.notes}</Field>
+              </div>
+            ) : null}
+          </dl>
+        ) : (
+          <p className="text-sm text-muted-foreground">
+            No intent on file yet. Brokers can only suggest listings to people who
+            have told them what they want.
+          </p>
+        )}
+
+        {intent ? (
+          <form action={setIntentStatus} className="mt-4 flex items-center gap-2 border-t pt-4">
+            <input
+              type="hidden"
+              name="status"
+              value={intent.status === "active" ? "fulfilled" : "active"}
+            />
+            <Button type="submit" size="sm" variant="ghost">
+              {intent.status === "active"
+                ? "I've found a place — stop suggestions"
+                : "Start looking again"}
+            </Button>
+            <span className="text-xs text-muted-foreground">
+              {intent.status === "active"
+                ? "Brokers can see this right now."
+                : "Hidden from brokers until you resume."}
+            </span>
+          </form>
+        ) : null}
+      </CardContent>
+    </Card>
   );
 }
 

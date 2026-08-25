@@ -29,6 +29,8 @@ export type SuggestionWithListing = {
 export async function getActiveIntents(
   supabase: SupabaseClient<Database>,
   localityId: string,
+  /** The viewing broker, whose own intent is demand they cannot answer (0024). */
+  viewerId: string,
   limit = 50,
 ): Promise<TenantIntent[]> {
   const { data } = await supabase
@@ -36,6 +38,7 @@ export async function getActiveIntents(
     .select("*")
     .eq("locality_id", localityId)
     .eq("status", "active")
+    .neq("tenant_id", viewerId)
     .order("created_at", { ascending: false })
     .limit(limit);
   return data ?? [];
@@ -66,6 +69,23 @@ export async function getSentSuggestions(
     .eq("broker_id", brokerId)
     .order("created_at", { ascending: false });
   return data ?? [];
+}
+
+/**
+ * Whether this person holds an intent at all. Since 0024 that is no longer
+ * implied by their role, so the nav has to ask rather than assume.
+ */
+export async function hasIntent(
+  supabase: SupabaseClient<Database>,
+  userId: string,
+): Promise<boolean> {
+  const { data } = await supabase
+    .from("tenant_intents")
+    .select("id")
+    .eq("tenant_id", userId)
+    .limit(1)
+    .maybeSingle();
+  return Boolean(data);
 }
 
 /** The tenant's intents (usually one, newest first). */
