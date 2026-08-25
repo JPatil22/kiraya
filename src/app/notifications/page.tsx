@@ -8,6 +8,7 @@ import {
   CalendarCheck,
   CalendarClock,
   CheckCircle2,
+  Clock,
   Flag,
   MessageSquareQuote,
   PhoneCall,
@@ -35,6 +36,9 @@ const ICON: Record<NotificationKind, typeof Bell> = {
   listing_matched: Sparkles,
   visit_proposed: CalendarClock,
   visit_answered: CalendarCheck,
+  // Freshness decaying, not an appointment — a different clock.
+  verification_due: Clock,
+  visit_reminder: CalendarClock,
 };
 
 export default async function NotificationsPage() {

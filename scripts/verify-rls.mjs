@@ -569,6 +569,80 @@ async function main() {
     record(true, "cannot read another tenant's intent", "skipped — only one tenant has an intent");
   }
 
+  // --- the clock (0025) ------------------------------------------------------
+  // These functions write notifications for OTHER people, so who may call them
+  // matters as much as what they do.
+  console.log("\nscheduled jobs (0025)");
+  {
+    await admin.from("notifications").delete().in("kind", ["verification_due", "visit_reminder"]);
+
+    // Setting up a visit trips 0010's and 0020's notify triggers, so snapshot
+    // first and remove whatever this block causes to be written.
+    const { data: noticesBefore } = await admin.from("notifications").select("id");
+    const preexistingNotices = new Set((noticesBefore ?? []).map((n) => n.id));
+
+    await mustFail("a tenant cannot run the verification sweep",
+      tenant.rpc("run_verification_due"));
+    await mustFail("anon cannot run the visit reminder sweep",
+      anon.rpc("run_visit_reminders"));
+
+    // The seed carries a never-verified live listing and two stale ones, so the
+    // sweep has real work to do without the harness manufacturing any.
+    const { data: firstRun, error: firstError } = await admin.rpc("run_verification_due");
+    record(!firstError && firstRun > 0, "the sweep nudges listings that need confirming",
+      firstError ? `errored: ${firstError.message}` : `wrote ${firstRun}`);
+
+    const { data: nudges } = await admin
+      .from("notifications")
+      .select("user_id, property_id, body")
+      .eq("kind", "verification_due");
+    record((nudges ?? []).length === firstRun, "one notice per listing, addressed to its poster",
+      `${(nudges ?? []).length} rows for ${firstRun} reported`);
+
+    // The point of the freshness window: being nudged once per cycle, not daily.
+    const { data: secondRun } = await admin.rpc("run_verification_due");
+    record(secondRun === 0, "running it again the next morning nudges nobody",
+      secondRun === 0 ? null : `wrote ${secondRun} on the second pass`);
+
+    // --- visit reminders ---
+    const ownerLive5 = props.find((p) => p.posted_by === ownerId && p.status === "live");
+    const { data: ex3 } = await admin.from("contact_exchanges").insert({
+      property_id: ownerLive5.id, tenant_id: tenantId,
+      counterparty_id: ownerId, source: "listing",
+    }).select("id").single();
+
+    const { data: soonVisit } = await admin.from("visits").insert({
+      property_id: ownerLive5.id, tenant_id: tenantId, host_id: ownerId,
+      contact_exchange_id: ex3.id,
+      scheduled_for: new Date(Date.now() + 3 * 3_600_000).toISOString(),
+      status: "confirmed", proposed_by: tenantId,
+    }).select("id").single();
+
+    const { data: reminded } = await admin.rpc("run_visit_reminders");
+    record(reminded === 1, "a viewing inside the next day reminds both sides",
+      reminded === 1 ? null : `reported ${reminded} visits`);
+
+    await mustSee("both the tenant and the host get told",
+      admin.from("notifications").select("id").eq("kind", "visit_reminder"), 2);
+
+    const { data: stamped } = await admin
+      .from("visits").select("reminded_at").eq("id", soonVisit.id).maybeSingle();
+    record(Boolean(stamped?.reminded_at), "the visit records that it was reminded",
+      stamped?.reminded_at ? null : "reminded_at stayed null");
+
+    const { data: reminderRerun } = await admin.rpc("run_visit_reminders");
+    record(reminderRerun === 0, "the same viewing is not reminded twice",
+      reminderRerun === 0 ? null : `reminded ${reminderRerun} again`);
+
+    await admin.from("visits").delete().eq("id", soonVisit.id);
+    await admin.from("contact_exchanges").delete().eq("id", ex3.id);
+
+    const { data: noticesAfter } = await admin.from("notifications").select("id");
+    for (const n of noticesAfter ?? []) {
+      if (!preexistingNotices.has(n.id)) await admin.from("notifications").delete().eq("id", n.id);
+    }
+  }
+
   // --- intents are not tenant-only (0024) -----------------------------------
   // 0001 never gated these policies on role; the restriction was three redirects
   // in the app. This proves the database was always willing.

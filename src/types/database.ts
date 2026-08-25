@@ -39,7 +39,9 @@ export type NotificationKind =
   | "listing_reviewed"
   | "listing_matched"
   | "visit_proposed"
-  | "visit_answered";
+  | "visit_answered"
+  | "verification_due"
+  | "visit_reminder";
 export type ModerationKind =
   | "approve"
   | "reject"
@@ -351,6 +353,8 @@ export type Visit = {
   status: VisitStatus;
   proposed_by: string;
   note: string | null;
+  /** 0025 — when the day-before reminder went out. Null means unsent. */
+  reminded_at: string | null;
   created_at: string;
   updated_at: string;
 };
