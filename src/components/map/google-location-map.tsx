@@ -24,35 +24,39 @@ export function GoogleLocationMap({
   const container = useRef<HTMLDivElement | null>(null);
   const map = useRef<google.maps.Map | null>(null);
   const [failed, setFailed] = useState<string | null>(null);
+  const [ready, setReady] = useState(false);
 
+  // Split for the same reason as the picker: building inside `.then()` lets a
+  // development remount cancel the build and leave an empty box behind.
   useEffect(() => {
-    let cancelled = false;
-
+    let live = true;
     loadGoogleMaps()
       .then(() => {
-        if (cancelled || !container.current || map.current) return;
-        const position = { lat: latitude, lng: longitude };
-
-        map.current = new google.maps.Map(container.current, {
-          center: position,
-          zoom: 17,
-          mapTypeId: "hybrid",
-          mapTypeControl: true,
-          streetViewControl: true,
-          fullscreenControl: true,
-        });
-
-        new google.maps.Marker({ position, map: map.current, title });
+        if (live) setReady(true);
       })
       .catch((error: Error) => {
-        if (!cancelled) setFailed(error.message);
+        if (live) setFailed(error.message);
       });
-
     return () => {
-      cancelled = true;
-      map.current = null;
+      live = false;
     };
-  }, [latitude, longitude, title]);
+  }, []);
+
+  useEffect(() => {
+    if (!ready || !container.current || map.current) return;
+    const position = { lat: latitude, lng: longitude };
+
+    map.current = new google.maps.Map(container.current, {
+      center: position,
+      zoom: 17,
+      mapTypeId: "hybrid",
+      mapTypeControl: true,
+      streetViewControl: true,
+      fullscreenControl: true,
+    });
+
+    new google.maps.Marker({ position, map: map.current, title });
+  }, [ready, latitude, longitude, title]);
 
   return (
     <div className="space-y-2">

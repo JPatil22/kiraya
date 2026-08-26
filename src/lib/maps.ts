@@ -52,32 +52,66 @@ let loader: Promise<void> | null = null;
  */
 export function loadGoogleMaps(): Promise<void> {
   if (typeof window === "undefined") return Promise.resolve();
-  if ((window as GoogleNamespace).google) return Promise.resolve();
   if (loader) return loader;
 
-  loader = new Promise<void>((resolve, reject) => {
-    if (!GOOGLE_MAPS_KEY) {
-      reject(new Error("NEXT_PUBLIC_GOOGLE_MAPS_API_KEY is not set"));
-      return;
-    }
+  loader = (async () => {
+    if (!GOOGLE_MAPS_KEY) throw new Error("NEXT_PUBLIC_GOOGLE_MAPS_API_KEY is not set");
 
-    const existing = document.getElementById("google-maps-sdk");
-    if (existing) {
-      existing.addEventListener("load", () => resolve());
-      existing.addEventListener("error", () => reject(new Error("Google Maps failed to load")));
-      return;
-    }
+    // Note there is no `if (window.google) return` shortcut. Under
+    // `loading=async` the script defines `google.maps.importLibrary` and
+    // nothing else — `google.maps.Map` is still undefined at that point — so
+    // testing for the namespace reports ready far too early, and the caller
+    // gets "google.maps.Map is not a constructor". This promise resolving is
+    // the only honest signal, which is also why every caller shares it.
+    ensureScript();
+    await waitForBootstrap();
 
-    const script = document.createElement("script");
-    script.id = "google-maps-sdk";
-    script.async = true;
-    script.src =
-      `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(GOOGLE_MAPS_KEY)}` +
-      `&libraries=places&loading=async&region=IN&language=en`;
-    script.onload = () => resolve();
-    script.onerror = () => reject(new Error("Google Maps failed to load"));
-    document.head.appendChild(script);
-  });
+    await Promise.all([
+      google.maps.importLibrary("maps"),
+      google.maps.importLibrary("places"),
+    ]);
+  })();
 
   return loader;
+}
+
+function ensureScript() {
+  if (document.getElementById("google-maps-sdk")) return;
+
+  const script = document.createElement("script");
+  script.id = "google-maps-sdk";
+  script.async = true;
+  script.src =
+    `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(GOOGLE_MAPS_KEY)}` +
+    `&loading=async&region=IN&language=en`;
+  document.head.appendChild(script);
+}
+
+/**
+ * Poll for the bootstrap rather than listening for `load`.
+ *
+ * An event listener only fires if it was attached before the event, and in
+ * development this module gets re-evaluated by Fast Refresh — so a fresh loader
+ * can find a script tag that finished loading seconds ago, attach a listener to
+ * it, and wait forever. Polling a condition is indifferent to when it became
+ * true, which is the property that matters here.
+ */
+function waitForBootstrap(timeoutMs = 15_000): Promise<void> {
+  const ready = () => typeof (window as GoogleNamespace).google !== "undefined"
+    && typeof google?.maps?.importLibrary === "function";
+
+  if (ready()) return Promise.resolve();
+
+  return new Promise<void>((resolve, reject) => {
+    const startedAt = Date.now();
+    const tick = window.setInterval(() => {
+      if (ready()) {
+        window.clearInterval(tick);
+        resolve();
+      } else if (Date.now() - startedAt > timeoutMs) {
+        window.clearInterval(tick);
+        reject(new Error("Google Maps did not load — check the key and its referrer restrictions"));
+      }
+    }, 50);
+  });
 }

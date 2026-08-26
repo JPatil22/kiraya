@@ -47,6 +47,7 @@ export function GoogleLocationPicker({
   );
   const [status, setStatus] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [ready, setReady] = useState(false);
 
   const place = useCallback((next: Coords, zoom?: number) => {
     if (typeof google === "undefined" || !map.current) return;
@@ -71,13 +72,28 @@ export function GoogleLocationPicker({
     map.current.setZoom(Math.max(map.current.getZoom() ?? 0, zoom ?? BUILDING_ZOOM));
   }, []);
 
+  // Two effects on purpose. Loading is async, and React runs effects twice in
+  // development — so a single effect that builds the map inside `.then()` can
+  // have its cleanup fire during the await, cancel itself, and leave an empty
+  // container with no error to show for it. Splitting means the build runs
+  // synchronously once `ready` flips, with no gap for a cleanup to land in.
   useEffect(() => {
-    let cancelled = false;
-
+    let live = true;
     loadGoogleMaps()
       .then(() => {
-        if (cancelled || !container.current || map.current) return;
+        if (live) setReady(true);
+      })
+      .catch((error: Error) => {
+        if (live) setStatus(error.message);
+      });
+    return () => {
+      live = false;
+    };
+  }, []);
 
+  useEffect(() => {
+    if (ready && container.current && !map.current) {
+      {
         map.current = new google.maps.Map(container.current, {
           center: pos ?? PUNE_CENTRE,
           zoom: pos ? BUILDING_ZOOM : CITY_ZOOM,
@@ -117,19 +133,11 @@ export function GoogleLocationPicker({
             });
           });
         }
-      })
-      .catch((error: Error) => {
-        if (!cancelled) setStatus(error.message);
-      });
-
-    return () => {
-      cancelled = true;
-      marker.current = null;
-      map.current = null;
-    };
-    // Mount once; `pos` is read only for the opening view.
+      }
+    }
+    // `pos` and `place` are read only to draw the opening view.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [ready]);
 
   function useMyLocation() {
     if (!navigator.geolocation) {
