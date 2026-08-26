@@ -114,3 +114,17 @@ export const getSessionUser = cache(async function getSessionUser(
 export function canPost(role: UserRole | null): boolean {
   return role === "owner" || role === "broker" || role === "admin";
 }
+
+/**
+ * A phone number is required to transact (0030).
+ *
+ * Google proves an email; the contact exchange trades phone numbers. Onboarding
+ * asks for one, so this catches accounts that predate 0030 and anyone who
+ * reached an action another way — belt and braces on the two points where a
+ * missing number would strand somebody mid-flow.
+ */
+export function needsPhone(user: { phone: string | null }): string | null {
+  return user.phone
+    ? null
+    : "Add your mobile number first — it's what gets exchanged when someone enquires.";
+}

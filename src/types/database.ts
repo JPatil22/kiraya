@@ -5,7 +5,7 @@
 // Keeping this file small and correct is enough for MVP1 to typecheck.
 
 export type UserRole = "tenant" | "owner" | "broker" | "admin";
-export type OnboardingStep = "role" | "intent" | "done";
+export type OnboardingStep = "role" | "phone" | "intent" | "done";
 export type BhkType = "1rk" | "1bhk" | "2bhk" | "3bhk" | "4plus";
 export type FurnishingType = "unfurnished" | "semi" | "full";
 export type OccupancyType = "family" | "bachelors_male" | "bachelors_female" | "any";
@@ -93,6 +93,8 @@ export type Profile = {
   phone: string | null;
   /** 0026 — optional delivery address. Phone is still the identity bar. */
   email: string | null;
+  /** 0030 — null means the number was typed but never proven by an OTP. */
+  phone_verified_at: string | null;
   full_name: string | null;
   role: UserRole | null;
   onboarding_step: OnboardingStep;

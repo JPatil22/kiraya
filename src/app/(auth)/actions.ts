@@ -8,6 +8,54 @@ import type { OnboardingStep } from "@/types/database";
 
 export type AuthState = { error: string } | null;
 
+/**
+ * Google sign-in (0030) — the way in, as of now.
+ *
+ * Phone OTP below is intact and dormant, exactly as it has been under open
+ * mode. It never delivered a code because an India rollout needs a
+ * DLT-registered sender; Google needs nothing, costs nothing, and cannot be
+ * abused by scripting an endpoint that has to be public.
+ *
+ * What it does NOT do is replace the phone number. Google proves an email, and
+ * email is free to create in bulk. Posting a listing or unlocking somebody's
+ * contact details still requires a number — see /onboarding/phone.
+ */
+export async function signInWithGoogle() {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase.auth.signInWithOAuth({
+    provider: "google",
+    options: {
+      // Must be an absolute URL, and must be registered in Supabase under
+      // Authentication → URL Configuration → Redirect URLs.
+      redirectTo: `${siteUrl()}/auth/callback`,
+      queryParams: { prompt: "select_account" },
+    },
+  });
+
+  if (error || !data?.url) {
+    // Nothing to render an error into — the button posts and navigates away —
+    // so send them back to /login with a reason in the URL.
+    redirect(`/login?error=${encodeURIComponent(error?.message ?? "Could not reach Google.")}`);
+  }
+
+  redirect(data.url);
+}
+
+/**
+ * The absolute origin OAuth has to come back to.
+ *
+ * Vercel sets VERCEL_URL without a scheme and only for the deployment's own
+ * hostname, so NEXT_PUBLIC_SITE_URL wins when it is set — otherwise a preview
+ * deploy would send people to production and a production deploy to nowhere.
+ */
+function siteUrl(): string {
+  const explicit = process.env.NEXT_PUBLIC_SITE_URL;
+  if (explicit) return explicit.replace(/\/$/, "");
+  if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`;
+  return "http://localhost:3000";
+}
+
 const OTP_COOKIE = "otp_phone";
 
 /** Step 1 — send an OTP to the given Indian mobile number. */

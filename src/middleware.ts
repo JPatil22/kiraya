@@ -5,6 +5,9 @@ import type { OnboardingStep } from "@/types/database";
 
 const AUTH_ROUTES = ["/login", "/verify"];
 
+/** OAuth comes back here before a session exists; it must never be redirected. */
+const CALLBACK_ROUTE = "/auth/callback";
+
 function isOnboardingRoute(path: string) {
   return path.startsWith("/onboarding");
 }
@@ -27,6 +30,11 @@ function isAppRoute(path: string) {
 
 export async function middleware(request: NextRequest) {
   const path = request.nextUrl.pathname;
+
+  // The OAuth code is exchanged for a session inside the route handler, so at
+  // this point the user legitimately looks signed out. Bouncing them to /login
+  // here would make Google sign-in loop forever.
+  if (path === CALLBACK_ROUTE) return NextResponse.next();
 
   // --- Open mode ------------------------------------------------------------
   // Nothing to gate: no session to refresh, no onboarding step to enforce. The

@@ -2,7 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
-import { canPost, getDataClient, getSessionUser } from "@/lib/auth";
+import { canPost, getDataClient, getSessionUser, needsPhone } from "@/lib/auth";
 import { OPEN_MODE } from "@/lib/open-mode";
 import { getActiveLocality } from "@/lib/locality";
 import { checkboxOn, resolveBrokerage } from "@/lib/brokerage";
@@ -63,6 +63,8 @@ export async function createListing(
   if (user.isSuspended) {
     return { error: "Your account is suspended. Contact support." };
   }
+  const missingPhone = needsPhone(user);
+  if (missingPhone) return { error: missingPhone };
   if (!locality) {
     return { error: "Active locality is not configured. Contact support." };
   }

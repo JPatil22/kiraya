@@ -70,6 +70,8 @@ function profile(
     // Sandbox identities are reachable by email the same way the RLS harness
     // signs them in: <key>@kiraya.dev.
     email: `${id.replace(/^u-/, "")}@kiraya.dev`,
+    // Seeded identities came in through OTP, so their numbers are proven.
+    phone_verified_at: daysAgo(120),
     full_name,
     role,
     onboarding_step: "done",

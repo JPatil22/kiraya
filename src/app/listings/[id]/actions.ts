@@ -2,7 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
-import { getDataClient, getSessionUser } from "@/lib/auth";
+import { getDataClient, getSessionUser, needsPhone } from "@/lib/auth";
 import { OPEN_MODE } from "@/lib/open-mode";
 import { availabilitySchema, listingSchema, mismatchSchema } from "@/lib/validators";
 import { BEDROOMS_FOR_BHK } from "@/lib/rooms";
@@ -349,6 +349,10 @@ export async function requestContact(
   if (property.posted_by === user.id) {
     return { error: "That's your own listing." };
   }
+
+  // Both numbers appear at once, so there is nothing to exchange without one.
+  const missingPhone = needsPhone(user);
+  if (missingPhone) return { error: missingPhone };
 
   // Already asked: nothing to do, the number is already on their screen.
   const existing = await getMyExchange(supabase, propertyId, user.id);
