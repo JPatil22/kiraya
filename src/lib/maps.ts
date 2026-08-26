@@ -82,7 +82,31 @@ export function loadGoogleMaps(): Promise<void> {
   return loader;
 }
 
+/**
+ * Google calls this global when it rejects the key, and then paints its own
+ * grey "Oops! Something went wrong" panel into every map container. The panel
+ * says to check the console; the console says the same thing in more words.
+ * Neither mentions the actual cause, which is almost always that the key's HTTP
+ * referrer restrictions do not include the host it is being loaded from — the
+ * exact failure a first deployment hits, because the key was set up against
+ * localhost.
+ */
+function installAuthFailureHandler() {
+  const w = window as GoogleNamespace & { gm_authFailure?: () => void };
+  if (w.gm_authFailure) return;
+
+  w.gm_authFailure = () => {
+    console.error(
+      `[maps] Google rejected the API key for ${window.location.origin}. ` +
+        "Add this origin to the key's HTTP referrer restrictions in Google Cloud " +
+        "(APIs & Services → Credentials), or remove NEXT_PUBLIC_GOOGLE_MAPS_API_KEY " +
+        "to fall back to OpenStreetMap. See docs/DEPLOY.md §3.",
+    );
+  };
+}
+
 function ensureScript() {
+  installAuthFailureHandler();
   if (document.getElementById("google-maps-sdk")) return;
 
   const script = document.createElement("script");
