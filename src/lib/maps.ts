@@ -46,6 +46,52 @@ export const PUNE_BOUNDS = {
   east: 74.05,
 };
 
+/**
+ * A picture of the map, for the case where nobody is going to touch it.
+ *
+ * The interactive SDK is roughly half a megabyte of JavaScript and is billed as
+ * a Dynamic Map on every listing view, whether or not the tenant ever drags it.
+ * Most won't — the question a listing map answers is "which building, and how
+ * far is it from me", and a still image with a pin answers both. So that is what
+ * loads first, and the real map arrives when someone asks for it by clicking.
+ *
+ * Static Maps is a separate API and has to be enabled in the same Google Cloud
+ * project (APIs & Services → Library → Maps Static API). If it isn't, the image
+ * 403s and google-location-map falls straight through to the interactive map —
+ * so this is an optimisation, never a dependency.
+ */
+export function staticMapUrl({
+  latitude,
+  longitude,
+  width = 640,
+  height = 256,
+  zoom = BUILDING_ZOOM,
+}: {
+  latitude: number;
+  longitude: number;
+  width?: number;
+  height?: number;
+  zoom?: number;
+}): string {
+  const centre = `${latitude},${longitude}`;
+  const params = new URLSearchParams({
+    center: centre,
+    zoom: String(zoom),
+    // 640 is the documented ceiling for one request; scale=2 is what makes it
+    // legible on the phone screens most of this traffic arrives on.
+    size: `${width}x${height}`,
+    scale: "2",
+    // Matches the interactive map, so clicking doesn't change what you're
+    // looking at — it only makes it movable.
+    maptype: "hybrid",
+    markers: `color:red|${centre}`,
+    region: "IN",
+    language: "en",
+    key: GOOGLE_MAPS_KEY,
+  });
+  return `https://maps.googleapis.com/maps/api/staticmap?${params.toString()}`;
+}
+
 type GoogleNamespace = typeof globalThis & { google?: unknown };
 
 let loader: Promise<void> | null = null;
