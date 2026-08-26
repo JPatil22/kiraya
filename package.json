@@ -5,6 +5,7 @@
   "description": "Tenant-first rental platform for a single Indian locality — verified tenants, fresh availability, transparent history.",
   "scripts": {
     "dev": "next dev",
+    "prebuild": "node scripts/check-env.mjs",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
