@@ -33,6 +33,44 @@ const OPTIONAL = [
   ["KIRAYA_CRON_SECRET", "the delivery route refuses to run at all without it"],
 ];
 
+/**
+ * Open mode in a build is refused by src/lib/open-mode.ts too, but that check
+ * fires while webpack is collecting page data — so the message arrives wrapped
+ * in module frames, attached to whichever page happened to import it first
+ * ("Failed to collect page data for /onboarding/intent"). The reason is in
+ * there, several lines up, past a stack trace.
+ *
+ * `next build` is always a production build, and `next start` would then serve
+ * whatever it produced. So there is no build worth making with this on, and it
+ * belongs here where it can be said plainly and first.
+ */
+if (
+  process.env.NEXT_PUBLIC_OPEN_MODE === "true" &&
+  process.env.KIRAYA_ALLOW_OPEN_MODE_IN_PRODUCTION !==
+    "i-understand-this-disables-all-access-control"
+) {
+  console.error(
+    [
+      "",
+      "  Build stopped. NEXT_PUBLIC_OPEN_MODE is true.",
+      "",
+      "  Open mode reads the acting role from a cookie and runs every query with",
+      "  the service-role key, which bypasses RLS. On a public URL that means",
+      "  every visitor is an administrator: approving listings, taking them down,",
+      "  suspending brokers, reading every profile.",
+      "",
+      "  Set NEXT_PUBLIC_OPEN_MODE=false and redeploy. That is the real auth gate",
+      "  and what this app is meant to ship with.",
+      "",
+      "  If this genuinely is a private demo and you accept that anyone with the",
+      "  URL is an admin:",
+      "    KIRAYA_ALLOW_OPEN_MODE_IN_PRODUCTION=i-understand-this-disables-all-access-control",
+      "",
+    ].join("\n"),
+  );
+  process.exit(1);
+}
+
 const missingRequired = REQUIRED.filter(([name]) => !process.env[name]);
 const missingOptional = OPTIONAL.filter(([name]) => !process.env[name]);
 
