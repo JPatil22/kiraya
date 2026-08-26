@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import {
   ArrowRight,
   BadgeCheck,
@@ -66,7 +67,25 @@ const localityName = ACTIVE_LOCALITY_SLUG.split("-")
   .map((w) => w[0]?.toUpperCase() + w.slice(1))
   .join(" ");
 
-export default function LandingPage() {
+export default async function LandingPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const { code } = await searchParams;
+
+  /**
+   * An OAuth code arriving here rather than at /auth/callback means Supabase
+   * fell back to its Site URL — which it does whenever the requested redirect
+   * is not on the allow list. The configuration is still wrong and should be
+   * fixed, but dropping the user on a marketing page holding a valid code, with
+   * no indication anything happened, is the worst of both. Hand it to the
+   * callback, which is the only place that knows how to exchange it.
+   */
+  if (typeof code === "string" && code) {
+    redirect(`/auth/callback?code=${encodeURIComponent(code)}`);
+  }
+
   return (
     <main className="mx-auto flex min-h-dvh max-w-5xl flex-col px-6">
       <header className="flex items-center justify-between py-6">
