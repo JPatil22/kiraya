@@ -1,12 +1,13 @@
 "use client";
 
-import { useActionState, useRef } from "react";
+import { useActionState, useRef, useState } from "react";
 import { format } from "date-fns";
 import { Camera, CheckCircle2, ImagePlus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { downscaleImage } from "@/lib/downscale";
 import { ACCEPTED_MIME, photoAgeWarning, photoUrl } from "@/lib/photos";
 import { slotsWithPhotos, type RoomSlot } from "@/lib/rooms";
 import { cn } from "@/lib/utils";
@@ -128,6 +129,8 @@ function SlotCard({
   lastVerifiedAt: string | null;
 }) {
   const [uploadState, upload, uploading] = useActionState(uploadPhotos, null);
+  // True while a chosen photo is being downscaled in the browser.
+  const [preparing, setPreparing] = useState(false);
   const [removeState, remove, removing] = useActionState(deletePhoto, null);
   const formRef = useRef<HTMLFormElement>(null);
   const today = new Date().toISOString().slice(0, 10);
@@ -182,6 +185,30 @@ function SlotCard({
             type="file"
             accept={ACCEPTED_MIME.join(",")}
             className="text-xs"
+            // Shrink before the bytes leave the phone: a 4000px camera photo
+            // is several megabytes of the poster's mobile data going up, and
+            // every tenant's coming back down.
+            onChange={async (event) => {
+              const input = event.currentTarget;
+              const picked = input.files?.[0];
+              if (!picked) return;
+
+              // The submit button waits on this. Without that, picking a file
+              // and hitting Add immediately would upload the original —
+              // silently, and only on slow phones, which is the worst kind of
+              // bug to find later.
+              setPreparing(true);
+              try {
+                const smaller = await downscaleImage(picked);
+                if (smaller !== picked) {
+                  const carrier = new DataTransfer();
+                  carrier.items.add(smaller);
+                  input.files = carrier.files;
+                }
+              } finally {
+                setPreparing(false);
+              }
+            }}
           />
           <Input
             name="capturedAt"
@@ -191,8 +218,14 @@ function SlotCard({
             className="text-xs"
           />
 
-          <Button type="submit" size="sm" variant={photo ? "outline" : "default"} disabled={uploading}>
-            <ImagePlus /> {uploading ? "Uploading…" : photo ? "Replace" : "Add photo"}
+          <Button
+            type="submit"
+            size="sm"
+            variant={photo ? "outline" : "default"}
+            disabled={uploading || preparing}
+          >
+            <ImagePlus />{" "}
+            {preparing ? "Preparing…" : uploading ? "Uploading…" : photo ? "Replace" : "Add photo"}
           </Button>
         </form>
 
