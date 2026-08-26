@@ -270,6 +270,8 @@ function photo(
     id,
     property_id,
     storage_path: swatch(label, hue),
+    // Seed photos are single data-URL swatches; the card reuses the full one.
+    thumbnail_path: null,
     caption: label,
     sort_order: 0,
     captured_at: recent,
@@ -740,6 +742,7 @@ export function listingsPublic(): ListingPublic[] {
       open_mismatch_count: openMismatches,
       has_warning: openMismatches >= 2,
       cover_photo_path: cover?.storage_path ?? null,
+      cover_photo_thumb_path: cover?.thumbnail_path ?? null,
       cover_photo_captured_at: cover?.captured_at ?? null,
       photo_count: photos.length,
       rooms_required: roomsRequiredForBhk(p.bhk),

@@ -80,5 +80,15 @@ export function photoObjectKey(propertyId: string, fileName: string): string {
   return `${propertyId}/${id}.${ext || "jpg"}`;
 }
 
+/**
+ * The thumbnail's key, derived from the full image's (0033). Kept next to it in
+ * the same folder — `<id>/<uuid>.<ext>` → `<id>/<uuid>_thumb.jpg` — so the
+ * folder-scoped storage RLS covers both, and always `.jpg` because the browser
+ * re-encodes the small variant regardless of the source format.
+ */
+export function thumbObjectKey(fullKey: string): string {
+  return fullKey.replace(/\.[^./]+$/, "") + "_thumb.jpg";
+}
+
 /** Fixture mode keeps bytes inline; everything else goes to Storage. */
 export const PHOTOS_INLINE = USE_FIXTURES;

@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { downscaleImage } from "@/lib/downscale";
+import { downscaleImage, thumbnailImage } from "@/lib/downscale";
 import { ACCEPTED_MIME, photoAgeWarning, photoUrl } from "@/lib/photos";
 import { slotsWithPhotos, type RoomSlot } from "@/lib/rooms";
 import { cn } from "@/lib/utils";
@@ -133,6 +133,9 @@ function SlotCard({
   const [preparing, setPreparing] = useState(false);
   const [removeState, remove, removing] = useActionState(deletePhoto, null);
   const formRef = useRef<HTMLFormElement>(null);
+  // The card-sized copy rides along in the same submit via a hidden file input
+  // whose contents we set programmatically (0033).
+  const thumbRef = useRef<HTMLInputElement>(null);
   const today = new Date().toISOString().slice(0, 10);
   const warning = photo ? photoAgeWarning(photo.captured_at, lastVerifiedAt) : null;
   const inputId = `file-${slot.roomType}-${slot.roomIndex}`;
@@ -143,7 +146,7 @@ function SlotCard({
         // Runtime Storage host and fixture data: URLs both defeat next/image.
         // eslint-disable-next-line @next/next/no-img-element
         <img
-          src={photoUrl(photo.storage_path)}
+          src={photoUrl(photo.thumbnail_path ?? photo.storage_path)}
           alt={slot.label}
           className="aspect-[4/3] w-full bg-muted object-cover"
         />
@@ -175,6 +178,9 @@ function SlotCard({
           <input type="hidden" name="propertyId" value={propertyId} />
           <input type="hidden" name="roomType" value={slot.roomType} />
           <input type="hidden" name="roomIndex" value={slot.roomIndex} />
+          {/* Populated in onChange, submitted with the form. Hidden, never
+              user-touched — the poster picks one file, not two (0033). */}
+          <input ref={thumbRef} name="thumbnail" type="file" className="hidden" tabIndex={-1} aria-hidden="true" />
 
           <Label htmlFor={inputId} className="sr-only">
             {photo ? `Replace the ${slot.label} photo` : `Add a ${slot.label} photo`}
@@ -199,11 +205,24 @@ function SlotCard({
               // bug to find later.
               setPreparing(true);
               try {
-                const smaller = await downscaleImage(picked);
+                // Full image for the detail page, thumbnail for the feed —
+                // produced from the same picked file in one pass.
+                const [smaller, thumb] = await Promise.all([
+                  downscaleImage(picked),
+                  thumbnailImage(picked),
+                ]);
                 if (smaller !== picked) {
                   const carrier = new DataTransfer();
                   carrier.items.add(smaller);
                   input.files = carrier.files;
+                }
+                // Replace whatever a previous pick left in the hidden input:
+                // an empty file list when the thumbnail couldn't be made, so a
+                // stale thumbnail never rides along with a new photo.
+                if (thumbRef.current) {
+                  const carrier = new DataTransfer();
+                  if (thumb) carrier.items.add(thumb);
+                  thumbRef.current.files = carrier.files;
                 }
               } finally {
                 setPreparing(false);

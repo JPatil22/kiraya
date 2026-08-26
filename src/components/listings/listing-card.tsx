@@ -38,7 +38,7 @@ export function ListingCard({
           {/* eslint-disable-next-line @next/next/no-img-element -- runtime Storage
               host and fixture data: URLs both defeat next/image. */}
           <img
-            src={photoUrl(listing.cover_photo_path)}
+            src={photoUrl(listing.cover_photo_thumb_path ?? listing.cover_photo_path)}
             alt=""
             loading="lazy"
             className="aspect-[16/9] w-full bg-muted object-cover sm:aspect-[21/9]"

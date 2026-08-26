@@ -11,6 +11,7 @@ import {
   PHOTOS_INLINE,
   PHOTO_BUCKET,
   photoObjectKey,
+  thumbObjectKey,
 } from "@/lib/photos";
 import { ROOM_LABEL } from "@/lib/rooms";
 import type { RoomType } from "@/types/database";
@@ -103,35 +104,70 @@ export async function uploadPhotos(
     return { error: `A listing can have at most ${MAX_PHOTOS} photos.` };
   }
 
+  // The browser sends a card-sized copy alongside the full image (0033). It is
+  // validated like the real thing but never required — a missing or malformed
+  // thumbnail just means the feed falls back to the full image.
+  const thumbFile = formData.get("thumbnail");
+  const hasThumb =
+    thumbFile instanceof File &&
+    thumbFile.size > 0 &&
+    thumbFile.size <= MAX_PHOTO_BYTES &&
+    ACCEPTED_MIME.includes(thumbFile.type);
+
   let storagePath: string;
+  let thumbnailPath: string | null = null;
   if (PHOTOS_INLINE) {
     // No Storage in fixture mode — keep the bytes inline.
     const bytes = Buffer.from(await file.arrayBuffer()).toString("base64");
     storagePath = `data:${file.type};base64,${bytes}`;
+    if (hasThumb) {
+      const tbytes = Buffer.from(await thumbFile.arrayBuffer()).toString("base64");
+      thumbnailPath = `data:${thumbFile.type};base64,${tbytes}`;
+    }
   } else {
     storagePath = photoObjectKey(propertyId, file.name);
     const { error: uploadError } = await supabase.storage
       .from(PHOTO_BUCKET)
       .upload(storagePath, file, { contentType: file.type, upsert: false });
     if (uploadError) return { error: uploadError.message };
+
+    if (hasThumb) {
+      const thumbKey = thumbObjectKey(storagePath);
+      const { error: thumbError } = await supabase.storage
+        .from(PHOTO_BUCKET)
+        .upload(thumbKey, thumbFile, { contentType: thumbFile.type, upsert: false });
+      // Optimisation, not a gate: on failure the listing still goes up.
+      if (!thumbError) thumbnailPath = thumbKey;
+    }
   }
 
   const cleanupUpload = async () => {
-    if (!PHOTOS_INLINE) await supabase.storage.from(PHOTO_BUCKET).remove([storagePath]);
+    if (PHOTOS_INLINE) return;
+    const keys = thumbnailPath ? [storagePath, thumbnailPath] : [storagePath];
+    await supabase.storage.from(PHOTO_BUCKET).remove(keys);
   };
 
   if (occupying) {
     const { error: updateError } = await supabase
       .from("property_photos")
-      .update({ storage_path: storagePath, captured_at: capturedAt, created_by: user.id })
+      .update({
+        storage_path: storagePath,
+        thumbnail_path: thumbnailPath,
+        captured_at: capturedAt,
+        created_by: user.id,
+      })
       .eq("id", occupying.id);
     if (updateError) {
       await cleanupUpload();
       return { error: updateError.message };
     }
-    // The slot's old image is now unreferenced.
+    // The slot's old image and its thumbnail are now unreferenced.
     if (!PHOTOS_INLINE && !occupying.storage_path.startsWith("data:")) {
-      await supabase.storage.from(PHOTO_BUCKET).remove([occupying.storage_path]);
+      const stale = [occupying.storage_path];
+      if (occupying.thumbnail_path && !occupying.thumbnail_path.startsWith("data:")) {
+        stale.push(occupying.thumbnail_path);
+      }
+      await supabase.storage.from(PHOTO_BUCKET).remove(stale);
     }
     refresh(propertyId);
     return { ok: "Photo replaced." };
@@ -140,6 +176,7 @@ export async function uploadPhotos(
   const { error: insertError } = await supabase.from("property_photos").insert({
     property_id: propertyId,
     storage_path: storagePath,
+    thumbnail_path: thumbnailPath,
     room_type: roomType,
     room_index: roomIndex,
     sort_order: current.reduce((max, p) => Math.max(max, p.sort_order), -1) + 1,
@@ -181,7 +218,11 @@ export async function deletePhoto(_prev: PhotoState, formData: FormData): Promis
   if (deleteError) return { error: deleteError.message };
 
   if (!PHOTOS_INLINE && !photo.storage_path.startsWith("data:")) {
-    await supabase.storage.from(PHOTO_BUCKET).remove([photo.storage_path]);
+    const keys = [photo.storage_path];
+    if (photo.thumbnail_path && !photo.thumbnail_path.startsWith("data:")) {
+      keys.push(photo.thumbnail_path);
+    }
+    await supabase.storage.from(PHOTO_BUCKET).remove(keys);
   }
 
   refresh(propertyId);

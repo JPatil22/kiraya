@@ -197,6 +197,8 @@ export type ListingPublic = {
   open_mismatch_count: number;
   has_warning: boolean;
   cover_photo_path: string | null;
+  /** ~400px variant of the cover for feed cards (0033); null → use full. */
+  cover_photo_thumb_path: string | null;
   cover_photo_captured_at: string | null;
   photo_count: number;
   /** Slots this configuration owes, and how many are filled (0008). */
@@ -252,6 +254,8 @@ export type PropertyPhoto = {
   id: string;
   property_id: string;
   storage_path: string;
+  /** ~400px variant for feed cards (0033); null → fall back to storage_path. */
+  thumbnail_path: string | null;
   caption: string | null;
   sort_order: number;
   captured_at: string | null;
