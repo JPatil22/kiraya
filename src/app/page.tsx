@@ -72,7 +72,17 @@ export default async function LandingPage({
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  const { code } = await searchParams;
+  const { code, error_description: oauthError, error: oauthErrorCode } = await searchParams;
+
+  /**
+   * Supabase reports OAuth failures against its Site URL too, so an error can
+   * land here just as a code can. Showing the marketing page with the reason
+   * hidden in the address bar tells nobody anything.
+   */
+  const failure = oauthError ?? oauthErrorCode;
+  if (typeof failure === "string" && failure) {
+    redirect(`/login?error=${encodeURIComponent(failure.replace(/\+/g, " "))}`);
+  }
 
   /**
    * An OAuth code arriving here rather than at /auth/callback means Supabase

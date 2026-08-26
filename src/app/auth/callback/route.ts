@@ -31,15 +31,25 @@ export async function GET(request: Request) {
   const supabase = await createClient();
   const { error } = await supabase.auth.exchangeCodeForSession(code);
 
-  if (error) {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  /**
+   * An authorisation code is single-use, so a second exchange of the same one
+   * fails with `flow_state_already_used`. That is not necessarily a failed
+   * sign-in — it is what a refresh, a back button, or the callback being
+   * requested twice looks like, and the first attempt may well have succeeded.
+   *
+   * So the session is the authority here, not the exchange result: if one
+   * exists, the person is signed in and being sent back to /login with an error
+   * would be a lie about their own state.
+   */
+  if (error && !user) {
     return NextResponse.redirect(
       new URL(`/login?error=${encodeURIComponent(error.message)}`, url.origin),
     );
   }
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
 
   let step: OnboardingStep = "role";
   if (user) {
