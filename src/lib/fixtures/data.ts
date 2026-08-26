@@ -77,17 +77,28 @@ function profile(
 }
 
 /** Mirrors the areas 0019 seeds. Slugs match so fixture URLs behave the same. */
-export const AREAS: Area[] = [
-  ["aundh", "Aundh"], ["balewadi", "Balewadi"], ["baner", "Baner"],
-  ["hadapsar", "Hadapsar"], ["hinjewadi", "Hinjewadi"], ["kharadi", "Kharadi"],
-  ["koregaon-park", "Koregaon Park"], ["kothrud", "Kothrud"],
-  ["magarpatta", "Magarpatta"], ["pimple-saudagar", "Pimple Saudagar"],
-  ["viman-nagar", "Viman Nagar"], ["wakad", "Wakad"],
-].map(([slug, name]) => ({
+export const AREAS: Area[] = (
+  [
+    ["aundh", "Aundh", 18.5590, 73.8078],
+    ["balewadi", "Balewadi", 18.5750, 73.7690],
+    ["baner", "Baner", 18.5590, 73.7770],
+    ["hadapsar", "Hadapsar", 18.5089, 73.9260],
+    ["hinjewadi", "Hinjewadi", 18.5910, 73.7380],
+    ["kharadi", "Kharadi", 18.5515, 73.9436],
+    ["koregaon-park", "Koregaon Park", 18.5362, 73.8939],
+    ["kothrud", "Kothrud", 18.5074, 73.8077],
+    ["magarpatta", "Magarpatta", 18.5157, 73.9280],
+    ["pimple-saudagar", "Pimple Saudagar", 18.5980, 73.7900],
+    ["viman-nagar", "Viman Nagar", 18.5679, 73.9143],
+    ["wakad", "Wakad", 18.5987, 73.7614],
+  ] as [string, string, number, number][]
+).map(([slug, name, latitude, longitude]) => ({
   id: `area-${slug}`,
   locality_id: LOCALITY.id,
   slug,
   name,
+  latitude,
+  longitude,
   created_at: daysAgo(120),
 }));
 

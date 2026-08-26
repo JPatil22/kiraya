@@ -13,6 +13,7 @@ import {
 } from "@/lib/constants";
 import { formatINR } from "@/lib/utils";
 import { LocationPicker } from "@/components/map/location-picker";
+import { toCoords } from "@/lib/geo";
 import type { Area, UserRole } from "@/types/database";
 
 /**
@@ -94,6 +95,13 @@ export function ListingForm({
     Boolean(initial?.brokerageDisclosed) && toInt(initial?.brokerage ?? "") === 0,
   );
 
+  // 0028 — the area sits one field above the map and is the strongest hint
+  // anyone gives us about where the flat is. Tracked so the map can open there
+  // and place search can be biased to it, instead of to the whole city.
+  const [areaId, setAreaId] = useState(initial?.areaId ?? "");
+  const selectedArea = areas.find((a) => a.id === areaId);
+  const areaCentre = toCoords(selectedArea?.latitude ?? null, selectedArea?.longitude ?? null);
+
   const allInMonthly = toInt(rent) + toInt(maintenance);
   const moveInCost = toInt(deposit) + toInt(brokerage) + toInt(oneTime);
   const today = new Date().toISOString().slice(0, 10);
@@ -158,7 +166,8 @@ export function ListingForm({
           <select
             id="areaId"
             name="areaId"
-            defaultValue={initial?.areaId ?? ""}
+            value={areaId}
+            onChange={(e) => setAreaId(e.target.value)}
             className={selectClass}
           >
             <option value="">Not sure / not listed</option>
@@ -193,7 +202,11 @@ export function ListingForm({
             the pin onto the actual building — or stand at the gate and press
             &ldquo;I&apos;m here now&rdquo;.
           </p>
-          <LocationPicker initialLat={initial?.latitude} initialLng={initial?.longitude} />
+          <LocationPicker
+            initialLat={initial?.latitude}
+            initialLng={initial?.longitude}
+            focus={areaCentre}
+          />
           <FieldError message={err("latitude")} />
         </div>
       </section>

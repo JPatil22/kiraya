@@ -13,6 +13,8 @@ import { OsmLocationPicker } from "./osm-location-picker";
 export function LocationPicker(props: {
   initialLat?: number | null;
   initialLng?: number | null;
+  /** Centre of the chosen area (0028): where to open, and what to bias search to. */
+  focus?: { lat: number; lng: number } | null;
 }) {
   return usingGoogleMaps() ? <GoogleLocationPicker {...props} /> : <OsmLocationPicker {...props} />;
 }

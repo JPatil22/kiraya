@@ -5,10 +5,12 @@ import { Crosshair, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
+  AREA_ZOOM,
   BUILDING_ZOOM,
   CITY_ZOOM,
   PUNE_BOUNDS,
   PUNE_CENTRE,
+  SEARCH_BIAS_DEGREES,
   loadGoogleMaps,
 } from "@/lib/maps";
 
@@ -28,17 +30,41 @@ import {
 
 type Coords = { lat: number; lng: number };
 
+/**
+ * A box around the chosen area rather than around the city.
+ *
+ * "Nyati Estate" exists in Kharadi and in Mohammed Wadi, twelve kilometres
+ * apart and both inside Pune — so a city-wide box gives the geocoder nothing to
+ * rank on. Bias, not restriction: a society just over an arbitrary line should
+ * still be findable.
+ */
+function boundsAround(centre?: { lat: number; lng: number } | null): google.maps.LatLngBounds {
+  if (!centre) {
+    return new google.maps.LatLngBounds(
+      { lat: PUNE_BOUNDS.south, lng: PUNE_BOUNDS.west },
+      { lat: PUNE_BOUNDS.north, lng: PUNE_BOUNDS.east },
+    );
+  }
+  return new google.maps.LatLngBounds(
+    { lat: centre.lat - SEARCH_BIAS_DEGREES, lng: centre.lng - SEARCH_BIAS_DEGREES },
+    { lat: centre.lat + SEARCH_BIAS_DEGREES, lng: centre.lng + SEARCH_BIAS_DEGREES },
+  );
+}
+
 export function GoogleLocationPicker({
   initialLat,
   initialLng,
+  focus,
 }: {
   initialLat?: number | null;
   initialLng?: number | null;
+  focus?: { lat: number; lng: number } | null;
 }) {
   const container = useRef<HTMLDivElement | null>(null);
   const searchInput = useRef<HTMLInputElement | null>(null);
   const map = useRef<google.maps.Map | null>(null);
   const marker = useRef<google.maps.Marker | null>(null);
+  const autocomplete = useRef<google.maps.places.Autocomplete | null>(null);
 
   const [pos, setPos] = useState<Coords | null>(
     typeof initialLat === "number" && typeof initialLng === "number"
@@ -95,8 +121,8 @@ export function GoogleLocationPicker({
     if (ready && container.current && !map.current) {
       {
         map.current = new google.maps.Map(container.current, {
-          center: pos ?? PUNE_CENTRE,
-          zoom: pos ? BUILDING_ZOOM : CITY_ZOOM,
+          center: pos ?? focus ?? PUNE_CENTRE,
+          zoom: pos ? BUILDING_ZOOM : focus ? AREA_ZOOM : CITY_ZOOM,
           mapTypeControl: true,
           // Rooftops are how somebody recognises their own building; road lines
           // are not. This is the single biggest aid to placing an accurate pin.
@@ -112,17 +138,14 @@ export function GoogleLocationPicker({
         if (pos) place(pos, BUILDING_ZOOM);
 
         if (searchInput.current) {
-          const autocomplete = new google.maps.places.Autocomplete(searchInput.current, {
+          autocomplete.current = new google.maps.places.Autocomplete(searchInput.current, {
             fields: ["geometry", "name", "formatted_address"],
             componentRestrictions: { country: "in" },
-            bounds: new google.maps.LatLngBounds(
-              { lat: PUNE_BOUNDS.south, lng: PUNE_BOUNDS.west },
-              { lat: PUNE_BOUNDS.north, lng: PUNE_BOUNDS.east },
-            ),
+            bounds: boundsAround(focus),
           });
 
-          autocomplete.addListener("place_changed", () => {
-            const found = autocomplete.getPlace();
+          autocomplete.current.addListener("place_changed", () => {
+            const found = autocomplete.current?.getPlace();
             if (!found?.geometry?.location) {
               setStatus("Pick one of the suggestions, or tap the map.");
               return;
@@ -135,9 +158,25 @@ export function GoogleLocationPicker({
         }
       }
     }
-    // `pos` and `place` are read only to draw the opening view.
+    // `pos`, `focus` and `place` are read only to draw the opening view.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ready]);
+
+  /**
+   * Changing the area re-aims both the view and the search (0028).
+   *
+   * The pin itself is never moved — somebody who has already placed one and
+   * then corrects the area dropdown has not asked to lose their work.
+   */
+  useEffect(() => {
+    if (!ready || !focus) return;
+    autocomplete.current?.setBounds(boundsAround(focus));
+    if (!pos && map.current) {
+      map.current.setCenter(focus);
+      map.current.setZoom(AREA_ZOOM);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ready, focus?.lat, focus?.lng]);
 
   function useMyLocation() {
     if (!navigator.geolocation) {

@@ -26,7 +26,14 @@ export function usingGoogleMaps(): boolean {
 /** Where the map opens when a listing has no pin yet. */
 export const PUNE_CENTRE = { lat: 18.5204, lng: 73.8567 };
 export const CITY_ZOOM = 12;
+export const AREA_ZOOM = 14;
 export const BUILDING_ZOOM = 17;
+
+/**
+ * Half-width of the box used to bias place search around a chosen area —
+ * roughly 5km, which covers a Pune neighbourhood and excludes the next one.
+ */
+export const SEARCH_BIAS_DEGREES = 0.045;
 
 /**
  * Bounds for biasing search towards the launch locality. "Nyati Estate" and

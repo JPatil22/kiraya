@@ -80,6 +80,9 @@ export type Area = {
   locality_id: string;
   slug: string;
   name: string;
+  /** 0028 — rough centre, used to bias place search. Null on both is allowed. */
+  latitude: number | null;
+  longitude: number | null;
   created_at: string;
 };
 

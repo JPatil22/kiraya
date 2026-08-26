@@ -29,15 +29,30 @@ const BUILDING_ZOOM = 17;
 /** Bias geocoding to the locality — "Nyati Estate" exists in several cities. */
 const PUNE_VIEWBOX = "73.70,18.65,74.05,18.40";
 
+/** Roughly 5km, matching the Google build: a neighbourhood, not the next one. */
+const AREA_BIAS_DEGREES = 0.045;
+const AREA_ZOOM = 14;
+
+/** Nominatim wants left,top,right,bottom. */
+function viewboxAround(centre?: { lat: number; lng: number } | null): string {
+  if (!centre) return PUNE_VIEWBOX;
+  const d = AREA_BIAS_DEGREES;
+  return [centre.lng - d, centre.lat + d, centre.lng + d, centre.lat - d]
+    .map((n) => n.toFixed(4))
+    .join(",");
+}
+
 type Coords = { lat: number; lng: number };
 type SearchHit = { label: string; lat: number; lng: number };
 
 export function OsmLocationPicker({
   initialLat,
   initialLng,
+  focus,
 }: {
   initialLat?: number | null;
   initialLng?: number | null;
+  focus?: { lat: number; lng: number } | null;
 }) {
   const container = useRef<HTMLDivElement | null>(null);
   const map = useRef<Leaflet.Map | null>(null);
@@ -49,6 +64,10 @@ export function OsmLocationPicker({
       ? { lat: initialLat, lng: initialLng }
       : null,
   );
+  // Read inside the search callback, which must not be rebuilt on every change.
+  const focusRef = useRef(focus ?? null);
+  focusRef.current = focus ?? null;
+
   const [query, setQuery] = useState("");
   const [hits, setHits] = useState<SearchHit[]>([]);
   const [status, setStatus] = useState<string | null>(null);
@@ -84,10 +103,10 @@ export function OsmLocationPicker({
       if (cancelled || !container.current || map.current) return;
 
       leaflet.current = L;
-      const start = pos ?? PUNE_CENTRE;
+      const start = pos ?? focus ?? PUNE_CENTRE;
       const instance = L.map(container.current, { scrollWheelZoom: false }).setView(
         start,
-        pos ? BUILDING_ZOOM : CITY_ZOOM,
+        pos ? BUILDING_ZOOM : focus ? AREA_ZOOM : CITY_ZOOM,
       );
 
       L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
@@ -112,6 +131,16 @@ export function OsmLocationPicker({
   }, []);
 
   /**
+   * Changing the area re-aims the view (0028). The pin itself never moves —
+   * correcting the dropdown is not a request to lose your work.
+   */
+  useEffect(() => {
+    if (!focus || pos || !map.current) return;
+    map.current.setView(focus, AREA_ZOOM);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [focus?.lat, focus?.lng]);
+
+  /**
    * Geocoding runs on submit rather than on keystroke — Nominatim is a free
    * service run on donated hardware and asks for at most one request a second.
    */
@@ -127,7 +156,7 @@ export function OsmLocationPicker({
     try {
       const url =
         `https://nominatim.openstreetmap.org/search?format=json&limit=5` +
-        `&countrycodes=in&viewbox=${PUNE_VIEWBOX}&q=${encodeURIComponent(q)}`;
+        `&countrycodes=in&viewbox=${viewboxAround(focusRef.current)}&q=${encodeURIComponent(q)}`;
       const response = await fetch(url, { headers: { Accept: "application/json" } });
       if (!response.ok) throw new Error(`search failed (${response.status})`);
 
