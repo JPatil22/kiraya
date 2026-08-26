@@ -573,6 +573,87 @@ async function main() {
     record(true, "cannot read another tenant's intent", "skipped — only one tenant has an intent");
   }
 
+  // --- photos and Storage (0006, 0008) ---------------------------------------
+  // Never covered until now. Every other boundary in this file had at least one
+  // assertion; the one that decides whether a stranger can drop images into
+  // somebody else's listing had none, and "we read the policy" is not evidence.
+  console.log("\nphotos and Storage (0006, 0008)");
+  {
+    const ownerLive6 = props.find((p) => p.posted_by === ownerId && p.status === "live");
+    const brokerLive2 = props.find((p) => p.posted_by === brokerId && p.status === "live");
+
+    if (!ownerLive6) {
+      record(false, "0006: a live owner listing exists", "none in seed");
+    } else {
+      const photoRow = (propertyId, by, room = "hall") => ({
+        property_id: propertyId,
+        storage_path: `${propertyId}/rls-harness-${Math.random().toString(36).slice(2)}.jpg`,
+        room_type: room,
+        room_index: 1,
+        created_by: by,
+      });
+
+      // --- the table ---
+      await mustFail("a tenant cannot add a photo to someone else's listing",
+        tenant.from("property_photos").insert(photoRow(ownerLive6.id, tenantId)));
+
+      await mustFail("nor forge one in the poster's name",
+        tenant.from("property_photos").insert(photoRow(ownerLive6.id, ownerId)));
+
+      if (brokerLive2) {
+        await mustFail("one poster cannot add photos to another poster's listing",
+          sessions.broker.client.from("property_photos").insert(photoRow(ownerLive6.id, brokerId)));
+      }
+
+      await mustSucceed("the poster can add a photo to their own listing",
+        owner.from("property_photos").insert(photoRow(ownerLive6.id, ownerId, "kitchen")));
+
+      const { data: mine } = await admin.from("property_photos")
+        .select("id").like("storage_path", "%rls-harness-%");
+      const harnessPhoto = (mine ?? [])[0];
+
+      if (harnessPhoto) {
+        await mustSee("a tenant cannot delete somebody's photo",
+          tenant.from("property_photos").delete().eq("id", harnessPhoto.id).select("id"), 0);
+        await mustSee("nor edit its caption",
+          tenant.from("property_photos").update({ caption: "defaced" }).eq("id", harnessPhoto.id).select("id"), 0);
+        await mustSee("the poster can delete their own",
+          owner.from("property_photos").delete().eq("id", harnessPhoto.id).select("id"), 1);
+      }
+
+      // --- the bucket ---
+      // Writes are scoped by the FIRST PATH SEGMENT being a property the caller
+      // posted, which is the part a table policy cannot cover.
+      const bytes = new Blob(["rls-harness"], { type: "image/jpeg" });
+
+      const stranger = await tenant.storage
+        .from("listing-photos")
+        .upload(`${ownerLive6.id}/rls-harness-${Date.now()}.jpg`, bytes, { contentType: "image/jpeg" });
+      record(Boolean(stranger.error), "a tenant cannot upload into someone else's listing folder",
+        stranger.error ? `blocked: ${stranger.error.message}` : "NOT BLOCKED — file accepted");
+
+      const key = `${ownerLive6.id}/rls-harness-${Date.now()}.jpg`;
+      const own = await owner.storage
+        .from("listing-photos")
+        .upload(key, bytes, { contentType: "image/jpeg" });
+      record(!own.error, "the poster can upload into their own listing folder",
+        own.error ? `unexpectedly blocked: ${own.error.message}` : null);
+
+      if (!own.error) {
+        const strangerDelete = await tenant.storage.from("listing-photos").remove([key]);
+        const stillThere = await admin.storage.from("listing-photos").list(ownerLive6.id);
+        const survived = (stillThere.data ?? []).some((f) => key.endsWith(f.name));
+        record(survived, "a tenant cannot delete somebody else's file",
+          survived ? null : "the file was removed by a stranger");
+        void strangerDelete;
+
+        await admin.storage.from("listing-photos").remove([key]);
+      }
+
+      await admin.from("property_photos").delete().like("storage_path", "%rls-harness-%");
+    }
+  }
+
   // --- pinned location (0027) ------------------------------------------------
   // Half a coordinate is a broken row, not a partly-known place.
   console.log("\npinned location (0027)");
