@@ -325,23 +325,6 @@ export default async function DashboardPage({
           </Card>
         ) : null}
 
-        <Card>
-          <CardHeader>
-            <CardTitle>What&apos;s next</CardTitle>
-            <CardDescription>The platform ships MVP by MVP.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <ul className="space-y-2 text-sm">
-              <NextItem done>MVP1 — Phone-verified identity &amp; tenant intent</NextItem>
-              <NextItem done>
-                MVP2 — Verified listings: availability, last-verified, full cost breakdown
-              </NextItem>
-              <NextItem>MVP3 — Update history &amp; mismatch warnings</NextItem>
-              <NextItem>MVP4 — Broker suggestions via in-app cards</NextItem>
-              <NextItem>MVP5 — Admin panel</NextItem>
-            </ul>
-          </CardContent>
-        </Card>
       </main>
     </div>
   );
@@ -460,19 +443,3 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
   );
 }
 
-function NextItem({ children, done }: { children: React.ReactNode; done?: boolean }) {
-  return (
-    <li className="flex items-center gap-2">
-      <span
-        className={
-          done
-            ? "inline-flex size-4 items-center justify-center rounded-full bg-success text-[10px] text-success-foreground"
-            : "inline-block size-4 rounded-full border"
-        }
-      >
-        {done ? "✓" : ""}
-      </span>
-      <span className={done ? "" : "text-muted-foreground"}>{children}</span>
-    </li>
-  );
-}
