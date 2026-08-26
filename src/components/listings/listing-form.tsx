@@ -14,6 +14,8 @@ import {
 import { formatINR } from "@/lib/utils";
 import { LocationPicker } from "@/components/map/location-picker";
 import { toCoords } from "@/lib/geo";
+import { groupByZone } from "@/lib/areas";
+import { FieldSelect } from "@/components/ui/field-select";
 import type { Area, UserRole } from "@/types/database";
 
 /**
@@ -47,8 +49,6 @@ export type ListingFormInitial = {
   availability: string;
 };
 
-const selectClass =
-  "flex h-9 w-full items-center rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring";
 
 function FieldError({ message }: { message?: string }) {
   if (!message) return null;
@@ -112,7 +112,15 @@ export function ListingForm({
         <input key={name} type="hidden" name={name} value={value} />
       ))}
 
-      <section className="space-y-4">
+      <section className="space-y-4 rounded-xl border p-5">
+        <div>
+          <h2 className="font-semibold">The flat</h2>
+          <p className="text-sm text-muted-foreground">
+            What it is and where. The area and the pin are what let a tenant decide
+            without travelling.
+          </p>
+        </div>
+
         <div className="space-y-2">
           <Label htmlFor="title">Title</Label>
           <Input
@@ -128,55 +136,49 @@ export function ListingForm({
         <div className="grid gap-4 sm:grid-cols-3">
           <div className="space-y-2">
             <Label htmlFor="bhk">Configuration</Label>
-            <select id="bhk" name="bhk" defaultValue={initial?.bhk ?? "2bhk"} className={selectClass}>
-              {BHK_OPTIONS.map((o) => (
-                <option key={o.value} value={o.value}>
-                  {o.label}
-                </option>
-              ))}
-            </select>
+            <FieldSelect
+              id="bhk"
+              name="bhk"
+              defaultValue={initial?.bhk ?? "2bhk"}
+              choices={BHK_OPTIONS.map((o) => ({ value: o.value, label: o.label }))}
+            />
             <FieldError message={err("bhk")} />
           </div>
           <div className="space-y-2">
             <Label htmlFor="furnishing">Furnishing</Label>
-            <select id="furnishing" name="furnishing" defaultValue={initial?.furnishing ?? "semi"} className={selectClass}>
-              {FURNISHING_OPTIONS.map((o) => (
-                <option key={o.value} value={o.value}>
-                  {o.label}
-                </option>
-              ))}
-            </select>
+            <FieldSelect
+              id="furnishing"
+              name="furnishing"
+              defaultValue={initial?.furnishing ?? "semi"}
+              choices={FURNISHING_OPTIONS.map((o) => ({ value: o.value, label: o.label }))}
+            />
             <FieldError message={err("furnishing")} />
           </div>
           <div className="space-y-2">
             <Label htmlFor="occupancy">Preferred occupancy</Label>
-            <select id="occupancy" name="occupancy" defaultValue={initial?.occupancy ?? "any"} className={selectClass}>
-              {OCCUPANCY_OPTIONS.map((o) => (
-                <option key={o.value} value={o.value}>
-                  {o.label}
-                </option>
-              ))}
-            </select>
+            <FieldSelect
+              id="occupancy"
+              name="occupancy"
+              defaultValue={initial?.occupancy ?? "any"}
+              choices={OCCUPANCY_OPTIONS.map((o) => ({ value: o.value, label: o.label }))}
+            />
             <FieldError message={err("occupancy")} />
           </div>
         </div>
 
         <div className="space-y-2">
           <Label htmlFor="areaId">Area</Label>
-          <select
+          <FieldSelect
             id="areaId"
             name="areaId"
             value={areaId}
-            onChange={(e) => setAreaId(e.target.value)}
-            className={selectClass}
-          >
-            <option value="">Not sure / not listed</option>
-            {areas.map((a) => (
-              <option key={a.id} value={a.id}>
-                {a.name}
-              </option>
-            ))}
-          </select>
+            onValueChange={setAreaId}
+            placeholder="Not sure / not listed"
+            groups={groupByZone(areas).map(({ zone, areas: inZone }) => ({
+              group: zone,
+              choices: inZone.map((a) => ({ value: a.id, label: a.name })),
+            }))}
+          />
           <p className="text-xs text-muted-foreground">
             Tenants filter by this, so a listing without one is much harder to find.
           </p>
@@ -211,7 +213,7 @@ export function ListingForm({
         </div>
       </section>
 
-      <section className="space-y-4 rounded-lg border p-4">
+      <section className="space-y-4 rounded-xl border p-5">
         <div>
           <h2 className="font-semibold">Cost breakdown</h2>
           <p className="text-sm text-muted-foreground">
@@ -339,7 +341,16 @@ export function ListingForm({
         </div>
       </section>
 
-      <section className="grid gap-4 sm:grid-cols-2">
+      <section className="space-y-4 rounded-xl border p-5">
+        <div>
+          <h2 className="font-semibold">Availability</h2>
+          <p className="text-sm text-muted-foreground">
+            Both of these are shown to tenants, and the date is what the freshness
+            reminder measures against.
+          </p>
+        </div>
+
+        <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-2">
           <Label htmlFor="availableFrom">Available from</Label>
           <Input
@@ -352,19 +363,14 @@ export function ListingForm({
         </div>
         <div className="space-y-2">
           <Label htmlFor="availability">Current status</Label>
-          <select
-            id="availability"
-            name="availability"
-            defaultValue={initial?.availability ?? "available"}
-            className={selectClass}
-          >
-            {AVAILABILITY_OPTIONS.map((o) => (
-              <option key={o.value} value={o.value}>
-                {o.label}
-              </option>
-            ))}
-          </select>
+          <FieldSelect
+              id="availability"
+              name="availability"
+              defaultValue={initial?.availability ?? "available"}
+              choices={AVAILABILITY_OPTIONS.map((o) => ({ value: o.value, label: o.label }))}
+            />
           <FieldError message={err("availability")} />
+        </div>
         </div>
       </section>
 

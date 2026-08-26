@@ -30,13 +30,16 @@ export async function SiteHeader() {
     : false;
 
   return (
-    <header className="border-b">
-      <div className="mx-auto flex max-w-5xl items-center justify-between gap-4 px-6 py-4">
-        <Link href="/" className="text-lg font-bold tracking-tight">
+    <header className="sticky top-0 z-40 border-b bg-background/85 backdrop-blur supports-[backdrop-filter]:bg-background/70">
+      <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-6 py-3">
+        <Link
+          href="/"
+          className="rounded-md text-lg font-bold tracking-tight focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
+        >
           किराया <span className="text-muted-foreground">Kiraya</span>
         </Link>
 
-        <nav className="flex items-center gap-2">
+        <nav className="flex items-center gap-1">
           <Button asChild variant="ghost" size="sm">
             <Link href="/listings">Listings</Link>
           </Button>

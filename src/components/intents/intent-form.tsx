@@ -13,6 +13,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { BHK_OPTIONS, FURNISHING_OPTIONS, OCCUPANCY_OPTIONS } from "@/lib/constants";
+import { groupByZone } from "@/lib/areas";
+import { FieldSelect } from "@/components/ui/field-select";
 import type { Area } from "@/types/database";
 
 /**
@@ -65,19 +67,16 @@ export function IntentForm({
     <form action={action} className="space-y-5">
       <div className="space-y-2">
         <Label htmlFor="areaId">Area</Label>
-        <select
+        <FieldSelect
           id="areaId"
           name="areaId"
           defaultValue={initial?.areaId ?? ""}
-          className="flex h-9 w-full items-center rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-        >
-          <option value="">Anywhere in the city</option>
-          {areas.map((a) => (
-            <option key={a.id} value={a.id}>
-              {a.name}
-            </option>
-          ))}
-        </select>
+          placeholder="Anywhere in the city"
+          groups={groupByZone(areas).map(({ zone, areas: inZone }) => ({
+            group: zone,
+            choices: inZone.map((a) => ({ value: a.id, label: a.name })),
+          }))}
+        />
         <p className="text-xs text-muted-foreground">
           Narrowing this means new matches are actually near you.
         </p>

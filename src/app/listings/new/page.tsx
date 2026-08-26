@@ -1,7 +1,6 @@
 import { redirect } from "next/navigation";
 import { SiteHeader } from "@/components/site-header";
 import { OpenModeSeedHint } from "@/components/open-mode-seed-hint";
-import { Card, CardContent } from "@/components/ui/card";
 import { canPost, getDataClient, getDevRole, getSessionUser } from "@/lib/auth";
 import { OPEN_MODE } from "@/lib/open-mode";
 import { ListingForm } from "@/components/listings/listing-form";
@@ -46,8 +45,6 @@ export default async function NewListingPage() {
           </p>
         </div>
 
-        <Card>
-          <CardContent className="pt-6">
             <ListingForm
               action={createListing}
               areas={areas}
@@ -56,8 +53,6 @@ export default async function NewListingPage() {
               pendingLabel="Submitting…"
               hint="Goes live after review, stamped with a verification date."
             />
-          </CardContent>
-        </Card>
       </main>
     </div>
   );

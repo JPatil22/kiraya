@@ -3,7 +3,6 @@ import { notFound, redirect } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { SiteHeader } from "@/components/site-header";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { ListingForm } from "@/components/listings/listing-form";
 import { getDataClient, getSessionUser } from "@/lib/auth";
 import { OPEN_MODE } from "@/lib/open-mode";
@@ -71,8 +70,6 @@ export default async function EditListingPage({
           </p>
         </div>
 
-        <Card>
-          <CardContent className="pt-6">
             <ListingForm
               action={updateListing}
               areas={areas}
@@ -101,8 +98,6 @@ export default async function EditListingPage({
                 availability: listing.availability,
               }}
             />
-          </CardContent>
-        </Card>
       </main>
     </div>
   );

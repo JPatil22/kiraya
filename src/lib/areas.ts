@@ -24,7 +24,26 @@ export const getAreas = cache(async function getAreas(
     .from("areas")
     .select("*")
     .eq("locality_id", localities.id)
+    // Zone then name: 0029 grouped the dropdown, and fifty areas sorted purely
+    // alphabetically is a wall running from Akurdi to Yerwada.
+    .order("zone")
     .order("name");
 
   return data ?? [];
 });
+
+/**
+ * Areas grouped for a <select> (0029). Preserves the query's zone-then-name
+ * order, and keeps anything without a zone in a trailing group rather than
+ * dropping it.
+ */
+export function groupByZone(areas: Area[]): { zone: string; areas: Area[] }[] {
+  const groups = new Map<string, Area[]>();
+  for (const area of areas) {
+    const key = area.zone ?? "Other";
+    const existing = groups.get(key);
+    if (existing) existing.push(area);
+    else groups.set(key, [area]);
+  }
+  return [...groups.entries()].map(([zone, list]) => ({ zone, areas: list }));
+}

@@ -83,6 +83,8 @@ export type Area = {
   /** 0028 — rough centre, used to bias place search. Null on both is allowed. */
   latitude: number | null;
   longitude: number | null;
+  /** 0029 — display grouping for the dropdown. Nothing filters by it. */
+  zone: string | null;
   created_at: string;
 };
 

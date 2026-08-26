@@ -10,11 +10,11 @@ import {
   SORT_OPTIONS,
 } from "@/lib/constants";
 import type { ListingFilters } from "@/lib/validators";
+import { groupByZone } from "@/lib/areas";
+import { FieldSelect } from "@/components/ui/field-select";
 import type { Area } from "@/types/database";
 import { cn } from "@/lib/utils";
 
-const selectClass =
-  "flex h-9 w-full items-center rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring";
 
 /**
  * Plain GET form — filters live in the URL, so the feed stays a server
@@ -44,26 +44,28 @@ export function ListingFilterBar({
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <div className="space-y-1.5">
           <Label htmlFor="area">Area</Label>
-          <select id="area" name="area" defaultValue={filters.area ?? "any"} className={selectClass}>
-            <option value="any">Anywhere in the city</option>
-            {areas.map((a) => (
-              <option key={a.id} value={a.slug}>
-                {a.name}
-              </option>
-            ))}
-          </select>
+          <FieldSelect
+            id="area"
+            name="area"
+            defaultValue={filters.area ?? "any"}
+            groups={[
+              { group: "All", choices: [{ value: "any", label: "Anywhere in the city" }] },
+              ...groupByZone(areas).map(({ zone, areas: inZone }) => ({
+                group: zone,
+                choices: inZone.map((a) => ({ value: a.slug, label: a.name })),
+              })),
+            ]}
+          />
         </div>
 
         <div className="space-y-1.5">
           <Label htmlFor="bhk">Configuration</Label>
-          <select id="bhk" name="bhk" defaultValue={filters.bhk} className={selectClass}>
-            <option value="any">Any</option>
-            {BHK_OPTIONS.map((o) => (
-              <option key={o.value} value={o.value}>
-                {o.label}
-              </option>
-            ))}
-          </select>
+          <FieldSelect
+            id="bhk"
+            name="bhk"
+            defaultValue={filters.bhk}
+            choices={[{ value: "any", label: "Any" }, ...BHK_OPTIONS.map((o) => ({ value: o.value, label: o.label }))]}
+          />
         </div>
 
         <div className="space-y-1.5">
@@ -96,64 +98,42 @@ export function ListingFilterBar({
 
         <div className="space-y-1.5">
           <Label htmlFor="availability">Availability</Label>
-          <select
+          <FieldSelect
             id="availability"
             name="availability"
             defaultValue={filters.availability}
-            className={selectClass}
-          >
-            <option value="any">Any</option>
-            {AVAILABILITY_OPTIONS.map((o) => (
-              <option key={o.value} value={o.value}>
-                {o.label}
-              </option>
-            ))}
-          </select>
+            choices={[{ value: "any", label: "Any" }, ...AVAILABILITY_OPTIONS.map((o) => ({ value: o.value, label: o.label }))]}
+          />
         </div>
 
         <div className="space-y-1.5">
           <Label htmlFor="furnishing">Furnishing</Label>
-          <select
+          <FieldSelect
             id="furnishing"
             name="furnishing"
             defaultValue={filters.furnishing}
-            className={selectClass}
-          >
-            <option value="any">Any</option>
-            {FURNISHING_OPTIONS.map((o) => (
-              <option key={o.value} value={o.value}>
-                {o.label}
-              </option>
-            ))}
-          </select>
+            choices={[{ value: "any", label: "Any" }, ...FURNISHING_OPTIONS.map((o) => ({ value: o.value, label: o.label }))]}
+          />
         </div>
 
         <div className="space-y-1.5">
           <Label htmlFor="occupancy">Who&apos;s moving in</Label>
-          <select
+          <FieldSelect
             id="occupancy"
             name="occupancy"
             defaultValue={filters.occupancy}
-            className={selectClass}
-          >
-            <option value="any">Anyone</option>
-            {OCCUPANCY_OPTIONS.filter((o) => o.value !== "any").map((o) => (
-              <option key={o.value} value={o.value}>
-                {o.label}
-              </option>
-            ))}
-          </select>
+            choices={[{ value: "any", label: "Anyone" }]}
+          />
         </div>
 
         <div className="space-y-1.5">
           <Label htmlFor="sort">Sort by</Label>
-          <select id="sort" name="sort" defaultValue={filters.sort} className={selectClass}>
-            {SORT_OPTIONS.map((o) => (
-              <option key={o.value} value={o.value}>
-                {o.label}
-              </option>
-            ))}
-          </select>
+          <FieldSelect
+            id="sort"
+            name="sort"
+            defaultValue={filters.sort}
+            choices={[...SORT_OPTIONS.map((o) => ({ value: o.value, label: o.label }))]}
+          />
         </div>
       </div>
 

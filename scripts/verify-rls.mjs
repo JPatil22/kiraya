@@ -454,8 +454,12 @@ async function main() {
     if (!area) {
       record(false, "0019: areas are seeded", "none found — did 0019 run?");
     } else {
+      // Counted, not hardcoded: 0029 took the list from 12 to 59 and a literal
+      // here fails on the next area anybody adds, which is noise rather than a
+      // security signal. What matters is that a tenant sees all of them.
+      const { data: allAreas } = await admin.from("areas").select("id");
       await mustSee("anyone signed in can read the area list",
-        tenant.from("areas").select("id"), 12);
+        tenant.from("areas").select("id"), (allAreas ?? []).length);
       await mustFail("a tenant cannot invent an area",
         tenant.from("areas").insert({ locality_id: locality.id, slug: "fake-area", name: "Fake Area" }));
       await mustSee("a tenant cannot rename one",

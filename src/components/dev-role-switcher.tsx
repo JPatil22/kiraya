@@ -14,12 +14,17 @@ export async function DevRoleSwitcher({ active }: { active: UserRole | null }) {
   const returnTo = (await headers()).get(DEV_PATH_HEADER) ?? "/dashboard";
 
   return (
-    <form action={setDevRole} className="hidden items-center gap-1 md:flex">
+    <form
+      action={setDevRole}
+      className="hidden items-center gap-2 rounded-full border border-dashed bg-muted/40 py-1 pl-3 pr-1 md:flex"
+    >
       <input type="hidden" name="returnTo" value={returnTo} />
-      <span className="mr-1 text-xs uppercase tracking-wide text-muted-foreground">
-        Acting as
+      <span className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+        Sandbox
       </span>
-      <div className="flex overflow-hidden rounded-md border">
+      {/* A segmented control on its own dashed ground: this is a development
+          affordance and should not read as product navigation. */}
+      <div className="flex items-center gap-0.5 rounded-full bg-background/80 p-0.5">
         {DEV_ROLES.map((role) => (
           <button
             key={role}
@@ -28,9 +33,9 @@ export async function DevRoleSwitcher({ active }: { active: UserRole | null }) {
             value={role}
             aria-pressed={role === active}
             className={cn(
-              "px-2.5 py-1 text-xs capitalize transition-colors",
-              "border-r last:border-r-0 hover:bg-muted",
-              role === active && "bg-primary text-primary-foreground hover:bg-primary",
+              "rounded-full px-2.5 py-1 text-xs font-medium capitalize transition-colors",
+              "text-muted-foreground hover:text-foreground",
+              role === active && "bg-primary text-primary-foreground hover:text-primary-foreground",
             )}
           >
             {role}
