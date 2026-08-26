@@ -42,6 +42,7 @@ import {
   getVisits,
   getUpdates,
   listingAccuracy,
+  listingAccuracyPublic,
   listingEngagement,
   listingPriceContext,
   listingsPublic,
@@ -634,6 +635,8 @@ export function createFixtureClient(): SupabaseClient<Database> {
           return new FixtureQuery(listingsPublic().map((l) => ({ ...l })));
         case "v_listing_engagement":
           return new FixtureQuery(listingEngagement().map((r) => ({ ...r })));
+        case "v_listing_accuracy_public":
+          return new FixtureQuery(listingAccuracyPublic().map((r) => ({ ...r })));
         case "v_listing_accuracy":
           return new FixtureQuery(listingAccuracy().map((r) => ({ ...r })));
         case "v_listing_price_context":

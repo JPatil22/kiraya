@@ -9,6 +9,7 @@ import type {
   ListingAccuracy,
   ListingEngagement,
   PriceContext,
+  PublicAccuracy,
   Shortlist,
   ListingPublic,
   Locality,
@@ -901,4 +902,20 @@ export function possibleDuplicates(): DuplicateCandidate[] {
   }
 
   return pairs;
+}
+
+/** 0031 — the public tally: three answers minimum, live listings only. */
+export function listingAccuracyPublic(): PublicAccuracy[] {
+  const live = new Set(getProperties().filter((p) => p.status === "live").map((p) => p.id));
+
+  return listingAccuracy()
+    .filter((a) => a.answered >= 3 && live.has(a.property_id))
+    .map((a) => ({
+      property_id: a.property_id,
+      answered: a.answered,
+      matched: a.matched,
+      mismatched: a.mismatched,
+      unreachable: a.unreachable,
+      pct_matched: a.answered === 0 ? null : Math.round((a.matched / a.answered) * 100),
+    }));
 }

@@ -1,5 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { Database, ListingAccuracy, VisitFeedback, VisitOutcome } from "@/types/database";
+import type { Database, ListingAccuracy, PublicAccuracy, VisitFeedback, VisitOutcome } from "@/types/database";
 
 /**
  * Post-visit feedback (0015) — the loop that turns "verified" from something
@@ -100,6 +100,26 @@ export async function getAccuracy(
 ): Promise<ListingAccuracy | null> {
   const { data } = await supabase
     .from("v_listing_accuracy")
+    .select("*")
+    .eq("property_id", propertyId)
+    .maybeSingle();
+
+  return data ?? null;
+}
+
+/**
+ * The tally a tenant sees (0031).
+ *
+ * Null below three answers — the view enforces it, and the UI renders nothing
+ * rather than a caveat, because "1 person said it didn't match" is one bad
+ * afternoon wearing the clothes of a pattern.
+ */
+export async function getPublicAccuracy(
+  supabase: SupabaseClient<Database>,
+  propertyId: string,
+): Promise<PublicAccuracy | null> {
+  const { data } = await supabase
+    .from("v_listing_accuracy_public")
     .select("*")
     .eq("property_id", propertyId)
     .maybeSingle();

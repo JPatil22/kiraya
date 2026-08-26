@@ -306,6 +306,19 @@ export type VisitFeedback = {
 };
 
 /** `v_listing_accuracy` — visit outcomes tallied per listing. */
+/**
+ * `v_listing_accuracy_public` (0031) — the tenant-facing tally. Three answers
+ * minimum, counts only, live listings only.
+ */
+export type PublicAccuracy = {
+  property_id: string;
+  answered: number;
+  matched: number;
+  mismatched: number;
+  unreachable: number;
+  pct_matched: number | null;
+};
+
 export type ListingAccuracy = {
   property_id: string;
   answered: number;
@@ -481,6 +494,7 @@ export interface Database {
       v_listings_public: { Row: ListingPublic; Relationships: [] };
       v_locality_health: { Row: LocalityHealth; Relationships: [] };
       v_listing_accuracy: { Row: ListingAccuracy; Relationships: [] };
+      v_listing_accuracy_public: { Row: PublicAccuracy; Relationships: [] };
       v_listing_price_context: { Row: PriceContext; Relationships: [] };
       v_listing_engagement: { Row: ListingEngagement; Relationships: [] };
       v_possible_duplicates: { Row: DuplicateCandidate; Relationships: [] };

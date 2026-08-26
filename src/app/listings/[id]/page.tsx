@@ -15,6 +15,7 @@ import {
 import { SiteHeader } from "@/components/site-header";
 import { CostBreakdown } from "@/components/listings/cost-breakdown";
 import { LocationMap } from "@/components/map/location-map";
+import { VisitRecord } from "@/components/listings/visit-record";
 import { toCoords } from "@/lib/geo";
 import { FreshnessBadge } from "@/components/listings/freshness-badge";
 import { PostedByBadge } from "@/components/listings/posted-by-badge";
@@ -26,7 +27,7 @@ import { getPublicListing } from "@/lib/listings";
 import { getMyOpenReport, getPropertyUpdates } from "@/lib/history";
 import { getCounterparty, getMyExchange } from "@/lib/contact";
 import { isShortlisted } from "@/lib/shortlist";
-import { ASK_AFTER_DAYS, getMyFeedback } from "@/lib/visits";
+import { ASK_AFTER_DAYS, getMyFeedback, getPublicAccuracy } from "@/lib/visits";
 import { getVisitForListing, isVisitDone } from "@/lib/visit-scheduling";
 import { VisitScheduler } from "@/components/visits/visit-scheduler";
 import { getPriceContext } from "@/lib/insights";
@@ -70,10 +71,11 @@ export default async function ListingDetailPage({
 
   // One round trip, not four. `getMyOpenReport` needs the user id, so it's
   // resolved off getSessionUser rather than after the whole batch.
-  const [updates, photos, priceContext, reports, userWithReport] = await Promise.all([
+  const [updates, photos, priceContext, accuracy, reports, userWithReport] = await Promise.all([
     getPropertyUpdates(supabase, id),
     getPhotos(supabase, id),
     getPriceContext(supabase, id),
+    getPublicAccuracy(supabase, id),
     getReportsForProperty(supabase, id),
     getSessionUser(supabase).then(async (u) => {
       const isOther = Boolean(u) && u!.id !== listing.posted_by;
@@ -271,6 +273,12 @@ export default async function ListingDetailPage({
           </CardHeader>
           <CardContent className="space-y-4">
             <CostBreakdown costs={listing} />
+            {/*
+              0031 — the only claim on this page nobody who profits from the
+              listing had a hand in.
+            */}
+            {accuracy ? <VisitRecord accuracy={accuracy} /> : null}
+
             {priceContext ? (
               <PriceContext
                 context={priceContext}
