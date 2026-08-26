@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database, UserRole } from "@/types/database";
+import { logRead } from "@/lib/errors";
 
 /**
  * Brokerage disclosure (0023) — the app-side twin of
@@ -66,11 +67,12 @@ export async function getPosterRole(
   supabase: SupabaseClient<Database>,
   postedBy: string,
 ): Promise<UserRole | null> {
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("profiles")
     .select("role")
     .eq("id", postedBy)
     .maybeSingle();
+  logRead("getPosterRole", error);
   return data?.role ?? null;
 }
 

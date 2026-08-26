@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database, ListingAccuracy, PublicAccuracy, VisitFeedback, VisitOutcome } from "@/types/database";
+import { logRead } from "@/lib/errors";
 
 /**
  * Post-visit feedback (0015) — the loop that turns "verified" from something
@@ -61,11 +62,12 @@ export async function getPendingAsks(
 
   return Promise.all(
     pending.map(async (e) => {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from("properties")
         .select("title")
         .eq("id", e.property_id)
         .maybeSingle();
+      logRead("getPendingAsks", error);
 
       return {
         contactExchangeId: e.id,
@@ -83,12 +85,13 @@ export async function getMyFeedback(
   tenantId: string,
   propertyId: string,
 ): Promise<VisitFeedback | null> {
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("visit_feedback")
     .select("*")
     .eq("tenant_id", tenantId)
     .eq("property_id", propertyId)
     .maybeSingle();
+  logRead("getMyFeedback", error);
 
   return data ?? null;
 }
@@ -98,11 +101,12 @@ export async function getAccuracy(
   supabase: SupabaseClient<Database>,
   propertyId: string,
 ): Promise<ListingAccuracy | null> {
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("v_listing_accuracy")
     .select("*")
     .eq("property_id", propertyId)
     .maybeSingle();
+  logRead("getAccuracy", error);
 
   return data ?? null;
 }
@@ -118,11 +122,12 @@ export async function getPublicAccuracy(
   supabase: SupabaseClient<Database>,
   propertyId: string,
 ): Promise<PublicAccuracy | null> {
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("v_listing_accuracy_public")
     .select("*")
     .eq("property_id", propertyId)
     .maybeSingle();
+  logRead("getPublicAccuracy", error);
 
   return data ?? null;
 }

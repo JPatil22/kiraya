@@ -12,6 +12,7 @@ import {
   isDevRole,
 } from "@/lib/open-mode";
 import type { Database, OnboardingStep, UserRole } from "@/types/database";
+import { logRead } from "@/lib/errors";
 
 /**
  * The acting identity for a request — real OTP session or open-mode stand-in.
@@ -66,11 +67,12 @@ export const getSessionUser = cache(async function getSessionUser(
 ): Promise<SessionUser | null> {
   if (OPEN_MODE) {
     const role = await getDevRole();
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("profiles")
       .select("*")
       .eq("phone", DEV_PHONES[role])
       .maybeSingle();
+    logRead("getSessionUser", error);
 
     if (!data) return null;
 

@@ -1,6 +1,7 @@
 import { cache } from "react";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database, Locality } from "@/types/database";
+import { logRead } from "@/lib/errors";
 
 /** The single locality this deployment serves. */
 export const ACTIVE_LOCALITY_SLUG =
@@ -13,10 +14,11 @@ export const ACTIVE_LOCALITY_SLUG =
 export const getActiveLocality = cache(async function getActiveLocality(
   supabase: SupabaseClient<Database>,
 ): Promise<Locality | null> {
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("localities")
     .select("*")
     .eq("slug", ACTIVE_LOCALITY_SLUG)
     .maybeSingle();
+  logRead("getActiveLocality", error);
   return data;
 });

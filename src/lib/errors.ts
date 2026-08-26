@@ -54,3 +54,24 @@ export function friendlyDbError(error: PostgrestError | { code?: string; message
 
   return (code && CODE_MESSAGE[code]) ?? "Something went wrong. Try again.";
 }
+
+/**
+ * Say something when a read fails.
+ *
+ * Forty-two queries in this codebase were written `const { data } = await ...`,
+ * discarding the error and letting `data ?? []` stand in for it. A failing read
+ * then renders as "no listings yet" or an empty dropdown — indistinguishable
+ * from a genuinely empty result, and invisible in every log.
+ *
+ * That is not hypothetical. Adding an ORDER BY on a column a migration had not
+ * yet created made getAreas return [] and emptied the area dropdown across the
+ * whole app, with nothing anywhere saying why. It took a manual query against
+ * Postgres to find it.
+ *
+ * There is no error monitoring yet, so this writes to the server log — which is
+ * at least somewhere, and is the seam a real reporter drops into later.
+ */
+export function logRead(context: string, error: { message: string; code?: string } | null): void {
+  if (!error) return;
+  console.error(`[db:read] ${context} — ${error.message}${error.code ? ` (${error.code})` : ""}`);
+}

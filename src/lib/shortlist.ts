@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database, ListingPublic, PropertyUpdate } from "@/types/database";
+import { logRead } from "@/lib/errors";
 
 /**
  * Shortlists (0011) — and, more usefully, what has changed since you saved.
@@ -19,10 +20,11 @@ export async function getShortlistIds(
   supabase: SupabaseClient<Database>,
   userId: string,
 ): Promise<Set<string>> {
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("shortlists")
     .select("property_id")
     .eq("user_id", userId);
+  logRead("getShortlistIds", error);
 
   return new Set((data ?? []).map((r) => r.property_id));
 }
@@ -32,12 +34,13 @@ export async function isShortlisted(
   userId: string,
   propertyId: string,
 ): Promise<boolean> {
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("shortlists")
     .select("id")
     .eq("user_id", userId)
     .eq("property_id", propertyId)
     .maybeSingle();
+  logRead("isShortlisted", error);
 
   return Boolean(data);
 }

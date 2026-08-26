@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database, Notification } from "@/types/database";
+import { logRead } from "@/lib/errors";
 
 /**
  * Notifications (0012). Rows are written exclusively by database triggers —
@@ -11,12 +12,13 @@ export async function getUnreadCount(
   supabase: SupabaseClient<Database>,
   userId: string,
 ): Promise<number> {
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("notifications")
     .select("id")
     .eq("user_id", userId)
     .is("read_at", null)
     .limit(50);
+  logRead("getUnreadCount", error);
 
   return (data ?? []).length;
 }
@@ -25,12 +27,13 @@ export async function getNotifications(
   supabase: SupabaseClient<Database>,
   userId: string,
 ): Promise<Notification[]> {
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("notifications")
     .select("*")
     .eq("user_id", userId)
     .order("created_at", { ascending: false })
     .limit(50);
+  logRead("getNotifications", error);
 
   return data ?? [];
 }

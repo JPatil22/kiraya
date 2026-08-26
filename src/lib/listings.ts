@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database, ListingPublic, Property } from "@/types/database";
 import type { ListingFilters } from "@/lib/validators";
 import { ACTIVE_LOCALITY_SLUG } from "@/lib/locality";
+import { logRead } from "@/lib/errors";
 
 /**
  * Tenant-facing feed. Reads `v_listings_public`, which already restricts to
@@ -151,11 +152,12 @@ export async function getPublicListing(
   supabase: SupabaseClient<Database>,
   id: string,
 ): Promise<ListingPublic | null> {
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("v_listings_public")
     .select("*")
     .eq("id", id)
     .maybeSingle();
+  logRead("getPublicListing", error);
   return data;
 }
 
@@ -167,11 +169,12 @@ export async function getMyListings(
   supabase: SupabaseClient<Database>,
   userId: string,
 ): Promise<Property[]> {
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("properties")
     .select("*")
     .eq("posted_by", userId)
     .order("created_at", { ascending: false });
+  logRead("getMyListings", error);
   return data ?? [];
 }
 

@@ -6,6 +6,7 @@ import type {
   ListingEngagement,
   PriceContext,
 } from "@/types/database";
+import { logRead } from "@/lib/errors";
 
 /**
  * Read-side helpers for the two things the product knew but never said:
@@ -28,11 +29,12 @@ export async function getPriceContext(
   supabase: SupabaseClient<Database>,
   propertyId: string,
 ): Promise<PriceContext | null> {
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("v_listing_price_context")
     .select("*")
     .eq("property_id", propertyId)
     .maybeSingle();
+  logRead("getPriceContext", error);
 
   if (!data || data.sample < MIN_PRICE_SAMPLE || data.pct_vs_median === null) return null;
   return data;
@@ -46,11 +48,12 @@ export async function getDepositContext(
   supabase: SupabaseClient<Database>,
   propertyId: string,
 ): Promise<DepositContext | null> {
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("v_listing_deposit_context")
     .select("*")
     .eq("property_id", propertyId)
     .maybeSingle();
+  logRead("getDepositContext", error);
 
   if (!data || data.sample < MIN_PRICE_SAMPLE) return null;
   if (data.months === null || data.median_months === null) return null;
@@ -61,11 +64,12 @@ export async function getEngagement(
   supabase: SupabaseClient<Database>,
   propertyId: string,
 ): Promise<ListingEngagement | null> {
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("v_listing_engagement")
     .select("*")
     .eq("property_id", propertyId)
     .maybeSingle();
+  logRead("getEngagement", error);
 
   return data ?? null;
 }
@@ -75,10 +79,11 @@ export async function getEngagementFor(
   supabase: SupabaseClient<Database>,
   posterId: string,
 ): Promise<Map<string, ListingEngagement>> {
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("v_listing_engagement")
     .select("*")
     .eq("posted_by", posterId);
+  logRead("getEngagementFor", error);
 
   return new Map((data ?? []).map((row) => [row.property_id, row]));
 }
@@ -93,11 +98,12 @@ export async function getEngagementFor(
 export async function getDuplicateCandidates(
   supabase: SupabaseClient<Database>,
 ): Promise<DuplicateCandidate[]> {
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("v_possible_duplicates")
     .select("*")
     .order("address_similarity", { ascending: false })
     .limit(50);
+  logRead("getDuplicateCandidates", error);
 
   return data ?? [];
 }

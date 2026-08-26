@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database, Visit, VisitStatus } from "@/types/database";
+import { logRead } from "@/lib/errors";
 
 /**
  * Arranged viewings (0020). Standing to schedule comes from a contact
@@ -32,11 +33,12 @@ export async function getMyVisits(
 
   return Promise.all(
     all.map(async (v) => {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from("properties")
         .select("title")
         .eq("id", v.property_id)
         .maybeSingle();
+      logRead("getMyVisits", error);
       return { ...v, propertyTitle: data?.title ?? null };
     }),
   );
@@ -48,7 +50,7 @@ export async function getVisitForListing(
   userId: string,
   propertyId: string,
 ): Promise<Visit | null> {
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("visits")
     .select("*")
     .eq("property_id", propertyId)
@@ -56,6 +58,7 @@ export async function getVisitForListing(
     .order("scheduled_for", { ascending: false })
     .limit(1)
     .maybeSingle();
+  logRead("getVisitForListing", error);
 
   return data ?? null;
 }

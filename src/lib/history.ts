@@ -21,6 +21,7 @@ import type {
   PropertyUpdate,
   UserRole,
 } from "@/types/database";
+import { logRead } from "@/lib/errors";
 
 /**
  * MVP3 — the trust layer. `property_updates` is written by the 0003 trigger on
@@ -33,12 +34,13 @@ export async function getPropertyUpdates(
   propertyId: string,
   limit = 25,
 ): Promise<PropertyUpdate[]> {
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("property_updates")
     .select("*")
     .eq("property_id", propertyId)
     .order("created_at", { ascending: false })
     .limit(limit);
+  logRead("getPropertyUpdates", error);
   return data ?? [];
 }
 
@@ -51,13 +53,14 @@ export async function getMyOpenReport(
   propertyId: string,
   userId: string,
 ): Promise<MismatchReport | null> {
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("mismatch_reports")
     .select("*")
     .eq("property_id", propertyId)
     .eq("reported_by", userId)
     .eq("status", "open")
     .maybeSingle();
+  logRead("getMyOpenReport", error);
   return data;
 }
 
@@ -116,12 +119,13 @@ export async function getReportsForProperty(
   supabase: SupabaseClient<Database>,
   propertyId: string,
 ): Promise<MismatchReport[]> {
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("mismatch_reports")
     .select("*")
     .eq("property_id", propertyId)
     .eq("status", "open")
     .order("created_at", { ascending: false });
+  logRead("getReportsForProperty", error);
 
   return data ?? [];
 }
@@ -131,11 +135,12 @@ export async function getModerationHistory(
   supabase: SupabaseClient<Database>,
   limit = 100,
 ): Promise<ModerationAction[]> {
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("moderation_actions")
     .select("*")
     .order("created_at", { ascending: false })
     .limit(limit);
+  logRead("getModerationHistory", error);
 
   return data ?? [];
 }

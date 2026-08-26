@@ -8,6 +8,7 @@ import type {
   Profile,
   Property,
 } from "@/types/database";
+import { logRead } from "@/lib/errors";
 
 /**
  * MVP5 — the operator's cockpit.
@@ -59,11 +60,12 @@ export async function getLocalityHealth(
   supabase: Client,
   slug: string,
 ): Promise<LocalityHealth | null> {
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("v_locality_health")
     .select("*")
     .eq("slug", slug)
     .maybeSingle();
+  logRead("getLocalityHealth", error);
   return data;
 }
 
@@ -72,12 +74,13 @@ export async function getReviewQueue(
   supabase: Client,
   localityId: string,
 ): Promise<Property[]> {
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("properties")
     .select("*")
     .eq("locality_id", localityId)
     .eq("status", "pending_review")
     .order("created_at", { ascending: true });
+  logRead("getReviewQueue", error);
   return data ?? [];
 }
 
@@ -86,31 +89,34 @@ export async function getLiveListings(
   supabase: Client,
   localityId: string,
 ): Promise<Property[]> {
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("properties")
     .select("*")
     .eq("locality_id", localityId)
     .eq("status", "live")
     .order("last_verified_at", { ascending: true, nullsFirst: true });
+  logRead("getLiveListings", error);
   return data ?? [];
 }
 
 export async function getOpenReports(supabase: Client): Promise<MismatchReport[]> {
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("mismatch_reports")
     .select("*")
     .eq("status", "open")
     .order("created_at", { ascending: true });
+  logRead("getOpenReports", error);
   return data ?? [];
 }
 
 /** Everyone who can post — the broker-management list. */
 export async function getPosters(supabase: Client): Promise<Profile[]> {
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("profiles")
     .select("*")
     .neq("role", "tenant")
     .order("created_at", { ascending: true });
+  logRead("getPosters", error);
   return (data ?? []).filter((p) => p.role !== null);
 }
 

@@ -2,6 +2,7 @@ import { cache } from "react";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Area, Database } from "@/types/database";
 import { ACTIVE_LOCALITY_SLUG } from "@/lib/locality";
+import { logRead } from "@/lib/errors";
 
 /**
  * Areas within the launch locality (0019).
@@ -20,7 +21,7 @@ export const getAreas = cache(async function getAreas(
 
   if (!localities) return [];
 
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("areas")
     .select("*")
     .eq("locality_id", localities.id)
@@ -28,6 +29,7 @@ export const getAreas = cache(async function getAreas(
     // alphabetically is a wall running from Akurdi to Yerwada.
     .order("zone")
     .order("name");
+  logRead("getAreas", error);
 
   return data ?? [];
 });

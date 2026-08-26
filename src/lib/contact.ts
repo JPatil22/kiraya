@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { ContactExchange, Database, Profile } from "@/types/database";
+import { logRead } from "@/lib/errors";
 
 /**
  * Contact exchange (0010) — the step that turns a browsed listing into a phone
@@ -33,12 +34,13 @@ export async function getMyExchange(
   propertyId: string,
   tenantId: string,
 ): Promise<ContactExchange | null> {
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("contact_exchanges")
     .select("*")
     .eq("property_id", propertyId)
     .eq("tenant_id", tenantId)
     .maybeSingle();
+  logRead("getMyExchange", error);
 
   return data ?? null;
 }
@@ -49,11 +51,12 @@ export async function countRecentExchanges(
   tenantId: string,
 ): Promise<number> {
   const since = new Date(Date.now() - 86_400_000).toISOString();
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("contact_exchanges")
     .select("id")
     .eq("tenant_id", tenantId)
     .gte("created_at", since);
+  logRead("countRecentExchanges", error);
 
   return (data ?? []).length;
 }
@@ -63,11 +66,12 @@ export async function getCounterparty(
   supabase: SupabaseClient<Database>,
   userId: string,
 ): Promise<Pick<Profile, "id" | "full_name" | "phone" | "role"> | null> {
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("profiles")
     .select("id, full_name, phone, role")
     .eq("id", userId)
     .maybeSingle();
+  logRead("getCounterparty", error);
 
   return data ?? null;
 }
@@ -98,11 +102,12 @@ export async function getLeads(
     Promise.all(rows.map((r) => getCounterparty(supabase, r.tenant_id))),
     Promise.all(
       rows.map(async (r) => {
-        const { data } = await supabase
+        const { data, error } = await supabase
           .from("properties")
           .select("title")
           .eq("id", r.property_id)
           .maybeSingle();
+        logRead("getLeads", error);
         return data?.title ?? null;
       }),
     ),

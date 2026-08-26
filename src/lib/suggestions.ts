@@ -6,6 +6,7 @@ import type {
   Property,
   TenantIntent,
 } from "@/types/database";
+import { logRead } from "@/lib/errors";
 
 /**
  * MVP4 — structured, on-platform broker suggestions.
@@ -33,7 +34,7 @@ export async function getActiveIntents(
   viewerId: string,
   limit = 50,
 ): Promise<TenantIntent[]> {
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("tenant_intents")
     .select("*")
     .eq("locality_id", localityId)
@@ -41,6 +42,7 @@ export async function getActiveIntents(
     .neq("tenant_id", viewerId)
     .order("created_at", { ascending: false })
     .limit(limit);
+  logRead("getActiveIntents", error);
   return data ?? [];
 }
 
@@ -49,12 +51,13 @@ export async function getSuggestableListings(
   supabase: SupabaseClient<Database>,
   brokerId: string,
 ): Promise<Property[]> {
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("properties")
     .select("*")
     .eq("posted_by", brokerId)
     .eq("status", "live")
     .order("created_at", { ascending: false });
+  logRead("getSuggestableListings", error);
   return data ?? [];
 }
 
@@ -63,11 +66,12 @@ export async function getSentSuggestions(
   supabase: SupabaseClient<Database>,
   brokerId: string,
 ): Promise<BrokerSuggestion[]> {
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("broker_suggestions")
     .select("*")
     .eq("broker_id", brokerId)
     .order("created_at", { ascending: false });
+  logRead("getSentSuggestions", error);
   return data ?? [];
 }
 
@@ -79,12 +83,13 @@ export async function hasIntent(
   supabase: SupabaseClient<Database>,
   userId: string,
 ): Promise<boolean> {
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("tenant_intents")
     .select("id")
     .eq("tenant_id", userId)
     .limit(1)
     .maybeSingle();
+  logRead("hasIntent", error);
   return Boolean(data);
 }
 
@@ -93,11 +98,12 @@ export async function getMyIntents(
   supabase: SupabaseClient<Database>,
   tenantId: string,
 ): Promise<TenantIntent[]> {
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("tenant_intents")
     .select("*")
     .eq("tenant_id", tenantId)
     .order("created_at", { ascending: false });
+  logRead("getMyIntents", error);
   return data ?? [];
 }
 
@@ -115,11 +121,12 @@ export async function getInbox(
 
   const perIntent = await Promise.all(
     intents.map(async (intent) => {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from("broker_suggestions")
         .select("*")
         .eq("tenant_intent_id", intent.id)
         .order("created_at", { ascending: false });
+      logRead("getInbox", error);
       return data ?? [];
     }),
   );

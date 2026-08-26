@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { USE_FIXTURES } from "@/lib/open-mode";
 import type { Database, PropertyPhoto } from "@/types/database";
+import { logRead } from "@/lib/errors";
 
 /** The public Storage bucket created in migration 0006. */
 export const PHOTO_BUCKET = "listing-photos";
@@ -26,11 +27,12 @@ export async function getPhotos(
   supabase: SupabaseClient<Database>,
   propertyId: string,
 ): Promise<PropertyPhoto[]> {
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("property_photos")
     .select("*")
     .eq("property_id", propertyId)
     .order("sort_order", { ascending: true });
+  logRead("getPhotos", error);
   return data ?? [];
 }
 
