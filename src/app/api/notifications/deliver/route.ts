@@ -39,13 +39,17 @@ export async function GET(request: Request) {
 }
 
 async function deliver(request: Request) {
-  const secret = process.env.KIRAYA_CRON_SECRET;
+  // Vercel Cron sends `Authorization: Bearer $CRON_SECRET` using its own
+  // variable, so accept either name. Requiring both to be set to the same
+  // value works but is a footgun: the failure is a 401 on a schedule nobody is
+  // watching, which looks exactly like "no email today".
+  const secret = process.env.KIRAYA_CRON_SECRET ?? process.env.CRON_SECRET;
 
   // Fail closed. An unauthenticated endpoint that spends money on sends is
   // worse than one that is switched off.
   if (!secret) {
     return NextResponse.json(
-      { error: "KIRAYA_CRON_SECRET is not set — delivery is disabled." },
+      { error: "Neither KIRAYA_CRON_SECRET nor CRON_SECRET is set — delivery is disabled." },
       { status: 503 },
     );
   }

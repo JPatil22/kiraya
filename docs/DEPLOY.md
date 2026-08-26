@@ -107,9 +107,21 @@ fails, and the delivery run reports success because Resend accepted it.
 
 ## 5. Delivery schedule
 
-`vercel.json` registers a cron hitting `/api/notifications/deliver` every fifteen
-minutes. Vercel sends `Authorization: Bearer $CRON_SECRET` automatically, so set
-Vercel's `CRON_SECRET` to the **same value** as `KIRAYA_CRON_SECRET`.
+`vercel.json` registers a cron hitting `/api/notifications/deliver` **once a
+day**, at 03:00 UTC — 08:30 IST, just after the freshness sweep and visit
+reminders.
+
+Daily because that is the Hobby plan's ceiling: it permits two cron jobs and
+runs them once per day, and a sub-daily expression is **rejected at deploy**,
+which would fail the whole deployment rather than merely scheduling less often.
+
+On Pro, change it to `*/15 * * * *`. Fifteen minutes is the cadence this route
+was built for — the digest then holds whatever accumulated in the window, which
+is usually one thing, and a contact request does not wait until tomorrow morning
+for its email.
+
+The route accepts either `KIRAYA_CRON_SECRET` or Vercel's own `CRON_SECRET`, so
+setting just one of them is enough.
 
 This is the piece that could not exist locally: `pg_net` cannot reach
 `localhost`, so until there is a public URL nothing calls the route and every
