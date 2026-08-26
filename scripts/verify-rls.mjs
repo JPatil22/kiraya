@@ -569,6 +569,34 @@ async function main() {
     record(true, "cannot read another tenant's intent", "skipped — only one tenant has an intent");
   }
 
+  // --- pinned location (0027) ------------------------------------------------
+  // Half a coordinate is a broken row, not a partly-known place.
+  console.log("\npinned location (0027)");
+  {
+    const base = {
+      posted_by: ownerId, locality_id: locality.id, bhk: "1bhk",
+      rent: 15000, available_from: "2026-12-01",
+    };
+
+    await mustFail("a latitude with no longitude is refused",
+      owner.from("properties").insert({ ...base, title: "RLS harness — half a pin", latitude: 18.52 }));
+
+    await mustFail("a pin off the edge of the earth is refused",
+      owner.from("properties").insert({ ...base, title: "RLS harness — impossible pin", latitude: 91, longitude: 73.85 }));
+
+    await mustSucceed("a complete pin is accepted",
+      owner.from("properties").insert({ ...base, title: "RLS harness — pinned", latitude: 18.5204, longitude: 73.8567 }));
+
+    await mustSucceed("no pin at all stays legitimate",
+      owner.from("properties").insert({ ...base, title: "RLS harness — unpinned" }));
+
+    const { data: viewRow, error: viewError } = await anon
+      .from("v_listings_public").select("latitude, longitude").limit(1).maybeSingle();
+    record(!viewError && viewRow !== null && "latitude" in (viewRow ?? {}),
+      "tenants can read the pin from v_listings_public",
+      viewError ? `errored: ${viewError.message}` : null);
+  }
+
   // --- email delivery (0026) -------------------------------------------------
   // emailed_at is the queue marker, so it is the one column worth lying about:
   // clearing it would make the next run re-send someone's entire history.

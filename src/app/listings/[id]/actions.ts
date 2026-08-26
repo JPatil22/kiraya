@@ -9,6 +9,7 @@ import { BEDROOMS_FOR_BHK } from "@/lib/rooms";
 import { friendlyDbError } from "@/lib/errors";
 import { CONTACT_DAILY_LIMIT, countRecentExchanges, getMyExchange } from "@/lib/contact";
 import { checkboxOn, getPosterRole, resolveBrokerage } from "@/lib/brokerage";
+import { parseLocation } from "@/lib/geo";
 import type { AvailabilityStatus, BhkType } from "@/types/database";
 
 export type MismatchState = { error?: string; ok?: boolean } | null;
@@ -231,6 +232,9 @@ export async function updateListing(_prev: EditState, formData: FormData): Promi
   );
   if (!fee.ok) return { fieldErrors: { brokerage: fee.message } };
 
+  const where = parseLocation(formData.get("latitude"), formData.get("longitude"));
+  if (!where.ok) return { fieldErrors: { latitude: where.message } };
+
   // Shrinking the configuration can strand photos: 0008's room rules are
   // checked when a photo is written, not when the property changes under it, so
   // a 2BHK → 1BHK would quietly leave a "Bedroom 2" shot that can no longer
@@ -250,6 +254,8 @@ export async function updateListing(_prev: EditState, formData: FormData): Promi
     .update({
       title: v.title,
       area_id: areaIdFrom(formData),
+      latitude: where.latitude,
+      longitude: where.longitude,
       description: v.description ? v.description : null,
       address_line: v.addressLine ? v.addressLine : null,
       bhk: v.bhk,

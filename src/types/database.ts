@@ -122,6 +122,9 @@ export type Property = {
   locality_id: string;
   /** Null means the area was never set — legitimate for pre-0019 rows. */
   area_id: string | null;
+  /** 0027 — exact pin. Null on both means not pinned, which is allowed. */
+  latitude: number | null;
+  longitude: number | null;
   title: string;
   description: string | null;
   address_line: string | null;
@@ -156,6 +159,9 @@ export type ListingPublic = {
   area_id: string | null;
   area_slug: string | null;
   area_name: string | null;
+  /** 0027 — exact pin, or null on both when nobody placed one. */
+  latitude: number | null;
+  longitude: number | null;
   title: string;
   description: string | null;
   address_line: string | null;

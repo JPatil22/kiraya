@@ -14,6 +14,8 @@ import {
 } from "lucide-react";
 import { SiteHeader } from "@/components/site-header";
 import { CostBreakdown } from "@/components/listings/cost-breakdown";
+import { LocationMap } from "@/components/map/location-map";
+import { toCoords } from "@/lib/geo";
 import { FreshnessBadge } from "@/components/listings/freshness-badge";
 import { PostedByBadge } from "@/components/listings/posted-by-badge";
 import { Badge } from "@/components/ui/badge";
@@ -62,6 +64,9 @@ export default async function ListingDetailPage({
   const supabase = await getDataClient();
   const listing = await getPublicListing(supabase, id);
   if (!listing) notFound();
+
+  // Postgres numerics arrive as strings through PostgREST often enough to matter.
+  const coords = toCoords(listing.latitude, listing.longitude);
 
   // One round trip, not four. `getMyOpenReport` needs the user id, so it's
   // resolved off getSessionUser rather than after the whole batch.
@@ -321,6 +326,18 @@ export default async function ListingDetailPage({
                 {listing.address_line}
               </div>
             ) : null}
+
+            {/*
+              0027 — the exact pin, which is the whole point: deciding whether a
+              place is worth the trip should not require making the trip.
+            */}
+            {coords ? (
+              <LocationMap latitude={coords.lat} longitude={coords.lng} title={listing.title} />
+            ) : (
+              <p className="rounded-md border border-dashed px-3 py-2 text-sm text-muted-foreground">
+                Nobody has pinned this one on the map yet.
+              </p>
+            )}
 
             {listing.description ? (
               <p className="whitespace-pre-line text-sm text-muted-foreground">

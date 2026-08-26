@@ -12,6 +12,7 @@ import {
   OCCUPANCY_OPTIONS,
 } from "@/lib/constants";
 import { formatINR } from "@/lib/utils";
+import { LocationPicker } from "@/components/map/location-picker";
 import type { Area, UserRole } from "@/types/database";
 
 /**
@@ -38,6 +39,8 @@ export type ListingFormInitial = {
   maintenanceMonthly: string;
   brokerage: string;
   brokerageDisclosed: boolean;
+  latitude: number | null;
+  longitude: number | null;
   oneTimeCharges: string;
   availableFrom: string;
   availability: string;
@@ -181,6 +184,17 @@ export function ListingForm({
             defaultValue={initial?.addressLine}
           />
           <FieldError message={err("addressLine")} />
+        </div>
+
+        <div className="space-y-2">
+          <Label>Pin it on the map</Label>
+          <p className="text-xs text-muted-foreground">
+            This is what saves a tenant an hour each way. Search for the society, then drag
+            the pin onto the actual building — or stand at the gate and press
+            &ldquo;I&apos;m here now&rdquo;.
+          </p>
+          <LocationPicker initialLat={initial?.latitude} initialLng={initial?.longitude} />
+          <FieldError message={err("latitude")} />
         </div>
       </section>
 

@@ -94,6 +94,8 @@ export default async function EditListingPage({
                 maintenanceMonthly: String(listing.maintenance_monthly),
                 brokerage: String(listing.brokerage),
                 brokerageDisclosed: listing.brokerage_disclosed,
+                latitude: listing.latitude,
+                longitude: listing.longitude,
                 oneTimeCharges: String(listing.one_time_charges),
                 availableFrom: listing.available_from,
                 availability: listing.availability,

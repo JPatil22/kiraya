@@ -6,6 +6,7 @@ import { canPost, getDataClient, getSessionUser } from "@/lib/auth";
 import { OPEN_MODE } from "@/lib/open-mode";
 import { getActiveLocality } from "@/lib/locality";
 import { checkboxOn, resolveBrokerage } from "@/lib/brokerage";
+import { parseLocation } from "@/lib/geo";
 import { listingSchema } from "@/lib/validators";
 
 export type ListingState = {
@@ -72,10 +73,15 @@ export async function createListing(
   const fee = resolveBrokerage(user.role, v.brokerage, checkboxOn(formData.get("brokerageNone")));
   if (!fee.ok) return { fieldErrors: { brokerage: fee.message } };
 
+  const where = parseLocation(formData.get("latitude"), formData.get("longitude"));
+  if (!where.ok) return { fieldErrors: { latitude: where.message } };
+
   const { error } = await supabase.from("properties").insert({
     posted_by: user.id,
     locality_id: locality.id,
     area_id: areaIdFrom(formData),
+    latitude: where.latitude,
+    longitude: where.longitude,
     title: v.title,
     description: v.description ? v.description : null,
     address_line: v.addressLine ? v.addressLine : null,
