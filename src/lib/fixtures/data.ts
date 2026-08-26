@@ -5,6 +5,10 @@ import type {
   BrokerSuggestion,
   ContactExchange,
   Area,
+  DuplicateCandidate,
+  ListingAccuracy,
+  ListingEngagement,
+  PriceContext,
   Shortlist,
   ListingPublic,
   Locality,
@@ -739,4 +743,160 @@ export function listingsPublic(): ListingPublic[] {
       created_at: p.created_at,
     };
   });
+}
+
+// ---------------------------------------------------------------------------
+// The four views that fixtures mode was missing (0015-0021).
+//
+// These existed only as SQL, so `NEXT_PUBLIC_USE_FIXTURES=true` threw the
+// moment anything asked for them — the dashboard for any poster, and every
+// listing detail page. Reimplemented here against the same store, following
+// the migrations rather than approximating them, because a fixture that
+// disagrees with the database is worse than no fixture at all.
+// ---------------------------------------------------------------------------
+
+/** Counts only, never who — 0017's promise, kept here too. */
+export function listingEngagement(): ListingEngagement[] {
+  const shortlists = getShortlists();
+  const contacts = getContacts();
+  const feedback = getVisits();
+
+  return getProperties().map((p) => ({
+    property_id: p.id,
+    posted_by: p.posted_by,
+    saves: shortlists.filter((s) => s.property_id === p.id).length,
+    enquiries: contacts.filter((c) => c.property_id === p.id).length,
+    visits_answered: feedback.filter(
+      (f) => f.property_id === p.id && f.outcome !== "did_not_visit",
+    ).length,
+  }));
+}
+
+/** Outcome tallies (0015). "Didn't go" is a first-class answer, not a gap. */
+export function listingAccuracy(): ListingAccuracy[] {
+  const byProperty = new Map<string, VisitFeedback[]>();
+  for (const f of getVisits()) {
+    const list = byProperty.get(f.property_id);
+    if (list) list.push(f);
+    else byProperty.set(f.property_id, [f]);
+  }
+
+  return [...byProperty.entries()].map(([property_id, rows]) => ({
+    property_id,
+    answered: rows.filter((r) => r.outcome !== "did_not_visit").length,
+    matched: rows.filter((r) => r.outcome === "as_described").length,
+    mismatched: rows.filter((r) => r.outcome === "did_not_match").length,
+    unreachable: rows.filter((r) => r.outcome === "unreachable").length,
+    did_not_visit: rows.filter((r) => r.outcome === "did_not_visit").length,
+  }));
+}
+
+/**
+ * `percentile_cont(0.5)` — the continuous median Postgres computes, which
+ * interpolates between the two middle values rather than picking one. Matching
+ * it matters: a fixture that rounds differently makes "3% above the median"
+ * disagree with production for no visible reason.
+ */
+function medianOf(values: number[]): number | null {
+  if (values.length === 0) return null;
+  const sorted = [...values].sort((a, b) => a - b);
+  const mid = (sorted.length - 1) / 2;
+  const low = Math.floor(mid);
+  const high = Math.ceil(mid);
+  return low === high ? sorted[low] : sorted[low] + (sorted[high] - sorted[low]) * (mid - low);
+}
+
+/** 0016. The listing is excluded from its own comparison; rented is history. */
+export function listingPriceContext(): PriceContext[] {
+  const live = getProperties().filter((p) => p.status === "live");
+
+  return live.map((p) => {
+    const comparable = live.filter(
+      (o) =>
+        o.id !== p.id &&
+        o.availability !== "rented" &&
+        o.locality_id === p.locality_id &&
+        o.bhk === p.bhk,
+    );
+    const allIn = p.rent + p.maintenance_monthly;
+    const median = medianOf(comparable.map((o) => o.rent + o.maintenance_monthly));
+    const medianInt = median === null ? null : Math.round(median);
+
+    return {
+      property_id: p.id,
+      all_in_monthly: allIn,
+      sample: comparable.length,
+      median_all_in: medianInt,
+      pct_vs_median:
+        medianInt === null || medianInt === 0
+          ? null
+          : Math.round(((allIn - medianInt) / medianInt) * 100),
+    };
+  });
+}
+
+/**
+ * pg_trgm's `similarity()`, which 0021 leans on.
+ *
+ * Postgres lowercases, splits on non-alphanumerics, pads each word with two
+ * leading spaces and one trailing space, then counts shared trigrams over the
+ * union. Implemented the same way so "Nyati Estate Rd" and "Nyati Estate Road"
+ * score alike in both places — the whole point of the check.
+ */
+function trigrams(text: string): Set<string> {
+  const out = new Set<string>();
+  for (const word of text.toLowerCase().split(/[^a-z0-9]+/).filter(Boolean)) {
+    const padded = `  ${word} `;
+    for (let i = 0; i + 3 <= padded.length; i += 1) out.add(padded.slice(i, i + 3));
+  }
+  return out;
+}
+
+function similarity(a: string, b: string): number {
+  const left = trigrams(a);
+  const right = trigrams(b);
+  if (left.size === 0 && right.size === 0) return 0;
+  let shared = 0;
+  for (const t of left) if (right.has(t)) shared += 1;
+  return shared / (left.size + right.size - shared);
+}
+
+/** 0021. Flagged, never merged. */
+export function possibleDuplicates(): DuplicateCandidate[] {
+  const live = getProperties().filter((p) => p.status === "live");
+  const pairs: DuplicateCandidate[] = [];
+
+  for (let i = 0; i < live.length; i += 1) {
+    for (let j = i + 1; j < live.length; j += 1) {
+      const a = live[i];
+      const b = live[j];
+      if (a.locality_id !== b.locality_id) continue;
+      if (a.bhk !== b.bhk) continue;
+      // `is not distinct from`: two nulls are the same area.
+      if ((a.area_id ?? null) !== (b.area_id ?? null)) continue;
+
+      const aAllIn = a.rent + a.maintenance_monthly;
+      const bAllIn = b.rent + b.maintenance_monthly;
+      if (Math.abs(aAllIn - bAllIn) > Math.max(aAllIn, bAllIn) * 0.05) continue;
+
+      const score = similarity(a.address_line ?? a.title, b.address_line ?? b.title);
+      if (score <= 0.3) continue;
+
+      pairs.push({
+        property_id: a.id,
+        other_id: b.id,
+        title: a.title,
+        other_title: b.title,
+        posted_by: a.posted_by,
+        other_posted_by: b.posted_by,
+        all_in_monthly: aAllIn,
+        other_all_in_monthly: bAllIn,
+        area_name: AREAS.find((ar) => ar.id === a.area_id)?.name ?? null,
+        address_similarity: Math.round(score * 100) / 100,
+        different_posters: a.posted_by !== b.posted_by,
+      });
+    }
+  }
+
+  return pairs;
 }

@@ -1,0 +1,64 @@
+name: CI
+
+# Typecheck, lint and build have run only when somebody remembered, across
+# twenty-nine migrations and five MVPs. This is the floor: nothing merges that
+# fails to compile.
+#
+# `verify:rls` is deliberately NOT here. It signs into a real Supabase project
+# with a service-role key and writes rows, so running it on every push would
+# mean putting production credentials in CI and letting it mutate the only
+# database this project has. It stays a local gate — see the README.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Build
+        # NEXT_PUBLIC_* are read at build time. These are throwaway values that
+        # only have to be present and well-shaped: the build renders no page
+        # against a real database, and open mode keeps the auth gate out of the
+        # way. A real key here would be a secret in a public log.
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: placeholder-anon-key
+          SUPABASE_SERVICE_ROLE_KEY: placeholder-service-key
+          NEXT_PUBLIC_ACTIVE_LOCALITY_SLUG: pune
+          NEXT_PUBLIC_VERIFY_STALE_DAYS: "7"
+          NEXT_PUBLIC_OPEN_MODE: "true"
+          NEXT_PUBLIC_USE_FIXTURES: "true"
+        run: npm run build
+
+      - name: Migrations are numbered without gaps
+        # A missing or duplicated number means somebody's migration never ran
+        # on a database that took the others, which is the failure mode this
+        # project cannot detect any other way.
+        run: |
+          ls supabase/migrations/[0-9]*.sql \
+            | sed -E 's#.*/([0-9]{4})_.*#\1#' \
+            | sort > /tmp/actual
+          seq -f '%04g' 1 "$(wc -l < /tmp/actual)" > /tmp/expected
+          diff /tmp/expected /tmp/actual \
+            || { echo "::error::migration numbers have a gap or duplicate"; exit 1; }
