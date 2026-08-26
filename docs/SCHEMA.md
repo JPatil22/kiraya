@@ -189,3 +189,48 @@ takedown, suspend — is attributable and reviewable.
   tenant feed and cards read from.
 - `v_locality_health` (MVP5) — per-locality fresh/stale/live counts, open mismatches, active
   verified tenants for the admin dashboard.
+- `v_listing_price_context` (`0016`) — median all-in of comparable live listings, the listing
+  itself excluded, rented excluded, silent below three comparables.
+- `v_listing_engagement` (`0017`, fixed `0018`) — saves, enquiries and answered visits per
+  listing. Counts only, never who.
+- `v_listing_accuracy` (`0015`) — post-visit outcome tallies. Not yet rendered anywhere.
+- `v_possible_duplicates` (`0021`) — candidate pairs sharing locality, configuration and area,
+  within 5% on all-in cost, above a trigram threshold on address. Admin-gated **inside the view**,
+  because a view runs with its owner's rights and bypasses RLS underneath.
+
+
+---
+
+## Everything after MVP5 (`0007`–`0029`)
+
+Added in migration order. Each ships its own RLS policies; the ones with a non-obvious boundary are
+called out.
+
+| Migration | Adds | Worth knowing |
+|---|---|---|
+| `0007` | Pune locality | Replaces HSR Layout, which is now `is_active = false` |
+| `0008` | `property_photos.room_type` | Every photo claims a room; the set owed derives from BHK |
+| `0009` | owner self-verification | Confirming restamps freshness in the poster's own name |
+| `0010` | `contact_exchanges` | Both numbers at once, daily limit, recorded on both sides |
+| `0011` | `shortlists` | Private. Turning it into a lead list would break that |
+| `0012`–`0014` | `notifications` + kinds | Written **only** by triggers; body frozen at insert |
+| `0015` | `visit_feedback` | "Didn't go" is a real answer, excluded from the denominator |
+| `0016` | price context | Median, not mean — one penthouse would flatter everything |
+| `0017`–`0018` | owner reply, engagement | A trigger pins the reply to one column; RLS can't |
+| `0019`, `0028`, `0029` | `areas` (+ centre, zone) | Controlled list; free text would be a lie |
+| `0020`, `0022` | `visits` | The contact exchange is the standing to schedule |
+| `0021` | duplicates view | Flagged, never merged |
+| `0023` | `brokerage_disclosed` | Integrity rule: **no** `auth.uid()` passthrough |
+| `0024` | intents for any role | Policies never had a role gate; the app did |
+| `0025` | `run_verification_due`, `run_visit_reminders` | Revoked from public; granted to `service_role` |
+| `0026` | `profiles.email`, `notifications.emailed_at` | Guard pins updates to `read_at` |
+| `0027` | `properties.latitude/longitude` | Both-or-neither; reverses `0002`'s coarse-address stance |
+
+### Columns added to existing tables
+
+- `properties` — `area_id` (`0019`), `brokerage_disclosed` (`0023`), `latitude`/`longitude` (`0027`)
+- `profiles` — `email` (`0026`)
+- `notifications` — `emailed_at` (`0026`)
+- `visits` — `reminded_at` (`0025`)
+- `areas` — `latitude`/`longitude` (`0028`), `zone` (`0029`)
+- `tenant_intents` — `area_id` (`0019`)

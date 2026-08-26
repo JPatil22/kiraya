@@ -3,85 +3,105 @@
 Legend: ✅ done · 🟡 in progress · ⬜ not started
 
 > **Open mode is on.** Phone OTP is deferred until deployment — a production India rollout needs a
-> DLT-registered SMS provider, and waiting on that shouldn't block MVP3–5. With
+> DLT-registered SMS provider, and waiting on that shouldn't block product work. With
 > `NEXT_PUBLIC_OPEN_MODE=true` the whole app is reachable with no sign-in, acting as seeded dev
-> identities you switch from the header. The OTP funnel below is built and intact; it's routed
-> around, not removed. Turning it back on is one env var. See the README.
+> identities you switch from the header. The OTP funnel is built and intact; it's routed around,
+> not removed. Turning it back on is one env var — and it has **never been done**, which is the
+> single largest unknown in this list.
 
-## MVP1 — Identity & Intent
-- ✅ Schema: `profiles`, `localities`, `tenant_intents` + enums + RLS (`0001`)
-- ✅ Supabase clients (browser / server / middleware) with `@supabase/ssr`
-- ✅ Phone OTP: `/login` → `/verify` (send + verify server actions)
-- ✅ Role selection `/onboarding/role`
-- ✅ Tenant intent form `/onboarding/intent`
-- ✅ Onboarding state machine in `middleware.ts`
-- ✅ `/dashboard` post-onboarding home
-- 🟡 **Deferred until deploy:** OTP gate bypassed by open mode (`src/lib/open-mode.ts`)
-- ✅ **Security model verified against real sessions** — `npm run verify:rls` signs in as each
-  seeded identity with a real JWT and asserts 24 behaviours across RLS, the `properties_guard`
-  trigger and the `0005` admin RPCs. All pass. Uses email+password on the dev users purely as a
-  test harness; phone OTP remains the production path.
-- ⬜ Rate-limiting / resend cooldown polish
-- ⬜ E2E test of the full funnel (the OTP screens themselves are still untested)
-- ⬜ Re-verify the funnel end-to-end once open mode is switched off
+## The five MVPs
 
-## MVP2 — Verified Listings
-- ✅ Schema: `properties` + enums + RLS + `v_listings_public` (`0002`)
-- ✅ `/listings` feed (filters: BHK, all-in budget, availability, hide-stale, sort)
-- ✅ `/listings/[id]` detail with cost breakdown + posted-by + last-verified
-- ✅ `/listings/new` create (owner/broker/admin) → `pending_review`
-- ✅ Stale badge from `is_stale`; freshness sort puts never-verified last
-- ✅ Poster sees own listings + status on `/dashboard`
-- ✅ Listing photos (`0006`) — own `captured_at` per photo, cover shot on the card,
-  gallery on detail, and an age warning when a photo predates the verification
-- ⬜ Edit an existing listing
-- ⬜ Pagination beyond the first 60 results
-- ⬜ Image resizing / thumbnails (full-size objects are served as-is today)
+All built. Schema, UI and the loop that connects them: post → review → live → enquire → visit →
+report back → moderate.
 
-## MVP3 — History & Mismatch
-- ✅ Schema: `property_updates` (+ trigger), `mismatch_reports` + RLS (`0003`)
-- ✅ Warning badge renders on card + detail from `has_warning`
-- ✅ Update timeline UI on listing detail (`components/listings/update-timeline.tsx`)
-- ✅ "Report mismatch" action (tenant-facing, one open report per person)
-- ⬜ Staleness demotion job/view surfacing
-- ⬜ Admin-facing mismatch queue → arrives with MVP5
+- **MVP1 Identity & intent** — `profiles`, `tenant_intents`, phone OTP funnel, onboarding state
+  machine in middleware, `/dashboard`.
+- **MVP2 Verified listings** — `properties`, `v_listings_public`, feed with filters, detail with
+  itemised cost and authorship, create + edit, photos with their own `captured_at`.
+- **MVP3 History & mismatch** — `property_updates` written by trigger, public timeline, mismatch
+  reports, warning at two open reports.
+- **MVP4 Broker suggestions** — `/broker/intents` demand board with no PII, suggestion compose
+  limited to the broker's own live listings, tenant inbox with accept/decline.
+- **MVP5 Admin panel** — review queue, re-verify, takedown, mismatch triage, broker suspension,
+  locality health, moderation log, duplicates queue.
 
-## MVP4 — Broker Suggestions
-- ✅ Schema: `broker_suggestions` + RLS (`0004`)
-- ✅ Broker view of verified intents, no PII (`/broker/intents`)
-- ✅ Suggestion compose — dropdown limited to the broker's own live listings
-- ✅ Tenant suggestions inbox: accept / decline / not-relevant (`/suggestions`)
-- ⬜ Notify the broker on response (needs a notification channel)
-- ⬜ Contact exchange on accept (currently just states that it's unlocked)
+## Shipped since (0009–0029)
 
-## MVP5 — Admin Panel
-- ✅ Schema: `moderation_actions`, `is_admin()`, `v_locality_health` (`0005`)
-- ✅ Listing review queue: approve+verify / reject (`/admin/listings`)
-- ✅ Re-verify and take down live listings, oldest verification first
-- ✅ Mismatch triage: resolve / dismiss, grouped by listing (`/admin/reports`)
-- ✅ Broker management: suspend / reinstate (`/admin/people`)
-- ✅ Locality health dashboard with a freshness headline (`/admin`)
-- ⬜ Broker trust score (deferred — needs a definition before a UI)
-- ⬜ Moderation-action history view (rows are written, nothing reads them yet)
+- ✅ **Owner self-verification** (`0009`) — confirming availability restamps freshness in your own
+  name; `verified_by_poster` tells the UI who said it.
+- ✅ **Contact exchange** (`0010`) — both numbers revealed at once, daily limit, recorded on both
+  sides.
+- ✅ **Shortlists** (`0011`) — private, with "what changed since you saved".
+- ✅ **Notifications** (`0012`–`0014`, `0022`) — eight kinds, all written by database triggers.
+- ✅ **Intent matching** (`0014`) — a new live listing notifies standing intents it fits; never
+  your own listing.
+- ✅ **Post-visit feedback** (`0015`) — four buttons, no typing; "didn't go" is a first-class
+  answer and excluded from the accuracy denominator.
+- ✅ **Price context** (`0016`) — median, not mean; the listing excluded from its own comparison;
+  silent below three comparables.
+- ✅ **Owner replies + engagement counts** (`0017`, `0018`) — right of reply on a mismatch, and
+  counts-only stats for posters (never who).
+- ✅ **Areas** (`0019`, `0028`, `0029`) — ~59 Pune areas with centres and display zones; drives the
+  feed filter, both forms, price comparison and matching.
+- ✅ **Visit scheduling** (`0020`, `0022`) — propose/confirm/decline against a contact exchange.
+- ✅ **Duplicate detection** (`0021`) — trigram address match plus configuration, area and 5% cost;
+  flagged for admins, never merged.
+- ✅ **Brokerage disclosure** (`0023`) — a fee is a stated claim; owners cannot charge one.
+- ✅ **Intents for any role** (`0024`) — an owner between places is still somebody looking to rent.
+- ✅ **The clock** (`0025`) — `pg_cron` jobs nudge listings before they go stale and remind both
+  sides of tomorrow's viewing.
+- ✅ **Email delivery** (`0026`) — optional address on `profiles`, `emailed_at` queue, digest
+  through `/api/notifications/deliver`.
+- ✅ **Map pins** (`0027`) — exact `latitude`/`longitude`, Google Maps + Places with an
+  OpenStreetMap fallback behind one env var.
+- ✅ **UI refresh** — every native `<select>` replaced, indigo accent, 40px controls, sandbox
+  switcher demoted out of the product nav.
+- ✅ **CI** — typecheck, lint, build and migration-numbering on every push.
+- ✅ **Fixtures mode restored** — the four views that had only ever existed as SQL.
 
-## Cross-cutting backlog
-- 🟡 **Sub-locality / area dimension.** The launch market is Pune, and the whole city is modelled
-  as one `locality` row (`0007`). The feed therefore has no geography filter: a tenant in Kothrud
-  sees Kharadi listings with no way to narrow down, and one `verify_stale_days` covers ~500 km².
-  Needs an `area` on `properties` + `tenant_intents` and a filter on the feed, or a split into
-  real per-neighbourhood localities. This is the largest known deviation from `docs/PRD.md` §4.6.
-- ⬜ DLT-registered SMS provider wired for production OTP (India/TRAI) — **the blocker open mode
-  is working around; needed before the auth gate can go back on in production**
-- ✅ Seed script for dev identities + sample listings (`npm run db:seed`)
-- ⬜ Real cold-start supply for the launch locality (the seed is demo data, not real inventory)
-- 🟡 **Page latency.** Listing detail is ~2s in production, ~3s in dev. A single Supabase round
-  trip from this machine measures ~180 ms, so the page is latency-bound on a short query
-  waterfall, not on Postgres. Already done: `cache()` on `getDataClient`/`getSessionUser`/
-  `getActiveLocality` (the session was being fetched twice per request), `getMyOpenReport` folded
-  into the parallel batch, and a static `loading.tsx` so a click paints instantly.
-  Still open: check the project's region (ap-south-1 for an India product), and consider a single
-  RPC returning listing + updates + photos in one hop.
-- ⬜ Orphaned Storage objects: deleting a property cascades `property_photos` but leaves the files
-  in the bucket. Needs a GC script or a delete flow that clears objects first.
-- ⬜ Observability: freshness %, mismatch rate dashboards
-- ⬜ CI: typecheck + lint + `supabase db lint`
+## Open
+
+### Blocks launch
+- ⬜ **DLT-registered SMS provider** (India/TRAI). The one true blocker: phone OTP is the identity
+  bar, and no code can go out without it.
+- ⬜ **Switch the auth gate back on.** `NEXT_PUBLIC_OPEN_MODE=false` has never run. RLS, the
+  `properties_guard` trigger and the five `0005` admin RPCs are exercised only by `verify:rls`;
+  the app itself takes the service-role path every time.
+- ⬜ **Walk the OTP funnel.** `/login` → `/verify` → onboarding is intact and untested since
+  2026-08-16. No resend cooldown or rate limit — every send costs money, so this is an abuse
+  vector as well as a bill.
+- ⬜ **Real supply in Pune.** Six seeded demo listings are not a market, and the product's central
+  bet cannot be tested or lost until real inventory exists.
+
+### Needed before real traffic
+- ⬜ **Deploy.** Nothing is hosted. Automated email delivery needs a public URL (`pg_net` cannot
+  reach `localhost`), a verified sender domain needs a real host, and the auth gate can only be
+  honestly tested on a deployed instance.
+- ⬜ **Verified email sender.** `onboarding@resend.dev` only delivers to the account owner.
+- ⬜ **Image resizing / thumbnails.** Full-size uploads are served as-is to phones on mobile data.
+- ⬜ **Photo permissions are unproven.** `verify:rls` doesn't touch `property_photos` or Storage.
+
+### Product backlog
+- ⬜ **Surface the accuracy data.** `v_listing_accuracy` has tallied real post-visit outcomes since
+  `0015` and is rendered nowhere. The most honest trust signal in the system, unused.
+- ⬜ **Broker trust score.** PRD open question #1, and the thing that would let verification scale
+  past one admin pressing a button per listing.
+- ⬜ **Duplicate resolution tooling.** Pairs are flagged; an admin has no merge, no dismiss, and
+  tenants are told nothing.
+- ⬜ **Multi-area intents.** "Baner or Balewadi" is the normal search; one area per intent was a
+  deliberate simplification.
+- ⬜ **Observability.** Freshness % and mismatch rate are computable today and tracked over time
+  nowhere.
+- ⬜ **i18n.** English only, for a mass-market rental product in Pune.
+- ⬜ **Relist flow** for an owner whose tenant moved out; shortlist notes and comparison for a
+  tenant weighing three flats; a way to report a broker rather than a listing.
+
+### Engineering
+- ⬜ **No test tooling.** No Playwright, Vitest or Jest. `verify:rls` is the whole suite and only
+  covers the database boundary — not one server action, validator or UI path is tested.
+- ⬜ **Orphaned Storage objects.** Deleting a property cascades `property_photos` and leaves the
+  files. Currently unreachable (nothing deletes a property), so it's a trap for whoever builds
+  delete rather than a live leak.
+- 🟡 **Page latency.** Listing detail was ~2s. Already done: `cache()` on the session/locality
+  lookups, parallel batching, a static `loading.tsx`. Still open: check the project region
+  (ap-south-1 for an India product) and consider one RPC returning listing + updates + photos.
