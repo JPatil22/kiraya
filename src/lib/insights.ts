@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type {
   Database,
+  DepositContext,
   DuplicateCandidate,
   ListingEngagement,
   PriceContext,
@@ -34,6 +35,25 @@ export async function getPriceContext(
     .maybeSingle();
 
   if (!data || data.sample < MIN_PRICE_SAMPLE || data.pct_vs_median === null) return null;
+  return data;
+}
+
+/**
+ * The deposit comparison (0032). Same threshold and silence rule as the rent
+ * one above — three comparables or nothing.
+ */
+export async function getDepositContext(
+  supabase: SupabaseClient<Database>,
+  propertyId: string,
+): Promise<DepositContext | null> {
+  const { data } = await supabase
+    .from("v_listing_deposit_context")
+    .select("*")
+    .eq("property_id", propertyId)
+    .maybeSingle();
+
+  if (!data || data.sample < MIN_PRICE_SAMPLE) return null;
+  if (data.months === null || data.median_months === null) return null;
   return data;
 }
 

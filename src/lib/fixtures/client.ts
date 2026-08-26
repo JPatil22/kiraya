@@ -43,6 +43,7 @@ import {
   getUpdates,
   listingAccuracy,
   listingAccuracyPublic,
+  listingDepositContext,
   listingEngagement,
   listingPriceContext,
   listingsPublic,
@@ -639,6 +640,8 @@ export function createFixtureClient(): SupabaseClient<Database> {
           return new FixtureQuery(listingAccuracyPublic().map((r) => ({ ...r })));
         case "v_listing_accuracy":
           return new FixtureQuery(listingAccuracy().map((r) => ({ ...r })));
+        case "v_listing_deposit_context":
+          return new FixtureQuery(listingDepositContext().map((r) => ({ ...r })));
         case "v_listing_price_context":
           return new FixtureQuery(listingPriceContext().map((r) => ({ ...r })));
         case "v_possible_duplicates":

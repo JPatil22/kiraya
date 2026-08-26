@@ -339,6 +339,18 @@ export type PriceContext = {
 };
 
 /** `v_listing_engagement` — counts only, never who (0017). */
+/**
+ * `v_listing_deposit_context` (0032) — the deposit in months of rent, against
+ * the local median. Months because rupees don't compare across a price range.
+ */
+export type DepositContext = {
+  property_id: string;
+  deposit: number;
+  months: number | null;
+  sample: number;
+  median_months: number | null;
+};
+
 export type ListingEngagement = {
   property_id: string;
   posted_by: string;
@@ -496,6 +508,7 @@ export interface Database {
       v_listing_accuracy: { Row: ListingAccuracy; Relationships: [] };
       v_listing_accuracy_public: { Row: PublicAccuracy; Relationships: [] };
       v_listing_price_context: { Row: PriceContext; Relationships: [] };
+      v_listing_deposit_context: { Row: DepositContext; Relationships: [] };
       v_listing_engagement: { Row: ListingEngagement; Relationships: [] };
       v_possible_duplicates: { Row: DuplicateCandidate; Relationships: [] };
     };

@@ -16,6 +16,7 @@ import { SiteHeader } from "@/components/site-header";
 import { CostBreakdown } from "@/components/listings/cost-breakdown";
 import { LocationMap } from "@/components/map/location-map";
 import { VisitRecord } from "@/components/listings/visit-record";
+import { DepositContext } from "@/components/listings/deposit-context";
 import { toCoords } from "@/lib/geo";
 import { FreshnessBadge } from "@/components/listings/freshness-badge";
 import { PostedByBadge } from "@/components/listings/posted-by-badge";
@@ -30,7 +31,7 @@ import { isShortlisted } from "@/lib/shortlist";
 import { ASK_AFTER_DAYS, getMyFeedback, getPublicAccuracy } from "@/lib/visits";
 import { getVisitForListing, isVisitDone } from "@/lib/visit-scheduling";
 import { VisitScheduler } from "@/components/visits/visit-scheduler";
-import { getPriceContext } from "@/lib/insights";
+import { getDepositContext, getPriceContext } from "@/lib/insights";
 import { getReportsForProperty } from "@/lib/history";
 import { OwnerReply } from "./owner-reply";
 import { PriceContext } from "@/components/listings/price-context";
@@ -71,10 +72,12 @@ export default async function ListingDetailPage({
 
   // One round trip, not four. `getMyOpenReport` needs the user id, so it's
   // resolved off getSessionUser rather than after the whole batch.
-  const [updates, photos, priceContext, accuracy, reports, userWithReport] = await Promise.all([
+  const [updates, photos, priceContext, depositContext, accuracy, reports, userWithReport] =
+    await Promise.all([
     getPropertyUpdates(supabase, id),
     getPhotos(supabase, id),
     getPriceContext(supabase, id),
+    getDepositContext(supabase, id),
     getPublicAccuracy(supabase, id),
     getReportsForProperty(supabase, id),
     getSessionUser(supabase).then(async (u) => {
@@ -278,6 +281,14 @@ export default async function ListingDetailPage({
               listing had a hand in.
             */}
             {accuracy ? <VisitRecord accuracy={accuracy} /> : null}
+
+            {depositContext ? (
+              <DepositContext
+                context={depositContext}
+                bhkLabel={labelFor(BHK_OPTIONS, listing.bhk)}
+                localityName={listing.area_name ?? "this part of the city"}
+              />
+            ) : null}
 
             {priceContext ? (
               <PriceContext

@@ -8,6 +8,7 @@ import type {
   DuplicateCandidate,
   ListingAccuracy,
   ListingEngagement,
+  DepositContext,
   PriceContext,
   PublicAccuracy,
   Shortlist,
@@ -919,3 +920,29 @@ export function listingAccuracyPublic(): PublicAccuracy[] {
       pct_matched: a.answered === 0 ? null : Math.round((a.matched / a.answered) * 100),
     }));
 }
+
+/** 0032 — deposit in months of rent against the local median. */
+export function listingDepositContext(): DepositContext[] {
+  const live = getProperties().filter((p) => p.status === "live" && p.rent > 0);
+
+  return live.map((p) => {
+    const comparable = live.filter(
+      (o) =>
+        o.id !== p.id &&
+        o.availability !== "rented" &&
+        o.locality_id === p.locality_id &&
+        o.bhk === p.bhk,
+    );
+    const median = medianOf(comparable.map((o) => o.deposit / o.rent));
+
+    return {
+      property_id: p.id,
+      deposit: p.deposit,
+      months: round1(p.deposit / p.rent),
+      sample: comparable.length,
+      median_months: median === null ? null : round1(median),
+    };
+  });
+}
+
+const round1 = (n: number) => Math.round(n * 10) / 10;
