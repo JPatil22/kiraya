@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { DevRoleSwitcher } from "@/components/dev-role-switcher";
 import { canPost, getDataClient, getDevRole, getSessionUser } from "@/lib/auth";
-import { OPEN_MODE } from "@/lib/open-mode";
+import { OPEN_MODE, OPEN_MODE_IN_PRODUCTION } from "@/lib/open-mode";
 import { getUnreadCount } from "@/lib/notifications";
 import { hasIntent } from "@/lib/suggestions";
 import { signOut } from "@/app/(auth)/actions";
@@ -30,6 +30,19 @@ export async function SiteHeader() {
     : false;
 
   return (
+    <>
+      {/*
+        Only reachable with the explicit escape hatch set, and loud on purpose:
+        a private demo that quietly became the production URL is exactly the
+        situation nobody notices until a stranger finds the role switcher.
+      */}
+      {OPEN_MODE_IN_PRODUCTION ? (
+        <div className="bg-destructive px-4 py-1.5 text-center text-xs font-medium text-destructive-foreground">
+          Open mode is on in a production build — everyone who loads this page is an
+          administrator. Set NEXT_PUBLIC_OPEN_MODE=false.
+        </div>
+      ) : null}
+
     <header className="sticky top-0 z-40 border-b bg-background/85 backdrop-blur supports-[backdrop-filter]:bg-background/70">
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-6 py-3">
         <Link
@@ -119,5 +132,6 @@ export async function SiteHeader() {
         </nav>
       </div>
     </header>
+    </>
   );
 }

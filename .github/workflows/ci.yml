@@ -39,15 +39,17 @@ jobs:
       - name: Build
         # NEXT_PUBLIC_* are read at build time. These are throwaway values that
         # only have to be present and well-shaped: the build renders no page
-        # against a real database, and open mode keeps the auth gate out of the
-        # way. A real key here would be a secret in a public log.
+        # against a real database. A real key here would be a secret in a
+        # public log.
         env:
           NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
           NEXT_PUBLIC_SUPABASE_ANON_KEY: placeholder-anon-key
           SUPABASE_SERVICE_ROLE_KEY: placeholder-service-key
           NEXT_PUBLIC_ACTIVE_LOCALITY_SLUG: pune
           NEXT_PUBLIC_VERIFY_STALE_DAYS: "7"
-          NEXT_PUBLIC_OPEN_MODE: "true"
+          # False on purpose: CI should build the configuration that ships, and
+          # since the open-mode guard a production build with it on is refused.
+          NEXT_PUBLIC_OPEN_MODE: "false"
           NEXT_PUBLIC_USE_FIXTURES: "true"
         run: npm run build
 

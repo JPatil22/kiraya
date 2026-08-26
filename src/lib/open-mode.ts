@@ -10,8 +10,69 @@ import type { UserRole } from "@/types/database";
  *
  * Fail-safe by design: this is OFF unless the env var says exactly "true", so
  * a deploy that simply doesn't set it gets the real auth gate back.
+ *
+ * ## Why the guard below exists
+ *
+ * "Fail-safe unless someone sets it" is not the same as safe. This repo has run
+ * with the flag ON for its entire life, so the value that is already in
+ * .env.local — and in any shell, CI variable or dashboard someone copies it
+ * into — is `true`. The realistic accident is not forgetting to set it; it is
+ * carrying the setting forward.
+ *
+ * And what it carries forward is total: the acting role comes from a cookie
+ * anybody can set, and every read and write uses the service-role key, which
+ * bypasses RLS. On a public URL that is not a degraded experience, it is the
+ * absence of access control — a visitor picks "admin" in the header and can
+ * approve listings, take them down, suspend brokers and read every profile.
+ *
+ * So in a production build it refuses to start rather than starting unsafely.
+ * A deliberate private demo is still possible, but it has to say so out loud in
+ * a second variable that nobody sets by accident.
  */
 export const OPEN_MODE = process.env.NEXT_PUBLIC_OPEN_MODE === "true";
+
+/** The deliberate escape hatch. Not NEXT_PUBLIC — this one is server-only. */
+const OPEN_MODE_ALLOWED_IN_PRODUCTION =
+  process.env.KIRAYA_ALLOW_OPEN_MODE_IN_PRODUCTION === "i-understand-this-disables-all-access-control";
+
+/**
+ * Runs at module load, so it fails the boot rather than the first request. Both
+ * `next build` and `next start` set NODE_ENV=production, which means a broken
+ * deploy is caught in the build log instead of by whoever finds the header
+ * switcher first.
+ */
+if (
+  process.env.NODE_ENV === "production" &&
+  OPEN_MODE &&
+  !OPEN_MODE_ALLOWED_IN_PRODUCTION
+) {
+  throw new Error(
+    [
+      "",
+      "  Kiraya refused to start.",
+      "",
+      "  NEXT_PUBLIC_OPEN_MODE=true in a production build gives every visitor",
+      "  administrator rights: the acting role is read from a cookie and all",
+      "  database access uses the service-role key, which bypasses RLS.",
+      "",
+      "  Set NEXT_PUBLIC_OPEN_MODE=false — that is the real auth gate, and it",
+      "  is what this app is meant to ship with.",
+      "",
+      "  If this really is a private demo with no real users, and you accept",
+      "  that anyone with the URL is an admin, set:",
+      "    KIRAYA_ALLOW_OPEN_MODE_IN_PRODUCTION=i-understand-this-disables-all-access-control",
+      "",
+    ].join("\n"),
+  );
+}
+
+/**
+ * True only when open mode is running somewhere it should not be. The UI uses
+ * this to say so on every page, because a private demo that quietly became the
+ * production URL is exactly the situation nobody notices.
+ */
+export const OPEN_MODE_IN_PRODUCTION =
+  process.env.NODE_ENV === "production" && OPEN_MODE;
 
 /**
  * UI-only mode: serve every query from in-memory fixtures instead of Postgres,
