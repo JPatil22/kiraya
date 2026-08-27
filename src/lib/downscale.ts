@@ -27,13 +27,14 @@ const QUALITY = 0.82;
 const SKIP_UNDER_BYTES = 400_000;
 
 /**
- * The feed thumbnail (0033). ~400px is twice what a card renders on a phone, so
- * it stays crisp on a 2x screen while costing a tenth of the full image's bytes
- * — and the feed is where a tenant pulls twenty at once. 0.7 is acceptable at
- * this size: nobody decides on a flat from the card, they decide from the
+ * The feed thumbnail (0033). 640px is sized for where the card actually renders
+ * — up to ~360 CSS px in the three-column grid, so ~2x on a retina screen — and
+ * still roughly a third of the full image's bytes. An earlier 400px was tuned
+ * for a narrower card than the layout ever had, and went soft when stretched.
+ * 0.7 is fine here: nobody decides on a flat from the card, they decide from the
  * detail page, which still gets the full-quality image.
  */
-const THUMB_EDGE = 400;
+const THUMB_EDGE = 640;
 const THUMB_QUALITY = 0.7;
 
 export async function downscaleImage(file: File): Promise<File> {

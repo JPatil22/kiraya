@@ -41,7 +41,7 @@ export function ListingCard({
             src={photoUrl(listing.cover_photo_thumb_path ?? listing.cover_photo_path)}
             alt=""
             loading="lazy"
-            className="aspect-[16/9] w-full bg-muted object-cover sm:aspect-[21/9]"
+            className="aspect-[4/3] w-full bg-muted object-cover"
           />
           <span className="absolute bottom-2 right-2 flex items-center gap-1 rounded-md bg-background/90 px-1.5 py-0.5 text-xs">
             <Camera className="size-3" />
@@ -50,7 +50,7 @@ export function ListingCard({
         </div>
       ) : null}
 
-      <div className="p-5">
+      <div className="p-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
           <h2 className="truncate font-semibold group-hover:underline">{listing.title}</h2>

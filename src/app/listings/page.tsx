@@ -60,7 +60,7 @@ export default async function ListingsPage({
     <div className="min-h-dvh">
       <SiteHeader />
 
-      <main className="mx-auto max-w-5xl space-y-6 px-6 py-8">
+      <main className="mx-auto max-w-6xl space-y-6 px-6 py-8">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">
             Rentals in {locality?.name ?? "your locality"}
@@ -93,7 +93,7 @@ export default async function ListingsPage({
         {listings.length === 0 ? (
           <EmptyState hasFilters={hasActiveFilters(filters)} />
         ) : (
-          <div className="grid gap-4">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {listings.map((listing) => (
               <ListingCard
                 key={listing.id}
