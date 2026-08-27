@@ -78,12 +78,16 @@ See `src/lib/open-mode.ts` and the README.
 - `npm run db:seed` — dev identities + sample listings for open mode (idempotent, service-role)
 - `npm run verify:rls` — sign in as each dev identity with a **real JWT** and assert what RLS, the
   triggers and the admin RPCs actually allow. Open mode uses service-role, so this is the only
-  thing that exercises the security boundary. **118 assertions. Run it after touching any policy.**
+  thing that exercises the security **boundary**. **128 assertions. Run it after touching any policy.**
+- `npm run test:e2e` — Playwright per-role journeys (post, photo upload, contact unlock, save intent)
+  against the app in **fixtures + open mode**: in-memory store, role from a cookie, no DB, no secrets.
+  Proves the **journeys** where `verify:rls` proves the boundary. `test:e2e:ui` for the debugger.
 - `node scripts/compare-geocoders.mjs` — measure OSM vs Google on real Pune society names
 - `npm run db:types` — regenerate `src/types/database.ts` from the local DB
 
-CI (`.github/workflows/ci.yml`) runs typecheck, lint, build and a migration-numbering check on every
-push. `verify:rls` is deliberately excluded — it needs a service-role key and writes real rows.
+CI (`.github/workflows/ci.yml`) runs typecheck, lint, build, the migration-numbering check and the
+`test:e2e` journeys on every push. `verify:rls` is deliberately excluded — it needs a service-role
+key and writes real rows; the e2e suite belongs in CI precisely because fixtures need neither.
 
 ## Gotchas
 - `@supabase/ssr` and `@supabase/supabase-js` must be a compatible pair (currently `^0.12` + `^2.112`).
