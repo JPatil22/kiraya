@@ -9,6 +9,7 @@ import type {
   ModerationAction,
   Property,
   PropertyPhoto,
+  ListingSource,
   PropertyUpdate,
   TenantIntent,
   Visit,
@@ -25,6 +26,7 @@ import {
   addMismatch,
   addModeration,
   addPhoto,
+  addSource,
   addProperty,
   addSuggestion,
   addUpdate,
@@ -34,6 +36,7 @@ import {
   getModerations,
   getNotifications,
   getPhotos,
+  getSources,
   getProfiles,
   getProperties,
   getShortlists,
@@ -380,6 +383,13 @@ function insertPhoto(row: Row): Row {
   return created as unknown as Row;
 }
 
+function insertSource(row: Row): Row {
+  const nowIso = new Date().toISOString();
+  const created = { created_at: nowIso, updated_at: nowIso, ...row } as Row;
+  addSource(created as unknown as ListingSource);
+  return created;
+}
+
 function insertContact(row: Row): Row {
   // Stands in for unique (tenant_id, property_id, counterparty_id) in 0010.
   const duplicate = getContacts().some(
@@ -597,6 +607,12 @@ export function createFixtureClient(): SupabaseClient<Database> {
             getPhotos().map((p) => ({ ...p })),
             insertPhoto,
             getPhotos as () => Row[],
+          );
+        case "listing_sources":
+          return new FixtureQuery(
+            getSources().map((r) => ({ ...r })),
+            insertSource,
+            getSources as () => Row[],
           );
         case "visits":
           return new FixtureQuery(

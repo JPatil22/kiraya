@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { getDataClient, getSessionUser, needsPhone } from "@/lib/auth";
 import { OPEN_MODE } from "@/lib/open-mode";
 import { availabilitySchema, listingSchema, mismatchSchema } from "@/lib/validators";
+import { saveListingSource } from "@/lib/listing-source";
 import { BEDROOMS_FOR_BHK } from "@/lib/rooms";
 import { friendlyDbError } from "@/lib/errors";
 import { CONTACT_DAILY_LIMIT, countRecentExchanges, getMyExchange } from "@/lib/contact";
@@ -280,6 +281,9 @@ export async function updateListing(_prev: EditState, formData: FormData): Promi
     .eq("id", propertyId);
 
   if (updateError) return { error: friendlyDbError(updateError) };
+
+  // Private source note (0034) — set, changed or cleared alongside the edit.
+  await saveListingSource(supabase, propertyId, user.id, formData);
 
   revalidatePath(`/listings/${propertyId}`);
   revalidatePath("/listings");

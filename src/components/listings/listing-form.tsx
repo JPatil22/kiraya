@@ -47,6 +47,10 @@ export type ListingFormInitial = {
   oneTimeCharges: string;
   availableFrom: string;
   availability: string;
+  /** Private source note (0034) — poster/admin only, prefilled on edit. */
+  sourceName?: string;
+  sourcePhone?: string;
+  sourceNote?: string;
 };
 
 
@@ -386,6 +390,54 @@ export function ListingForm({
         />
         <FieldError message={err("description")} />
       </div>
+
+      {/* Private source note (0034). Only the poster and admins ever see this —
+          it is never on the public page and never contact-exchanged. It's for
+          seeding: who the flat actually came from, to call when a tenant bites
+          and to spot one broker's number behind several listings. */}
+      <section className="space-y-3 rounded-lg border border-dashed bg-muted/30 p-4">
+        <div>
+          <h3 className="text-sm font-semibold">Where did this come from? (private)</h3>
+          <p className="text-xs text-muted-foreground">
+            Only you see this. It never appears on the listing and is never shared with tenants —
+            it&apos;s your own note for seeded listings.
+          </p>
+        </div>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <div className="space-y-2">
+            <Label htmlFor="sourceName">Source name</Label>
+            <Input
+              id="sourceName"
+              name="sourceName"
+              maxLength={120}
+              placeholder="e.g. broker from the FB group"
+              defaultValue={initial?.sourceName ?? ""}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="sourcePhone">Source phone</Label>
+            <Input
+              id="sourcePhone"
+              name="sourcePhone"
+              maxLength={40}
+              inputMode="tel"
+              placeholder="their number, for your call-list"
+              defaultValue={initial?.sourcePhone ?? ""}
+            />
+          </div>
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="sourceNote">Note (optional)</Label>
+          <Textarea
+            id="sourceNote"
+            name="sourceNote"
+            rows={2}
+            maxLength={500}
+            placeholder="e.g. posted 12 Aug in Pune Rentals group; said available from Sept"
+            defaultValue={initial?.sourceNote ?? ""}
+          />
+        </div>
+      </section>
 
       {state?.error ? (
         <div className="rounded-md border border-destructive/50 bg-destructive/10 px-3 py-2 text-sm text-destructive">

@@ -47,6 +47,14 @@ export default async function EditListingPage({
     redirect(`/listings/${id}`);
   }
 
+  // The private source note (0034), if one was recorded. RLS already limits this
+  // to the poster/admin, and we've just confirmed the viewer is one of them.
+  const { data: source } = await supabase
+    .from("listing_sources")
+    .select("source_name, source_phone, note")
+    .eq("property_id", id)
+    .maybeSingle();
+
   // 0023 judges the fee by whose listing it is, not who is editing it.
   const posterRole =
     listing.posted_by === user.id ? user.role : await getPosterRole(supabase, listing.posted_by);
@@ -96,6 +104,9 @@ export default async function EditListingPage({
                 oneTimeCharges: String(listing.one_time_charges),
                 availableFrom: listing.available_from,
                 availability: listing.availability,
+                sourceName: source?.source_name ?? "",
+                sourcePhone: source?.source_phone ?? "",
+                sourceNote: source?.note ?? "",
               }}
             />
       </main>

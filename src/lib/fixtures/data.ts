@@ -21,6 +21,7 @@ import type {
   Profile,
   Property,
   PropertyPhoto,
+  ListingSource,
   PropertyUpdate,
   TenantIntent,
   Visit,
@@ -544,6 +545,7 @@ type FixtureStore = {
   moderations: ModerationAction[];
   profiles: Profile[];
   photos: PropertyPhoto[];
+  sources: ListingSource[];
   contacts: ContactExchange[];
   shortlists: Shortlist[];
   notifications: Notification[];
@@ -563,6 +565,7 @@ const seedStore = (): FixtureStore => ({
   // Copied so admin suspend/reinstate can mutate them.
   profiles: PROFILES.map((p) => ({ ...p })),
   photos: [...SEED_PHOTOS],
+  sources: [],
   // Starts empty on purpose: an exchange is something a person does, and the
   // sandbox should show the "not yet unlocked" state first.
   contacts: [],
@@ -595,6 +598,7 @@ export const getSuggestions = (): BrokerSuggestion[] => store().suggestions;
 export const getModerations = (): ModerationAction[] => store().moderations;
 export const getProfiles = (): Profile[] => store().profiles;
 export const getPhotos = (): PropertyPhoto[] => store().photos;
+export const getSources = (): ListingSource[] => store().sources;
 export const getContacts = (): ContactExchange[] => store().contacts;
 export const getShortlists = (): Shortlist[] => store().shortlists;
 export const getNotifications = (): Notification[] => store().notifications;
@@ -603,6 +607,14 @@ export const getViewings = (): Visit[] => store().viewings;
 
 export function addPhoto(row: PropertyPhoto): void {
   store().photos.push(row);
+}
+
+export function addSource(row: ListingSource): void {
+  // Delete-then-insert upserts (fixtures have no upsert), so replace any prior row.
+  const rows = store().sources;
+  const at = rows.findIndex((r) => r.property_id === row.property_id);
+  if (at >= 0) rows.splice(at, 1);
+  rows.unshift(row);
 }
 
 export function addContact(row: ContactExchange): void {

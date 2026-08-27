@@ -7,6 +7,7 @@ import { OPEN_MODE } from "@/lib/open-mode";
 import { getActiveLocality } from "@/lib/locality";
 import { checkboxOn, resolveBrokerage } from "@/lib/brokerage";
 import { parseLocation } from "@/lib/geo";
+import { saveListingSource } from "@/lib/listing-source";
 import { listingSchema } from "@/lib/validators";
 
 export type ListingState = {
@@ -78,29 +79,38 @@ export async function createListing(
   const where = parseLocation(formData.get("latitude"), formData.get("longitude"));
   if (!where.ok) return { fieldErrors: { latitude: where.message } };
 
-  const { error } = await supabase.from("properties").insert({
-    posted_by: user.id,
-    locality_id: locality.id,
-    area_id: areaIdFrom(formData),
-    latitude: where.latitude,
-    longitude: where.longitude,
-    title: v.title,
-    description: v.description ? v.description : null,
-    address_line: v.addressLine ? v.addressLine : null,
-    bhk: v.bhk,
-    furnishing: v.furnishing,
-    occupancy_pref: v.occupancy,
-    rent: v.rent,
-    deposit: v.deposit,
-    maintenance_monthly: v.maintenanceMonthly,
-    brokerage: fee.amount,
-    brokerage_disclosed: fee.disclosed,
-    one_time_charges: v.oneTimeCharges,
-    available_from: v.availableFrom,
-    availability: v.availability,
-    status: "pending_review",
-  });
+  const { data: created, error } = await supabase
+    .from("properties")
+    .insert({
+      posted_by: user.id,
+      locality_id: locality.id,
+      area_id: areaIdFrom(formData),
+      latitude: where.latitude,
+      longitude: where.longitude,
+      title: v.title,
+      description: v.description ? v.description : null,
+      address_line: v.addressLine ? v.addressLine : null,
+      bhk: v.bhk,
+      furnishing: v.furnishing,
+      occupancy_pref: v.occupancy,
+      rent: v.rent,
+      deposit: v.deposit,
+      maintenance_monthly: v.maintenanceMonthly,
+      brokerage: fee.amount,
+      brokerage_disclosed: fee.disclosed,
+      one_time_charges: v.oneTimeCharges,
+      available_from: v.availableFrom,
+      availability: v.availability,
+      status: "pending_review",
+    })
+    .select("id")
+    .single();
   if (error) return { error: error.message };
+
+  // Private note of where a seeded listing came from (0034), if given.
+  if (created?.id) {
+    await saveListingSource(supabase, created.id, user.id, formData);
+  }
 
   revalidatePath("/dashboard");
   redirect("/dashboard?posted=1");

@@ -267,6 +267,20 @@ export type PropertyPhoto = {
   created_at: string;
 };
 
+/**
+ * `listing_sources` — private note of where a seeded listing came from (0034).
+ * Poster/admin only, never in v_listings_public, never contact-exchanged.
+ */
+export type ListingSource = {
+  property_id: string;
+  source_name: string | null;
+  source_phone: string | null;
+  note: string | null;
+  created_by: string;
+  created_at: string;
+  updated_at: string;
+};
+
 /** `moderation_actions` — who did what, as an admin, and when. */
 export type ModerationAction = {
   id: string;
@@ -475,6 +489,11 @@ export interface Database {
         PropertyPhoto,
         Partial<Omit<PropertyPhoto, "id" | "created_at">> &
           Pick<PropertyPhoto, "property_id" | "storage_path" | "created_by">
+      >;
+      listing_sources: TableDef<
+        ListingSource,
+        Partial<Omit<ListingSource, "created_at" | "updated_at">> &
+          Pick<ListingSource, "property_id" | "created_by">
       >;
       moderation_actions: TableDef<
         ModerationAction,

@@ -26,6 +26,14 @@ test.describe("owner", () => {
     await expect(page).not.toHaveURL(/\/broker\/intents$/);
   });
 
+  test("post form offers a private source note (0034)", async ({ page }) => {
+    await page.goto("/listings/new");
+    await expect(page.getByText(/where did this come from\?/i)).toBeVisible();
+    await expect(page.locator('input[name="sourcePhone"]')).toBeVisible();
+    // It must read as private — never shown to tenants.
+    await expect(page.getByText(/only you see this/i)).toBeVisible();
+  });
+
   test("can add a photo to their own listing", async ({ page }) => {
     await page.goto(`/listings/${OWNER_LISTING_ID}/photos`);
 
