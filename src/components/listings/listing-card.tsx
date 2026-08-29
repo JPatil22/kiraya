@@ -24,14 +24,14 @@ export function ListingCard({
     : null;
 
   return (
-    <div className="relative">
+    <div className="relative h-full">
       {saved === undefined ? null : (
         <SaveButton propertyId={listing.id} saved={saved} />
       )}
 
     <Link
       href={`/listings/${listing.id}`}
-      className="group block overflow-hidden rounded-xl border bg-card shadow-sm transition-colors hover:border-primary focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+      className="group flex h-full flex-col overflow-hidden rounded-xl border bg-card shadow-sm transition-colors hover:border-primary focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
     >
       {listing.cover_photo_path ? (
         <div className="relative">
@@ -50,7 +50,7 @@ export function ListingCard({
         </div>
       ) : null}
 
-      <div className="p-4">
+      <div className="flex flex-1 flex-col p-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
           <h2 className="truncate font-semibold group-hover:underline">{listing.title}</h2>
@@ -91,7 +91,10 @@ export function ListingCard({
         <Badge variant={listing.availability === "available" ? "secondary" : "outline"}>
           {labelFor(AVAILABILITY_OPTIONS, listing.availability)}
         </Badge>
-        <PostedByBadge role={listing.posted_by_role} />
+        <PostedByBadge
+          role={listing.posted_by_role}
+          sourcedBrokerName={listing.sourced_broker_name}
+        />
         {/*
           Only worth a chip on a broker's listing (0023). "Owner" already implies
           no fee, and badging every owner listing would bury the signal in noise.
@@ -128,7 +131,7 @@ export function ListingCard({
         ) : null}
       </div>
 
-      <p className="mt-3 text-xs text-muted-foreground">
+      <p className="mt-auto pt-3 text-xs text-muted-foreground">
         Available from {format(new Date(listing.available_from), "d MMM yyyy")}
       </p>
       </div>

@@ -391,16 +391,19 @@ export function ListingForm({
         <FieldError message={err("description")} />
       </div>
 
-      {/* Private source note (0034). Only the poster and admins ever see this —
-          it is never on the public page and never contact-exchanged. It's for
-          seeding: who the flat actually came from, to call when a tenant bites
-          and to spot one broker's number behind several listings. */}
+      {/* Source contact (0034). For a listing seeded from elsewhere — a Facebook
+          post, a broker's own ad — the name and phone are the real contact a
+          tenant is given when they unlock this listing, in place of the posting
+          identity's own number. The note stays private to the poster and admins.
+          Leave all three blank for a listing posted by its real owner in person. */}
       <section className="space-y-3 rounded-lg border border-dashed bg-muted/30 p-4">
         <div>
-          <h3 className="text-sm font-semibold">Where did this come from? (private)</h3>
+          <h3 className="text-sm font-semibold">Broker / source contact</h3>
           <p className="text-xs text-muted-foreground">
-            Only you see this. It never appears on the listing and is never shared with tenants —
-            it&apos;s your own note for seeded listings.
+            Filling a listing from a Facebook post or a broker&apos;s ad? Put the real broker&apos;s
+            name and number here — that&apos;s what a tenant gets when they unlock contact, instead
+            of this account&apos;s number. The note below stays private to you. Leave blank if the
+            owner posted it themselves.
           </p>
         </div>
         <div className="grid gap-3 sm:grid-cols-2">
@@ -421,7 +424,7 @@ export function ListingForm({
               name="sourcePhone"
               maxLength={40}
               inputMode="tel"
-              placeholder="their number, for your call-list"
+              placeholder="broker's number — shown on unlock"
               defaultValue={initial?.sourcePhone ?? ""}
             />
           </div>

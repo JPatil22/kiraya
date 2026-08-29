@@ -194,6 +194,13 @@ export type ListingPublic = {
   posted_by_role: UserRole | null;
   posted_by_name: string | null;
   posted_by: string;
+  /**
+   * 0035 — the real broker's name when this listing was seeded from an outside
+   * post (from listing_sources.source_name), else null. Public and shown as
+   * "credited, via Kiraya, unverified". The matching phone is never here: it
+   * reaches a tenant only on contact unlock.
+   */
+  sourced_broker_name: string | null;
   open_mismatch_count: number;
   has_warning: boolean;
   cover_photo_path: string | null;

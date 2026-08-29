@@ -751,6 +751,9 @@ export function listingsPublic(): ListingPublic[] {
       posted_by_role: poster?.role ?? null,
       posted_by_name: poster?.full_name ?? null,
       posted_by: p.posted_by,
+      // Mirrors 0035's lateral join on listing_sources — name only, never phone.
+      sourced_broker_name:
+        getSources().find((s) => s.property_id === p.id)?.source_name ?? null,
       open_mismatch_count: openMismatches,
       has_warning: openMismatches >= 2,
       cover_photo_path: cover?.storage_path ?? null,

@@ -18,8 +18,17 @@ export const BEDROOMS_FOR_BHK: Record<BhkType, number> = {
   "4plus": 4,
 };
 
-/** Slots every listing owes, regardless of size. */
-const BASE_SLOTS: RoomType[] = ["hall", "kitchen", "bathroom"];
+/**
+ * Bathrooms a configuration is expected to have — an Indian 2BHK almost always
+ * has two. Twin of `bathrooms_for_bhk` in migration 0036; keep the two in step.
+ */
+export const BATHROOMS_FOR_BHK: Record<BhkType, number> = {
+  "1rk": 1,
+  "1bhk": 1,
+  "2bhk": 2,
+  "3bhk": 2,
+  "4plus": 3,
+};
 
 /** Labelled extras — allowed, but they don't count toward coverage. */
 export const OPTIONAL_ROOMS: RoomType[] = ["balcony", "exterior"];
@@ -68,7 +77,15 @@ export function slotsForBhk(bhk: BhkType): RoomSlot[] {
     });
   }
 
-  slots.push({ roomType: "bathroom", roomIndex: 1, label: ROOM_LABEL.bathroom, required: true });
+  const bathrooms = BATHROOMS_FOR_BHK[bhk];
+  for (let i = 1; i <= bathrooms; i += 1) {
+    slots.push({
+      roomType: "bathroom",
+      roomIndex: i,
+      label: bathrooms === 1 ? ROOM_LABEL.bathroom : `${ROOM_LABEL.bathroom} ${i}`,
+      required: true,
+    });
+  }
 
   for (const roomType of OPTIONAL_ROOMS) {
     slots.push({ roomType, roomIndex: 1, label: ROOM_LABEL[roomType], required: false });
@@ -77,7 +94,8 @@ export function slotsForBhk(bhk: BhkType): RoomSlot[] {
   return slots;
 }
 
-export const roomsRequiredForBhk = (bhk: BhkType): number => 3 + BEDROOMS_FOR_BHK[bhk];
+export const roomsRequiredForBhk = (bhk: BhkType): number =>
+  2 + BEDROOMS_FOR_BHK[bhk] + BATHROOMS_FOR_BHK[bhk];
 
 /** Label for a photo already assigned to a slot. */
 export function photoRoomLabel(roomType: RoomType, roomIndex: number, bhk?: BhkType): string {
@@ -85,6 +103,10 @@ export function photoRoomLabel(roomType: RoomType, roomIndex: number, bhk?: BhkT
   if (roomType === "bedroom") {
     const bedrooms = bhk ? BEDROOMS_FOR_BHK[bhk] : 2;
     return bedrooms === 1 ? "Bedroom" : `Bedroom ${roomIndex}`;
+  }
+  if (roomType === "bathroom") {
+    const bathrooms = bhk ? BATHROOMS_FOR_BHK[bhk] : 1;
+    return bathrooms === 1 ? "Bathroom" : `Bathroom ${roomIndex}`;
   }
   return ROOM_LABEL[roomType];
 }

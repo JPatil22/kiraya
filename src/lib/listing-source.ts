@@ -60,6 +60,38 @@ export async function saveListingSource(
   });
 }
 
+export type ListingContact = { name: string | null; phone: string };
+
+/**
+ * The contact to hand a tenant on unlock when a listing was *seeded* from an
+ * outside source (a Facebook post, a broker's own ad) rather than posted by the
+ * real owner in person. When a source phone was recorded, the exchange should
+ * reveal that real broker — not the seeded identity that technically posted the
+ * row. A source *name* on its own can't be dialled, so with no phone we return
+ * null and the caller falls back to the poster's own profile number.
+ *
+ * NOTE — RLS: this reads `listing_sources`, which policy keeps poster/admin-only.
+ * That is correct in open mode (service-role), which is where seeded listings
+ * live today. When the auth gate returns, revealing this to a tenant needs a
+ * policy that lets someone holding a `contact_exchange` on the property read the
+ * source's name + phone (and only those — never the private `note`). Until then
+ * an authenticated tenant simply falls back to the poster's profile number.
+ */
+export async function getListingContact(
+  supabase: SupabaseClient<Database>,
+  propertyId: string,
+): Promise<ListingContact | null> {
+  const { data } = await supabase
+    .from("listing_sources")
+    .select("source_name, source_phone")
+    .eq("property_id", propertyId)
+    .maybeSingle();
+
+  const phone = data?.source_phone?.trim();
+  if (!phone) return null;
+  return { name: data?.source_name?.trim() || null, phone };
+}
+
 /** Digits only, so "+91 98…", "98…" and "098…" group together. */
 export function normalisePhone(phone: string | null | undefined): string {
   return (phone ?? "").replace(/\D/g, "");

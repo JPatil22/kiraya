@@ -27,6 +27,7 @@ import { getDataClient, getSessionUser } from "@/lib/auth";
 import { getPublicListing } from "@/lib/listings";
 import { getMyOpenReport, getPropertyUpdates } from "@/lib/history";
 import { getCounterparty, getMyExchange } from "@/lib/contact";
+import { getListingContact } from "@/lib/listing-source";
 import { isShortlisted } from "@/lib/shortlist";
 import { ASK_AFTER_DAYS, getMyFeedback, getPublicAccuracy } from "@/lib/visits";
 import { getVisitForListing, isVisitDone } from "@/lib/visit-scheduling";
@@ -98,6 +99,11 @@ export default async function ListingDetailPage({
   // makes the row readable at all, so this returns null rather than leaking.
   const poster = exchange ? await getCounterparty(supabase, listing.posted_by) : null;
 
+  // A listing seeded from an outside source (e.g. a Facebook post) reveals that
+  // real broker's number rather than the seeded identity that posted the row.
+  // Same unlock gate as the poster number above, so it can't leak before then.
+  const sourceContact = exchange ? await getListingContact(supabase, listing.id) : null;
+
   // Already answered? Then don't ask again on this page.
   const [myFeedback, visit] = exchange && user
     ? await Promise.all([
@@ -148,6 +154,7 @@ export default async function ListingDetailPage({
               role={listing.posted_by_role}
               name={listing.posted_by_name}
               showName
+              sourcedBrokerName={listing.sourced_broker_name}
             />
             {user ? <SaveButton propertyId={listing.id} saved={saved} variant="inline" /> : null}
           </div>
@@ -160,6 +167,15 @@ export default async function ListingDetailPage({
               {listing.verified_by_poster
                 ? "Confirmed by the person who posted it."
                 : "Verified by Kiraya."}
+            </p>
+          ) : null}
+
+          {/* 0035 — a seeded listing says so plainly: the broker is credited,
+              not claimed as a member, and their number waits behind an unlock. */}
+          {listing.sourced_broker_name ? (
+            <p className="mt-2 text-sm text-muted-foreground">
+              Kiraya listed this from a public post. {listing.sourced_broker_name} isn&apos;t a
+              verified Kiraya member yet — unlock contact to get their number.
             </p>
           ) : null}
         </div>
@@ -306,7 +322,8 @@ export default async function ListingDetailPage({
             posterName={listing.posted_by_name}
             posterRole={listing.posted_by_role}
             unlocked={Boolean(exchange)}
-            phone={poster?.phone ?? null}
+            phone={sourceContact?.phone ?? poster?.phone ?? null}
+            contactName={sourceContact?.name ?? null}
           />
         ) : null}
 

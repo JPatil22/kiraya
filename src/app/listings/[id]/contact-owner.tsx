@@ -23,24 +23,32 @@ export function ContactOwner({
   posterRole,
   unlocked,
   phone,
+  contactName = null,
 }: {
   propertyId: string;
   posterName: string | null;
   posterRole: UserRole | null;
   unlocked: boolean;
   phone: string | null;
+  /**
+   * The name that goes with `phone` when the listing was seeded from an outside
+   * source — the real broker, not the seeded identity that posted the row. Only
+   * meaningful once unlocked, since that's the only time a number is shown.
+   */
+  contactName?: string | null;
 }) {
   const [state, action, pending] = useActionState(requestContact, null);
   const [showMessage, setShowMessage] = useState(false);
 
   const who = posterName ?? (posterRole === "broker" ? "the broker" : "the owner");
+  const revealedWho = contactName ?? who;
 
   if (unlocked || state?.ok) {
     const href = telHref(phone);
     return (
       <Card className="border-success/40">
         <CardHeader>
-          <CardTitle className="text-base">Contact {who}</CardTitle>
+          <CardTitle className="text-base">Contact {revealedWho}</CardTitle>
           <CardDescription>
             They can see that you asked, and on which listing.
           </CardDescription>
@@ -59,7 +67,7 @@ export function ContactOwner({
             </div>
           ) : (
             <p className="text-sm text-muted-foreground">
-              No number on file for {who}. That&apos;s unusual — an admin can help.
+              No number on file for {revealedWho}. That&apos;s unusual — an admin can help.
             </p>
           )}
 

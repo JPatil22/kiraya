@@ -6,8 +6,12 @@ import { logRead } from "@/lib/errors";
 /** The public Storage bucket created in migration 0006. */
 export const PHOTO_BUCKET = "listing-photos";
 
-/** Matches the bucket's own limits, so the UI rejects before the upload does. */
-export const MAX_PHOTOS = 8;
+/**
+ * Ceiling on photos per listing. High enough to cover the largest room set — a
+ * 4+ BHK owes hall + kitchen + 4 bedrooms + 3 bathrooms = 9 required, plus the
+ * two optional extras (balcony, exterior) — with a little headroom.
+ */
+export const MAX_PHOTOS = 12;
 export const MAX_PHOTO_BYTES = 5 * 1024 * 1024;
 export const ACCEPTED_MIME = ["image/jpeg", "image/png", "image/webp"];
 
@@ -47,7 +51,11 @@ export function photoAgeWarning(
   capturedAt: string | null,
   lastVerifiedAt: string | null,
 ): { label: string; stale: boolean } | null {
-  if (!capturedAt) return { label: "Photo date not given", stale: true };
+  // A taken-date is no longer asked for — a photo carries its upload date — so a
+  // missing captured_at is normal, not a mismatch to warn about. The genuine
+  // "this photo is far older than the listing" checks below still run whenever a
+  // real capture date is present.
+  if (!capturedAt) return null;
 
   const captured = Date.parse(capturedAt);
   if (Number.isNaN(captured)) return null;

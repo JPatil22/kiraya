@@ -68,12 +68,7 @@ export default async function ListingPhotosPage({
           </p>
         </div>
 
-        <PhotoManager
-          propertyId={id}
-          bhk={property.bhk}
-          photos={photos}
-          lastVerifiedAt={property.last_verified_at}
-        />
+        <PhotoManager propertyId={id} bhk={property.bhk} photos={photos} />
       </main>
     </div>
   );

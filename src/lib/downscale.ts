@@ -40,9 +40,19 @@ const THUMB_QUALITY = 0.7;
 export async function downscaleImage(file: File): Promise<File> {
   if (typeof document === "undefined") return file;
   if (file.size <= SKIP_UNDER_BYTES) return file;
-  // PNGs are often screenshots or floor plans, where re-encoding to JPEG loses
-  // text clarity for little gain. Photographs are what this is for.
-  if (file.type !== "image/jpeg" && file.type !== "image/webp") return file;
+  // JPEG, WebP and PNG are all re-encoded down to MAX_EDGE. PNG is included
+  // because a pasted screenshot of a room is a multi-MB PNG that would otherwise
+  // be stored — and re-served to tenants — at full size, filling storage fast.
+  // The "keep the original if it didn't shrink" guard below still preserves an
+  // already-small or genuinely-better PNG (a crisp floor plan under 400 KB is
+  // skipped entirely by the size check above).
+  if (
+    file.type !== "image/jpeg" &&
+    file.type !== "image/webp" &&
+    file.type !== "image/png"
+  ) {
+    return file;
+  }
 
   const resized = await resizeToJpeg(file, MAX_EDGE, QUALITY);
   // If the round trip didn't shrink it, keep the original bytes and name.

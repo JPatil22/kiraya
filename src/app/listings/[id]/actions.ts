@@ -6,7 +6,7 @@ import { getDataClient, getSessionUser, needsPhone } from "@/lib/auth";
 import { OPEN_MODE } from "@/lib/open-mode";
 import { availabilitySchema, listingSchema, mismatchSchema } from "@/lib/validators";
 import { saveListingSource } from "@/lib/listing-source";
-import { BEDROOMS_FOR_BHK } from "@/lib/rooms";
+import { BATHROOMS_FOR_BHK, BEDROOMS_FOR_BHK } from "@/lib/rooms";
 import { friendlyDbError } from "@/lib/errors";
 import { CONTACT_DAILY_LIMIT, countRecentExchanges, getMyExchange } from "@/lib/contact";
 import { checkboxOn, getPosterRole, resolveBrokerage } from "@/lib/brokerage";
@@ -301,12 +301,23 @@ async function strandedRooms(
     .from("property_photos")
     .select("room_type, room_index")
     .eq("property_id", propertyId)
-    .eq("room_type", "bedroom");
+    .in("room_type", ["bedroom", "bathroom"]);
 
-  const allowed = BEDROOMS_FOR_BHK[nextBhk];
+  // Both bedrooms and bathrooms are numbered and scale with the configuration,
+  // so either can be stranded by a downsize (2BHK → 1BHK drops bathroom 2).
+  const allowed: Record<"bedroom" | "bathroom", number> = {
+    bedroom: BEDROOMS_FOR_BHK[nextBhk],
+    bathroom: BATHROOMS_FOR_BHK[nextBhk],
+  };
   return (data ?? [])
-    .filter((p) => p.room_index > allowed)
-    .map((p) => (allowed === 0 ? "separate bedroom" : `bedroom ${p.room_index}`))
+    .filter((p) => p.room_index > allowed[p.room_type as "bedroom" | "bathroom"])
+    .map((p) =>
+      p.room_type === "bedroom"
+        ? allowed.bedroom === 0
+          ? "separate bedroom"
+          : `bedroom ${p.room_index}`
+        : `bathroom ${p.room_index}`,
+    )
     .filter((label, i, all) => all.indexOf(label) === i);
 }
 
