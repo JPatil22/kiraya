@@ -324,6 +324,7 @@ export default async function ListingDetailPage({
             unlocked={Boolean(exchange)}
             phone={sourceContact?.phone ?? poster?.phone ?? null}
             contactName={sourceContact?.name ?? null}
+            sourcedBrokerName={listing.sourced_broker_name}
           />
         ) : null}
 

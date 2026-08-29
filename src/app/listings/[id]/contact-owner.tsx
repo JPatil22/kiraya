@@ -24,6 +24,7 @@ export function ContactOwner({
   unlocked,
   phone,
   contactName = null,
+  sourcedBrokerName = null,
 }: {
   propertyId: string;
   posterName: string | null;
@@ -31,17 +32,30 @@ export function ContactOwner({
   unlocked: boolean;
   phone: string | null;
   /**
-   * The name that goes with `phone` when the listing was seeded from an outside
-   * source — the real broker, not the seeded identity that posted the row. Only
-   * meaningful once unlocked, since that's the only time a number is shown.
+   * The name that goes with `phone` once unlocked — the real broker for a seeded
+   * listing, not the seeded identity that posted the row.
    */
   contactName?: string | null;
+  /**
+   * The public broker credit for a seeded listing ("Broker: X"), or the sentinel
+   * "Broker" when the post gave no name. Drives who the card names *before*
+   * unlock too, so it never shows the seeded poster's account name.
+   */
+  sourcedBrokerName?: string | null;
 }) {
   const [state, action, pending] = useActionState(requestContact, null);
   const [showMessage, setShowMessage] = useState(false);
 
-  const who = posterName ?? (posterRole === "broker" ? "the broker" : "the owner");
-  const revealedWho = contactName ?? who;
+  // For a seeded listing the counterparty is the real broker (already public on
+  // the card), not the seeded account that posted it. "Broker" is the no-name
+  // sentinel, so it reads as "the broker".
+  const brokerLabel = sourcedBrokerName
+    ? sourcedBrokerName.trim().toLowerCase() === "broker"
+      ? "the broker"
+      : sourcedBrokerName
+    : null;
+  const who = brokerLabel ?? posterName ?? (posterRole === "broker" ? "the broker" : "the owner");
+  const revealedWho = brokerLabel ?? contactName ?? who;
 
   if (unlocked || state?.ok) {
     const href = telHref(phone);
