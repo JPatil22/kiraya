@@ -206,9 +206,10 @@ export async function ingestListing(
       latitude: null,
       longitude: null,
       title: safeTitle(parsed.title, parsed.bhk),
-      // The post text, phone-redacted, so the reviewer sees the original. Capped
-      // to the description CHECK (<= 2000).
-      description: redactPhones(payload.text).slice(0, 2000) || null,
+      // The listing's own text — focused to one post and stripped of Facebook
+      // chrome by the parser, then phone-redacted so no number rides into the
+      // public page. Capped to the description CHECK (<= 2000).
+      description: redactPhones(parsed.cleanText || payload.text).slice(0, 2000) || null,
       address_line: parsed.address_line,
       bhk: parsed.bhk,
       furnishing: parsed.furnishing,

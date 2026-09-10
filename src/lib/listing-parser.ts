@@ -3,6 +3,8 @@
 
 export interface ParsedRentalListing {
   title: string;
+  /** The focused post text, stripped of Facebook chrome — the listing's description. */
+  cleanText: string;
   rent: number | null;
   deposit: number | null;
   /** Rupees. 0 = post says "no brokerage"; null = post is silent on it. */
@@ -43,6 +45,12 @@ const FB_CHROME_PATTERNS: RegExp[] = [
   // A bare relative timestamp ("5h", "2d", "Just now", "Yesterday at 5:00").
   /^(just now|yesterday|\d+\s*(m|min|h|hr|hrs|d|w|y)\b)/i,
   /^\s*(facebook|meta)\s*$/i,
+  // Post-body engagement chrome that trails a group post.
+  /are you interested in this post/i,
+  /^(interested|not interested)$/i,
+  /^no comments?\s*yet/i,
+  /be the first to comment/i,
+  /^\+\d+$/, // the "+16" more-photos overlay
 ];
 
 function isFacebookChrome(line: string): boolean {
@@ -223,6 +231,9 @@ export function parseListingText(rawText: string): ParsedRentalListing {
 
   return {
     title,
+    // The focused, chrome-free post text — a clean description a tenant can read,
+    // not the whole scraped blob with its "Facebook" nav and comment furniture.
+    cleanText: scopeLines.join("\n"),
     rent,
     deposit,
     brokerage,
