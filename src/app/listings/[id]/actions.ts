@@ -288,6 +288,15 @@ export async function updateListing(_prev: EditState, formData: FormData): Promi
   revalidatePath(`/listings/${propertyId}`);
   revalidatePath("/listings");
   revalidatePath("/dashboard");
+
+  // The admin review page (0037) edits a listing in place and wants to land back
+  // on itself, not the public page. Only ever an internal path — never a
+  // caller-supplied absolute or protocol-relative URL.
+  const returnTo = formData.get("returnTo");
+  if (typeof returnTo === "string" && /^\/(?!\/)/.test(returnTo)) {
+    revalidatePath(returnTo);
+    redirect(returnTo);
+  }
   redirect(`/listings/${propertyId}?updated=1`);
 }
 

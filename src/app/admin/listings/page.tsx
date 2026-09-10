@@ -65,7 +65,7 @@ export default async function AdminListingsPage() {
             <ul className="divide-y">
               {queue.map((p) => (
                 <li key={p.id} className="space-y-3 py-4 first:pt-0 last:pb-0">
-                  <Summary property={p} />
+                  <Summary property={p} review />
                   <ReviewDecision propertyId={p.id} />
                 </li>
               ))}
@@ -104,10 +104,12 @@ function Summary({
   property: p,
   stale,
   live,
+  review,
 }: {
   property: Property;
   stale?: boolean;
   live?: boolean;
+  review?: boolean;
 }) {
   return (
     <div className="flex flex-wrap items-start justify-between gap-3">
@@ -115,6 +117,10 @@ function Summary({
         <div className="font-medium">
           {live ? (
             <Link href={`/listings/${p.id}`} className="hover:underline">
+              {p.title}
+            </Link>
+          ) : review ? (
+            <Link href={`/admin/listings/${p.id}`} className="hover:underline">
               {p.title}
             </Link>
           ) : (

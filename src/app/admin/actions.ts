@@ -62,6 +62,30 @@ export async function reviewListingAction(
   return null;
 }
 
+/**
+ * Approve or reject from the dedicated review page (0037). Same effect as
+ * `reviewListingAction`, but on success it returns to the review queue rather
+ * than staying on a page whose listing has just left the queue.
+ */
+export async function reviewFromPageAction(
+  _prev: AdminState,
+  formData: FormData,
+): Promise<AdminState> {
+  const { supabase, user, error } = await requireAdmin();
+  if (error || !user) return { error: error ?? "Admins only." };
+
+  const propertyId = formData.get("propertyId");
+  const approve = formData.get("decision") === "approve";
+  if (typeof propertyId !== "string") return { error: "Missing listing." };
+
+  const failure = await reviewListing(supabase, user.id, propertyId, approve, note(formData));
+  if (failure) return { error: failure };
+
+  refresh();
+  revalidatePath(`/listings/${propertyId}`);
+  redirect("/admin/listings");
+}
+
 /** Re-stamp freshness, or pull the listing entirely. */
 export async function listingMaintenanceAction(
   _prev: AdminState,
