@@ -10,6 +10,7 @@ import type {
   Property,
   PropertyPhoto,
   ListingSource,
+  IngestPhoto,
   PropertyUpdate,
   TenantIntent,
   Visit,
@@ -26,6 +27,7 @@ import {
   addMismatch,
   addModeration,
   addPhoto,
+  addIngestPhoto,
   addSource,
   addProperty,
   addSuggestion,
@@ -36,6 +38,7 @@ import {
   getModerations,
   getNotifications,
   getPhotos,
+  getIngestPhotos,
   getSources,
   getProfiles,
   getProperties,
@@ -390,6 +393,18 @@ function insertSource(row: Row): Row {
   return created;
 }
 
+function insertIngestPhoto(row: Row): Row {
+  const created = {
+    id: `ing-${Math.random().toString(36).slice(2, 10)}`,
+    thumbnail_path: null,
+    source_url: null,
+    created_at: iso(),
+    ...row,
+  } as Row;
+  addIngestPhoto(created as unknown as IngestPhoto);
+  return created;
+}
+
 function insertContact(row: Row): Row {
   // Stands in for unique (tenant_id, property_id, counterparty_id) in 0010.
   const duplicate = getContacts().some(
@@ -613,6 +628,12 @@ export function createFixtureClient(): SupabaseClient<Database> {
             getSources().map((r) => ({ ...r })),
             insertSource,
             getSources as () => Row[],
+          );
+        case "ingest_photos":
+          return new FixtureQuery(
+            getIngestPhotos().map((r) => ({ ...r })),
+            insertIngestPhoto,
+            getIngestPhotos as () => Row[],
           );
         case "visits":
           return new FixtureQuery(

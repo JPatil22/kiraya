@@ -22,6 +22,7 @@ import type {
   Property,
   PropertyPhoto,
   ListingSource,
+  IngestPhoto,
   PropertyUpdate,
   TenantIntent,
   Visit,
@@ -551,6 +552,7 @@ type FixtureStore = {
   notifications: Notification[];
   visits: VisitFeedback[];
   viewings: Visit[];
+  ingestPhotos: IngestPhoto[];
 };
 
 const globalRef = globalThis as unknown as { __kirayaFixtures?: FixtureStore };
@@ -576,6 +578,9 @@ const seedStore = (): FixtureStore => ({
   notifications: [...SEED_NOTIFICATIONS],
   visits: [],
   viewings: [],
+  // Scraped photos awaiting room-tagging. Empty in the sandbox — ingestion runs
+  // service-role against real Postgres, never fixtures.
+  ingestPhotos: [],
 });
 
 function store(): FixtureStore {
@@ -604,9 +609,14 @@ export const getShortlists = (): Shortlist[] => store().shortlists;
 export const getNotifications = (): Notification[] => store().notifications;
 export const getVisits = (): VisitFeedback[] => store().visits;
 export const getViewings = (): Visit[] => store().viewings;
+export const getIngestPhotos = (): IngestPhoto[] => store().ingestPhotos;
 
 export function addPhoto(row: PropertyPhoto): void {
   store().photos.push(row);
+}
+
+export function addIngestPhoto(row: IngestPhoto): void {
+  store().ingestPhotos.push(row);
 }
 
 export function addSource(row: ListingSource): void {

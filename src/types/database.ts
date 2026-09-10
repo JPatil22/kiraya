@@ -288,6 +288,22 @@ export type ListingSource = {
   updated_at: string;
 };
 
+/**
+ * `ingest_photos` — a photo scraped from a source post (via the Chrome ingestor)
+ * that no human has yet assigned to a room (0037). Held outside the room-coverage
+ * maths until the poster/admin tags it, at which point a real `property_photos`
+ * row is created reusing the same storage object. Poster/admin only.
+ */
+export type IngestPhoto = {
+  id: string;
+  property_id: string;
+  storage_path: string;
+  thumbnail_path: string | null;
+  source_url: string | null;
+  created_by: string;
+  created_at: string;
+};
+
 /** `moderation_actions` — who did what, as an admin, and when. */
 export type ModerationAction = {
   id: string;
@@ -501,6 +517,11 @@ export interface Database {
         ListingSource,
         Partial<Omit<ListingSource, "created_at" | "updated_at">> &
           Pick<ListingSource, "property_id" | "created_by">
+      >;
+      ingest_photos: TableDef<
+        IngestPhoto,
+        Partial<Omit<IngestPhoto, "id" | "created_at">> &
+          Pick<IngestPhoto, "property_id" | "storage_path" | "created_by">
       >;
       moderation_actions: TableDef<
         ModerationAction,
