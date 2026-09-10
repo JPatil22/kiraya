@@ -28,6 +28,11 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
+# scraped listing dumps — the old /api/ingest wrote posts + photos (with real
+# phone numbers) here. The endpoint now writes to the DB, but leftover dumps
+# contain third-party PII and must never be committed.
+/temp-ingest/
+
 # supabase
 /supabase/.branches
 /supabase/.temp
