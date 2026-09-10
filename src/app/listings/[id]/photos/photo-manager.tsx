@@ -10,6 +10,7 @@ import { cn } from "@/lib/utils";
 import type { BhkType, PropertyPhoto } from "@/types/database";
 import { deletePhoto } from "./actions";
 import { QuickAddPhotos } from "./quick-add";
+import { StagedPhotos, type StagedItem } from "./staged-photos";
 
 function Feedback({ state }: { state: { error?: string; ok?: string } | null }) {
   if (state?.error) {
@@ -39,14 +40,24 @@ export function PhotoManager({
   propertyId,
   bhk,
   photos,
+  staged = [],
 }: {
   propertyId: string;
   bhk: BhkType;
   photos: PropertyPhoto[];
+  staged?: StagedItem[];
 }) {
   const slots = slotsWithPhotos(bhk, photos);
   const required = slots.filter((s) => s.slot.required);
   const covered = required.filter((s) => s.photo).length;
+
+  const slotOptions = slots.map(({ slot, photo }) => ({
+    roomType: slot.roomType,
+    roomIndex: slot.roomIndex,
+    label: slot.label,
+    required: slot.required,
+    hasPhoto: Boolean(photo),
+  }));
 
   const filled = slots.filter((s) => s.photo);
   const missingRequired = required.filter((s) => !s.photo).map((s) => s.slot.label);
@@ -79,16 +90,9 @@ export function PhotoManager({
         </div>
       </div>
 
-      <QuickAddPhotos
-        propertyId={propertyId}
-        slots={slots.map(({ slot, photo }) => ({
-          roomType: slot.roomType,
-          roomIndex: slot.roomIndex,
-          label: slot.label,
-          required: slot.required,
-          hasPhoto: Boolean(photo),
-        }))}
-      />
+      <StagedPhotos propertyId={propertyId} staged={staged} slots={slotOptions} />
+
+      <QuickAddPhotos propertyId={propertyId} slots={slotOptions} />
 
       {filled.length > 0 ? (
         <div>

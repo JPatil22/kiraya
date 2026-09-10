@@ -45,6 +45,18 @@ export default async function ListingPhotosPage({
 
   const photos = await getPhotos(supabase, id);
 
+  // Photos the Chrome ingestor scraped and left waiting for a room (0037).
+  const { data: stagedRows } = await supabase
+    .from("ingest_photos")
+    .select("*")
+    .eq("property_id", id)
+    .order("created_at", { ascending: true });
+  const staged = (stagedRows ?? []).map((r) => ({
+    id: r.id,
+    storagePath: r.storage_path,
+    thumbnailPath: r.thumbnail_path,
+  }));
+
   return (
     <div className="min-h-dvh">
       <SiteHeader />
@@ -68,7 +80,7 @@ export default async function ListingPhotosPage({
           </p>
         </div>
 
-        <PhotoManager propertyId={id} bhk={property.bhk} photos={photos} />
+        <PhotoManager propertyId={id} bhk={property.bhk} photos={photos} staged={staged} />
       </main>
     </div>
   );

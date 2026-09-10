@@ -13,7 +13,7 @@ import {
   photoObjectKey,
   thumbObjectKey,
 } from "@/lib/photos";
-import { ROOM_LABEL } from "@/lib/rooms";
+import { ROOM_LABEL, slotsForBhk } from "@/lib/rooms";
 import type { RoomType } from "@/types/database";
 
 export type PhotoState = { error?: string; ok?: string } | null;
@@ -232,3 +232,143 @@ export async function deletePhoto(_prev: PhotoState, formData: FormData): Promis
 // Manual reordering is gone: with one photo per room slot, the canonical room
 // order (hall → kitchen → bedrooms → bathroom → extras) IS the order, and the
 // hall leads as the cover shot. See slotsForBhk() in src/lib/rooms.ts.
+
+// ---------------------------------------------------------------------------
+// Staged (scraped) photos — the "from the source post" pile that /api/ingest
+// drops into ingest_photos. Assigning one promotes it into a real
+// property_photos row reusing the same storage object (never re-uploaded);
+// discarding one deletes the row and its object. See migration 0037.
+// ---------------------------------------------------------------------------
+
+/**
+ * Tag a staged photo with a room, turning it into a real listing photo. The
+ * scraped bytes already live in the bucket, so this just creates (or replaces)
+ * the property_photos row pointing at the same object, then drops the staging
+ * row. captured_at is left null: nobody knows when a scraped photo was taken,
+ * and stamping "today" would fake a freshness the image doesn't have.
+ */
+export async function assignStagedPhoto(_prev: PhotoState, formData: FormData): Promise<PhotoState> {
+  const propertyId = formData.get("propertyId");
+  const stagedId = formData.get("stagedId");
+  const slotKey = formData.get("slotKey");
+  if (typeof propertyId !== "string" || typeof stagedId !== "string") {
+    return { error: "Missing photo." };
+  }
+  if (typeof slotKey !== "string" || !slotKey.includes(":")) {
+    return { error: "Pick which room this shows." };
+  }
+
+  const { supabase, user, error } = await requirePoster(propertyId);
+  if (error || !user) return { error: error ?? "Not allowed." };
+
+  const [roomType, roomIndexRaw] = slotKey.split(":");
+  const roomIndex = Number(roomIndexRaw);
+  if (!isRoomType(roomType) || !Number.isInteger(roomIndex)) {
+    return { error: "Pick a valid room." };
+  }
+
+  // The slot has to be one this listing's configuration actually has.
+  const { data: property } = await supabase
+    .from("properties")
+    .select("bhk")
+    .eq("id", propertyId)
+    .maybeSingle();
+  if (!property) return { error: "That listing doesn't exist." };
+  const validSlot = slotsForBhk(property.bhk).some(
+    (s) => s.roomType === roomType && s.roomIndex === roomIndex,
+  );
+  if (!validSlot) return { error: "That room isn't part of this listing." };
+
+  const { data: staged } = await supabase
+    .from("ingest_photos")
+    .select("*")
+    .eq("id", stagedId)
+    .eq("property_id", propertyId)
+    .maybeSingle();
+  if (!staged) return { error: "That photo is no longer waiting." };
+
+  const { data: existing } = await supabase
+    .from("property_photos")
+    .select("*")
+    .eq("property_id", propertyId);
+  const current = existing ?? [];
+  const occupying = current.find((p) => p.room_type === roomType && p.room_index === roomIndex);
+
+  if (occupying) {
+    const { error: updateError } = await supabase
+      .from("property_photos")
+      .update({
+        storage_path: staged.storage_path,
+        thumbnail_path: staged.thumbnail_path,
+        captured_at: null,
+        created_by: user.id,
+      })
+      .eq("id", occupying.id);
+    if (updateError) return { error: updateError.message };
+
+    // The slot's previous object is now unreferenced.
+    if (!PHOTOS_INLINE && !occupying.storage_path.startsWith("data:")) {
+      const stale = [occupying.storage_path];
+      if (occupying.thumbnail_path && !occupying.thumbnail_path.startsWith("data:")) {
+        stale.push(occupying.thumbnail_path);
+      }
+      await supabase.storage.from(PHOTO_BUCKET).remove(stale);
+    }
+  } else {
+    if (current.length >= MAX_PHOTOS) {
+      return { error: `A listing can have at most ${MAX_PHOTOS} photos.` };
+    }
+    const { error: insertError } = await supabase.from("property_photos").insert({
+      property_id: propertyId,
+      storage_path: staged.storage_path,
+      thumbnail_path: staged.thumbnail_path,
+      room_type: roomType,
+      room_index: roomIndex,
+      sort_order: current.reduce((max, p) => Math.max(max, p.sort_order), -1) + 1,
+      captured_at: null,
+      created_by: user.id,
+    });
+    if (insertError) return { error: insertError.message };
+  }
+
+  // Object now belongs to the property_photos row — drop the staging row only,
+  // never its storage.
+  await supabase.from("ingest_photos").delete().eq("id", stagedId);
+
+  refresh(propertyId);
+  return { ok: "Photo added." };
+}
+
+/** Throw away a staged photo the poster doesn't want — row and object both. */
+export async function discardStagedPhoto(_prev: PhotoState, formData: FormData): Promise<PhotoState> {
+  const propertyId = formData.get("propertyId");
+  const stagedId = formData.get("stagedId");
+  if (typeof propertyId !== "string" || typeof stagedId !== "string") {
+    return { error: "Missing photo." };
+  }
+
+  const { supabase, user, error } = await requirePoster(propertyId);
+  if (error || !user) return { error: error ?? "Not allowed." };
+
+  const { data: staged } = await supabase
+    .from("ingest_photos")
+    .select("*")
+    .eq("id", stagedId)
+    .eq("property_id", propertyId)
+    .maybeSingle();
+  if (!staged) return { error: "That photo is already gone." };
+
+  const { error: deleteError } = await supabase.from("ingest_photos").delete().eq("id", stagedId);
+  if (deleteError) return { error: deleteError.message };
+
+  if (!PHOTOS_INLINE && !staged.storage_path.startsWith("data:")) {
+    const keys = [staged.storage_path];
+    if (staged.thumbnail_path && !staged.thumbnail_path.startsWith("data:")) {
+      keys.push(staged.thumbnail_path);
+    }
+    await supabase.storage.from(PHOTO_BUCKET).remove(keys);
+  }
+
+  refresh(propertyId);
+  return { ok: "Photo discarded." };
+}
