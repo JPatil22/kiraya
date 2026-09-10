@@ -14,6 +14,33 @@ export interface ParsedRentalListing {
   occupancy_pref: "family" | "bachelors_male" | "bachelors_female" | "any";
   address_line: string | null;
   phone: string | null;
+  /** The contact person's name, when the post pairs one with the number. */
+  sourceName: string | null;
+}
+
+/** Listing words that sit next to a number but aren't a person's name. */
+const NAME_STOP =
+  /^(rent|deposit|contact|call|whatsapp|whats|available|family|families|single|singles|girl|girls|boy|boys|bachelor|bachelors|semi|fully|furnished|unfurnished|flat|apartment|bhk|rk|location|society|near|road|nagar|chowk|phase|prime|spacious|modular|kitchen|parking|lift|security|month|monthly|visit|negotiable|highlights|details|amenities|owner|broker|agent|immediate|working|professional|preferred|only|slightly|the|for|and)$/i;
+
+/**
+ * The contact person's name, when the post writes it next to the number —
+ * "Contact: 98… – Anuraj", "SACHIN--98…", "98… - Rahul". Best-effort: skips the
+ * listing vocabulary that also sits near a number, and returns null rather than
+ * guess. Never a phone or a common word.
+ */
+function extractSourceName(text: string): string | null {
+  const cands: string[] = [];
+  let m: RegExpExecArray | null;
+  const re1 = /(?:contact|call|whats?\s?app|name)\b[^\n]{0,40}?[-–—]\s*([A-Za-z][a-zA-Z]{2,19})/gi;
+  while ((m = re1.exec(text))) cands.push(m[1]);
+  const re2 = /\b([A-Za-z][a-zA-Z]{2,19})\s*[-–—]{1,2}\s*(?:\+?91[\s-]?)?[6-9]\d{9}/g;
+  while ((m = re2.exec(text))) cands.push(m[1]);
+  const re3 = /[6-9]\d{9}\s*[-–—]\s*([A-Za-z][a-zA-Z]{2,19})/g;
+  while ((m = re3.exec(text))) cands.push(m[1]);
+  const raw = cands.find((c) => !NAME_STOP.test(c));
+  if (!raw) return null;
+  // Title-case an all-caps name (SACHIN → Sachin); leave mixed case alone.
+  return raw === raw.toUpperCase() ? raw[0] + raw.slice(1).toLowerCase() : raw;
 }
 
 /**
@@ -125,6 +152,7 @@ export function parseListingText(rawText: string): ParsedRentalListing {
   // post, so we don't grab the number of a different flat further down the feed.
   const phoneMatch = text.match(/\b[6-9]\d{9}\b/);
   const phone = phoneMatch ? phoneMatch[0] : null;
+  const sourceName = extractSourceName(text);
 
   // Separator between a label and its number: any run of spaces, colons,
   // hyphens (incl. the doubled "RENT--32K"), en/em dashes, dots or equals.
@@ -241,6 +269,7 @@ export function parseListingText(rawText: string): ParsedRentalListing {
     furnishing,
     occupancy_pref,
     address_line,
-    phone
+    phone,
+    sourceName,
   };
 }

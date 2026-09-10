@@ -391,19 +391,19 @@ export function ListingForm({
         <FieldError message={err("description")} />
       </div>
 
-      {/* Source contact (0034). For a listing seeded from elsewhere — a Facebook
-          post, a broker's own ad — the name and phone are the real contact a
-          tenant is given when they unlock this listing, in place of the posting
-          identity's own number. The note stays private to the poster and admins.
-          Leave all three blank for a listing posted by its real owner in person. */}
+      {/* Source contact (0034). For a listing seeded from an outside source — a
+          broker's own ad, an online post — the name and phone are the real
+          contact a tenant is given when they unlock this listing, in place of the
+          posting identity's own number. The note stays private to the poster and
+          admins. Leave all three blank for a listing posted by its real owner. */}
       <section className="space-y-3 rounded-lg border border-dashed bg-muted/30 p-4">
         <div>
           <h3 className="text-sm font-semibold">Broker / source contact</h3>
           <p className="text-xs text-muted-foreground">
-            Filling a listing from a Facebook post or a broker&apos;s ad? Put the real broker&apos;s
-            name and number here — that&apos;s what a tenant gets when they unlock contact, instead
-            of this account&apos;s number. The note below stays private to you. Leave blank if the
-            owner posted it themselves.
+            Re-posting a listing on someone else&apos;s behalf? Put the real broker&apos;s name and
+            number here — that&apos;s what a tenant gets when they unlock contact, instead of this
+            account&apos;s number. The note below stays private to you. Leave blank if the owner
+            posted it themselves.
           </p>
         </div>
         <div className="grid gap-3 sm:grid-cols-2">
@@ -413,7 +413,7 @@ export function ListingForm({
               id="sourceName"
               name="sourceName"
               maxLength={120}
-              placeholder="e.g. broker from the FB group"
+              placeholder="e.g. the listing broker"
               defaultValue={initial?.sourceName ?? ""}
             />
           </div>

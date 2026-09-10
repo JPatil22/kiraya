@@ -231,18 +231,23 @@ export async function ingestListing(
   }
   const propertyId = created.id;
 
-  // Private provenance: the real number to call, and where it came from.
-  let note = `Ingested from ${payload.source}`;
-  if (isBroker && parsed.brokerage == null) {
-    note += " · brokerage not stated in post — set before approving";
+  // Private contact for the tenant on unlock: the real name and number from the
+  // post. The note carries only a review flag — no source URL, so nothing names
+  // where the listing came from.
+  const note =
+    isBroker && parsed.brokerage == null
+      ? "Brokerage not stated in the source — set before approving"
+      : null;
+  const hasSource = parsed.sourceName || parsed.phone || note;
+  if (hasSource) {
+    await db.from("listing_sources").insert({
+      property_id: propertyId,
+      source_name: parsed.sourceName,
+      source_phone: parsed.phone,
+      note,
+      created_by: postedBy,
+    });
   }
-  await db.from("listing_sources").insert({
-    property_id: propertyId,
-    source_name: null, // FB posts rarely give a clean broker name; parser doesn't guess
-    source_phone: parsed.phone,
-    note: note.slice(0, 500),
-    created_by: postedBy,
-  });
 
   // Stage photos for room-tagging. Walk every candidate (not just the first N),
   // skipping stickers/thumbnails, and stop once MAX_PHOTOS *real* photos land —
