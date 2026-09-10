@@ -1,0 +1,24 @@
+#kiraya-global-target-btn {
+  position: fixed !important;
+  bottom: 40px !important;
+  right: 40px !important;
+  background-color: #ff4757 !important;
+  color: white !important;
+  border: 3px solid white !important;
+  padding: 15px 25px !important;
+  border-radius: 50px !important;
+  font-family: sans-serif !important;
+  font-size: 16px !important;
+  font-weight: bold !important;
+  cursor: pointer !important;
+  z-index: 2147483647 !important; /* Max z-index */
+  box-shadow: 0 4px 15px rgba(0,0,0,0.4) !important;
+  transition: all 0.2s !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+#kiraya-global-target-btn:hover {
+  transform: scale(1.05) !important;
+}
