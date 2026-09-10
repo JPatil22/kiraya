@@ -1,0 +1,235 @@
+// Zero-Credential Indian Real Estate Listing Parser
+// Extracts BHK, Rent, Deposit, Phone, Furnishing, Occupancy from Facebook text without any AI key!
+
+export interface ParsedRentalListing {
+  title: string;
+  rent: number | null;
+  deposit: number | null;
+  /** Rupees. 0 = post says "no brokerage"; null = post is silent on it. */
+  brokerage: number | null;
+  bhk: "1rk" | "1bhk" | "2bhk" | "3bhk" | "4plus";
+  furnishing: "unfurnished" | "semi" | "full";
+  occupancy_pref: "family" | "bachelors_male" | "bachelors_female" | "any";
+  address_line: string | null;
+  phone: string | null;
+}
+
+/**
+ * Lines Facebook's own UI injects into a scraped post's innerText. Any line
+ * matching one of these is not part of the listing and must never become its
+ * title. Kept deliberately broad — a dropped real line only costs us the next
+ * candidate, but a kept chrome line names the flat after Facebook's chrome.
+ */
+const FB_CHROME_PATTERNS: RegExp[] = [
+  /what's on your mind/i,
+  /write something/i,
+  /write a (public )?comment/i,
+  /^see (more|less|translation|original)/i,
+  /^(like|comment|share|reply|send|follow|save|report)$/i,
+  /all reactions/i,
+  /most relevant|newest|top comments/i,
+  /^(public|private) group/i,
+  /top contributor|anonymous (member|participant|post)/i,
+  /·\s*follow/i,
+  /^\d+\s*(comments?|shares?|reactions?)\b/i,
+  /\bmembers?\b.*\bjoined\b/i,
+  /^\d[\d.,]*k?\s*members?$/i,
+  // Group-feed nav / composer chrome that leaks in as its own lines.
+  /^(invite|joined|about|discussion|people|events|media|files|more)$/i,
+  /feeling\/activity/i,
+  /^poll$/i,
+  /sort group feed by/i,
+  /^ai content$/i,
+  // A bare relative timestamp ("5h", "2d", "Just now", "Yesterday at 5:00").
+  /^(just now|yesterday|\d+\s*(m|min|h|hr|hrs|d|w|y)\b)/i,
+  /^\s*(facebook|meta)\s*$/i,
+];
+
+function isFacebookChrome(line: string): boolean {
+  return FB_CHROME_PATTERNS.some((re) => re.test(line));
+}
+
+/** Any mention of a configuration ("2 BHK", "1 RK") — headline or body line. */
+const HEADLINE_RE = /\b\d\s*(?:bhk|rk)\b/i;
+
+/**
+ * A *new post's* headline: a configuration that also announces a letting
+ * ("2 BHK … for rent", "available … 3 BHK"). This is the real post boundary —
+ * NOT a bare "2BHK Semi Furnished Flat" line repeated in the body, which posts
+ * do all the time (and which must not truncate the listing before its rent).
+ */
+const STRONG_HEADLINE_RE =
+  /\b\d\s*(?:bhk|rk)\b[^\n]*\b(?:for\s+rent|available|rent\b)|\b(?:for\s+rent|available)\b[^\n]*\b\d\s*(?:bhk|rk)\b/i;
+
+/**
+ * A scraped group feed can carry several posts and a pile of group chrome. Focus
+ * on ONE listing: start at the first "N BHK/RK" line and stop at the *next post's
+ * headline* (a configuration line that also says "for rent"/"available") or the
+ * hashtags. A bare BHK line in the body is kept — breaking on it would cut the
+ * post off before its rent/deposit. Two distinct posts still separate cleanly,
+ * because the second one's headline announces its own letting.
+ */
+function focusListing(lines: string[]): { headline: string | null; lines: string[] } {
+  const start = lines.findIndex((l) => HEADLINE_RE.test(l));
+  if (start === -1) return { headline: null, lines };
+
+  const windowLines: string[] = [lines[start]];
+  for (let i = start + 1; i < lines.length && windowLines.length < 30; i += 1) {
+    const line = lines[i];
+    if (STRONG_HEADLINE_RE.test(line)) break; // the next post's headline
+    if (/^#/.test(line)) break; // hashtags close a post
+    windowLines.push(line);
+  }
+  return { headline: lines[start], lines: windowLines };
+}
+
+/** A clean title from parsed fields, for when the post text yields no headline. */
+function fallbackTitle(
+  bhk: ParsedRentalListing['bhk'],
+  furnishing: ParsedRentalListing['furnishing'],
+): string {
+  const bhkLabel = bhk === '1rk' ? '1 RK' : bhk.replace('bhk', ' BHK').replace('plus', '+ BHK').toUpperCase();
+  const furnish = furnishing === 'full' ? 'furnished ' : furnishing === 'unfurnished' ? 'unfurnished ' : '';
+  return `${bhkLabel} ${furnish}flat for rent`.replace(/\s+/g, ' ').trim();
+}
+
+export function parseListingText(rawText: string): ParsedRentalListing {
+  // Drop Facebook chrome, then narrow to a single post. All field extraction
+  // below runs on this focused text, not the whole scraped blob — so a feed with
+  // several posts yields the ONE the headline belongs to, not a blend of them.
+  const cleanLines = rawText
+    .split('\n')
+    .map((l) => l.trim())
+    .filter((l) => l.length > 5 && !isFacebookChrome(l));
+  const focus = focusListing(cleanLines);
+  const scopeLines = focus.lines;
+  const text = scopeLines.join(' ').replace(/\s+/g, ' ');
+
+  // 1. Extract BHK
+  let bhk: ParsedRentalListing['bhk'] = "2bhk";
+  if (/\b1\s*rk\b/i.test(text)) bhk = "1rk";
+  else if (/\b1\s*bhk\b/i.test(text)) bhk = "1bhk";
+  else if (/\b2\s*bhk\b/i.test(text)) bhk = "2bhk";
+  else if (/\b3\s*bhk\b/i.test(text)) bhk = "3bhk";
+  else if (/\b(4|5)\s*bhk\b/i.test(text)) bhk = "4plus";
+
+  // 2. Extract Phone Number (10 digit Indian mobile numbers) — from the focused
+  // post, so we don't grab the number of a different flat further down the feed.
+  const phoneMatch = text.match(/\b[6-9]\d{9}\b/);
+  const phone = phoneMatch ? phoneMatch[0] : null;
+
+  // Separator between a label and its number: any run of spaces, colons,
+  // hyphens (incl. the doubled "RENT--32K"), en/em dashes, dots or equals.
+  const SEP = String.raw`[\s:.=\-–—]*`;
+
+  // 3. Extract Rent
+  let rent: number | null = null;
+  // Match "Rent : 35k", "Rent: ₹35,000", "Rent 35000", "RENT--32K", "30k rent".
+  const rentMatch = text.match(new RegExp(`rent${SEP}₹?\\s*(\\d{1,2})\\s*[kK]\\b`, "i")) ||
+                    text.match(new RegExp(`rent${SEP}₹?\\s*(\\d{2,6})`, "i")) ||
+                    text.match(/₹?\s*(\d{1,2})\s*[kK]\s*rent/i);
+  if (rentMatch) {
+    const val = parseInt(rentMatch[1], 10);
+    rent = val < 200 ? val * 1000 : val;
+  }
+
+  // 4. Extract Deposit
+  let deposit: number | null = null;
+  const depositMatch = text.match(new RegExp(`deposit${SEP}₹?\\s*(\\d{1,3})\\s*[kK]\\b`, "i")) ||
+                        text.match(new RegExp(`deposit${SEP}₹?\\s*(\\d{2,6})`, "i"));
+  if (depositMatch) {
+    const val = parseInt(depositMatch[1], 10);
+    deposit = val < 500 ? val * 1000 : val;
+  } else if (rent && new RegExp(`deposit${SEP}2\\s*months`, "i").test(text)) {
+    deposit = rent * 2;
+  }
+
+  // 4b. Extract Brokerage. A broker states it as a flat amount ("brokerage
+  // 15k"), or as a slice of rent ("brokerage 1 month", "15 days brokerage"),
+  // or says there is none ("no brokerage"). null means the post never mentions
+  // it — the caller decides what an unstated broker fee defaults to.
+  let brokerage: number | null = null;
+  if (/\b(no|zero|nil|without)\s*brokerage\b/i.test(text) || new RegExp(`\\bbrokerage${SEP}(0|nil|none)\\b`, "i").test(text)) {
+    brokerage = 0;
+  } else {
+    const bMonths =
+      text.match(new RegExp(`brokerage${SEP}₹?\\s*(\\d+(?:\\.\\d+)?)\\s*months?`, "i")) ||
+      text.match(/(\d+(?:\.\d+)?)\s*months?\s*(?:rent\s*)?(?:as\s*)?brokerage/i);
+    const bDays =
+      text.match(new RegExp(`brokerage${SEP}(\\d+)\\s*days?`, "i")) ||
+      text.match(/(\d+)\s*days?\s*brokerage/i);
+    const bAmount =
+      text.match(new RegExp(`brokerage${SEP}₹?\\s*(\\d{1,2})\\s*[kK]\\b`, "i")) ||
+      text.match(new RegExp(`brokerage${SEP}₹?\\s*(\\d{3,6})\\b`, "i")) ||
+      text.match(/₹?\s*(\d{1,2})\s*[kK]\s*brokerage/i) ||
+      text.match(/₹?\s*(\d{3,6})\s*brokerage/i);
+    if (bMonths && rent) {
+      brokerage = Math.round(parseFloat(bMonths[1]) * rent);
+    } else if (bDays && rent) {
+      brokerage = Math.round((parseInt(bDays[1], 10) / 30) * rent);
+    } else if (bAmount) {
+      const val = parseInt(bAmount[1], 10);
+      brokerage = val < 200 ? val * 1000 : val;
+    }
+  }
+
+  // 5. Extract Furnishing
+  let furnishing: ParsedRentalListing['furnishing'] = "semi";
+  if (/fully\s*furnished/i.test(text) || /full\s*furnished/i.test(text)) {
+    furnishing = "full";
+  } else if (/unfurnished/i.test(text) || /empty/i.test(text)) {
+    furnishing = "unfurnished";
+  } else if (/semi\s*furnished/i.test(text)) {
+    furnishing = "semi";
+  }
+
+  // 6. Extract Occupancy Preference. A post that welcomes both a family and
+  // bachelors ("family & bachelor girls allow") is open to anyone, so only the
+  // *exclusive* single-group posts narrow the preference.
+  let occupancy_pref: ParsedRentalListing['occupancy_pref'] = "any";
+  const wantsFamily = /family|families/i.test(text);
+  const wantsFemale = /bachelor\s*girls|girls?\s*(?:only|allow|allowed|preferred)|\bfemales?\b/i.test(text);
+  const wantsMale = /bachelor\s*boys|boys?\s*(?:only|allow|allowed|preferred)|\bmales?\b/i.test(text);
+  const wantsBachelor = /bachelors?\b/i.test(text) || wantsFemale || wantsMale;
+  if (wantsFamily && wantsBachelor) {
+    occupancy_pref = "any";
+  } else if (wantsFamily) {
+    occupancy_pref = "family";
+  } else if (wantsFemale && !wantsMale) {
+    occupancy_pref = "bachelors_female";
+  } else if (wantsMale && !wantsFemale) {
+    occupancy_pref = "bachelors_male";
+  }
+
+  // 7. Title & Address, from the focused post's lines.
+  //
+  // The headline the focus started from ("2 BHK … for Rent") is the title. With
+  // no headline (a terse post), fall back to the first line that reads like a
+  // listing, then to a title built from parsed fields — never Facebook's chrome.
+  const listingLine =
+    focus.headline ??
+    scopeLines.find((l) =>
+      /\b\d\s*(rk|bhk)\b|\bfor\s+rent\b|\bflat\b|\bapartment\b|\bavailable\b|\brent\b/i.test(l),
+    ) ??
+    scopeLines[0] ??
+    '';
+  const title = listingLine.substring(0, 120) || fallbackTitle(bhk, furnishing);
+
+  const locationLine =
+    scopeLines.find((l) => /location|society|near|\bat\b|road|nagar|chowk|phase/i.test(l)) || null;
+  const address_line = locationLine
+    ? locationLine.replace(/location\s*[:\-]/i, '').trim().substring(0, 200)
+    : null;
+
+  return {
+    title,
+    rent,
+    deposit,
+    brokerage,
+    bhk,
+    furnishing,
+    occupancy_pref,
+    address_line,
+    phone
+  };
+}
