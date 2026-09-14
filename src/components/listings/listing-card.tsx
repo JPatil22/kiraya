@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { format } from "date-fns";
-import { AlertTriangle, Camera, MapPin } from "lucide-react";
+import { AlertTriangle, Camera, ImageOff, MapPin } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { FreshnessBadge } from "./freshness-badge";
 import { PostedByBadge } from "./posted-by-badge";
@@ -24,120 +24,118 @@ export function ListingCard({
     : null;
 
   return (
-    <div className="relative h-full">
-      {saved === undefined ? null : (
-        <SaveButton propertyId={listing.id} saved={saved} />
-      )}
+    <div className="group relative h-full">
+      {saved === undefined ? null : <SaveButton propertyId={listing.id} saved={saved} />}
 
-    <Link
-      href={`/listings/${listing.id}`}
-      className="group flex h-full flex-col overflow-hidden rounded-[var(--radius)] border border-border bg-card transition duration-200 hover:border-foreground/15 hover:shadow-[0_1px_2px_rgba(16,24,40,0.04),0_4px_12px_rgba(16,24,40,0.06)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
-    >
-      {listing.cover_photo_path ? (
-        <div className="relative overflow-hidden">
-          {/* eslint-disable-next-line @next/next/no-img-element -- runtime Storage
-              host and fixture data: URLs both defeat next/image. */}
-          <img
-            src={photoUrl(listing.cover_photo_thumb_path ?? listing.cover_photo_path)}
-            alt=""
-            loading="lazy"
-            className="aspect-[4/3] w-full bg-muted object-cover transition duration-300 group-hover:scale-[1.02]"
-          />
-          <span className="absolute bottom-2 right-2 flex items-center gap-1 rounded-full border border-border bg-card px-2 py-0.5 text-xs font-medium text-muted-foreground shadow-sm">
-            <Camera className="size-3" />
-            {listing.rooms_covered}/{listing.rooms_required}
-          </span>
+      <Link
+        href={`/listings/${listing.id}`}
+        className="flex h-full flex-col overflow-hidden rounded-xl border border-border bg-card transition duration-200 hover:-translate-y-0.5 hover:border-foreground/10 hover:shadow-[0_2px_4px_rgba(16,24,40,0.04),0_12px_28px_rgba(16,24,40,0.10)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
+      >
+        {/* Photo is the hook — big, with the price and freshness read straight off it. */}
+        <div className="relative aspect-[4/3] overflow-hidden bg-muted">
+          {listing.cover_photo_path ? (
+            // eslint-disable-next-line @next/next/no-img-element -- runtime Storage
+            // host and fixture data: URLs both defeat next/image.
+            <img
+              src={photoUrl(listing.cover_photo_thumb_path ?? listing.cover_photo_path)}
+              alt=""
+              loading="lazy"
+              className="size-full object-cover transition duration-500 group-hover:scale-[1.04]"
+            />
+          ) : (
+            <div className="flex size-full flex-col items-center justify-center gap-1 text-muted-foreground/50">
+              <ImageOff className="size-7" />
+              <span className="text-xs">No photo yet</span>
+            </div>
+          )}
+
+          {/* Scrim so white text and the price sit legibly over any photo. */}
+          <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black/55 via-black/10 to-transparent" />
+
+          <div className="absolute left-2.5 top-2.5">
+            <FreshnessBadge
+              daysSinceVerified={listing.days_since_verified}
+              isStale={listing.is_stale}
+              className="shadow-sm"
+            />
+          </div>
+
+          <div className="absolute inset-x-3 bottom-2.5 flex items-end justify-between gap-2">
+            <div className="text-white drop-shadow-sm">
+              <span className="text-xl font-semibold tabular-nums tracking-tight">
+                {formatINR(listing.all_in_monthly)}
+              </span>
+              <span className="text-sm font-medium text-white/80">/mo</span>
+            </div>
+            {listing.cover_photo_path ? (
+              <span className="flex items-center gap-1 rounded-full bg-black/45 px-2 py-0.5 text-xs font-medium text-white backdrop-blur-sm">
+                <Camera className="size-3" />
+                {listing.rooms_covered}/{listing.rooms_required}
+              </span>
+            ) : null}
+          </div>
         </div>
-      ) : null}
 
-      <div className="flex flex-1 flex-col p-4">
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <h2 className="truncate text-[15px] font-semibold leading-snug tracking-tight">
-            {listing.title}
-          </h2>
+        <div className="flex flex-1 flex-col p-4">
+          <h2 className="truncate font-semibold leading-snug tracking-tight">{listing.title}</h2>
+
           <p className="mt-1 text-[13px] text-muted-foreground">
-            {labelFor(BHK_OPTIONS, listing.bhk)} ·{" "}
-            {labelFor(FURNISHING_OPTIONS, listing.furnishing)}
+            {labelFor(BHK_OPTIONS, listing.bhk)} · {labelFor(FURNISHING_OPTIONS, listing.furnishing)}
+            <span className="text-muted-foreground/70"> · {formatINR(listing.move_in_cost)} to move in</span>
+          </p>
+
+          {listing.area_name || listing.address_line ? (
+            <p className="mt-2 flex items-center gap-1.5 text-[13px] text-muted-foreground">
+              <MapPin className="size-3.5 shrink-0" />
+              <span className="truncate">
+                {listing.area_name ? (
+                  <span className="font-medium text-foreground">{listing.area_name}</span>
+                ) : null}
+                {listing.area_name && listing.address_line ? " · " : null}
+                {listing.address_line}
+              </span>
+            </p>
+          ) : null}
+
+          {/* Trust signals — calm row, the ones a tenant should weigh at a glance. */}
+          <div className="mt-3.5 flex flex-wrap items-center gap-1.5 border-t border-border/70 pt-3">
+            <Badge variant={listing.availability === "available" ? "secondary" : "outline"}>
+              {labelFor(AVAILABILITY_OPTIONS, listing.availability)}
+            </Badge>
+            <PostedByBadge
+              role={listing.posted_by_role}
+              sourcedBrokerName={listing.sourced_broker_name}
+            />
+            {listing.posted_by_role === "broker" && brokerageClaim(listing) === "none" ? (
+              <Badge variant="outline" className="text-success">
+                No brokerage
+              </Badge>
+            ) : null}
+            {brokerageClaim(listing) === "unstated" ? (
+              <Badge variant="outline" className="gap-1 text-warning">
+                <AlertTriangle className="size-3.5" />
+                Brokerage not stated
+              </Badge>
+            ) : null}
+            {listing.has_warning ? (
+              <Badge variant="destructive" className="gap-1">
+                <AlertTriangle className="size-3.5" />
+                {listing.open_mismatch_count} mismatch{listing.open_mismatch_count === 1 ? "" : "es"}
+              </Badge>
+            ) : null}
+            {photoWarning?.stale ? (
+              <Badge variant="outline" className="gap-1 text-warning">
+                <Camera className="size-3.5" />
+                {photoWarning.label}
+              </Badge>
+            ) : null}
+          </div>
+
+          <p className="mt-auto pt-3 text-[11px] uppercase tracking-wide text-muted-foreground/80">
+            Available {format(new Date(listing.available_from), "d MMM yyyy")}
           </p>
         </div>
-        <div className="shrink-0 text-right">
-          <div className="text-lg font-semibold tabular-nums tracking-tight">
-            {formatINR(listing.all_in_monthly)}
-            <span className="text-xs font-normal text-muted-foreground">/mo</span>
-          </div>
-          <div className="text-[11px] text-muted-foreground">
-            {formatINR(listing.move_in_cost)} to move in
-          </div>
-        </div>
-      </div>
-
-      {listing.area_name || listing.address_line ? (
-        <p className="mt-2.5 flex items-center gap-1.5 text-[13px] text-muted-foreground">
-          <MapPin className="size-3.5 shrink-0" />
-          <span className="truncate">
-            {listing.area_name ? (
-              <span className="font-medium text-foreground">{listing.area_name}</span>
-            ) : null}
-            {listing.area_name && listing.address_line ? " · " : null}
-            {listing.address_line}
-          </span>
-        </p>
-      ) : null}
-
-      <div className="mt-3.5 flex flex-wrap items-center gap-1.5 border-t border-border/70 pt-3.5">
-        <FreshnessBadge
-          daysSinceVerified={listing.days_since_verified}
-          isStale={listing.is_stale}
-        />
-        <Badge variant={listing.availability === "available" ? "secondary" : "outline"}>
-          {labelFor(AVAILABILITY_OPTIONS, listing.availability)}
-        </Badge>
-        <PostedByBadge
-          role={listing.posted_by_role}
-          sourcedBrokerName={listing.sourced_broker_name}
-        />
-        {/*
-          Only worth a chip on a broker's listing (0023). "Owner" already implies
-          no fee, and badging every owner listing would bury the signal in noise.
-        */}
-        {listing.posted_by_role === "broker" && brokerageClaim(listing) === "none" ? (
-          <Badge variant="outline" className="gap-1 text-success">
-            No brokerage
-          </Badge>
-        ) : null}
-        {brokerageClaim(listing) === "unstated" ? (
-          <Badge variant="outline" className="gap-1 text-warning">
-            <AlertTriangle className="size-3.5" />
-            Brokerage not stated
-          </Badge>
-        ) : null}
-        {listing.has_warning ? (
-          <Badge variant="destructive" className="gap-1">
-            <AlertTriangle className="size-3.5" />
-            {listing.open_mismatch_count} mismatch reports
-          </Badge>
-        ) : null}
-        {photoWarning?.stale ? (
-          <Badge variant="outline" className="gap-1 text-warning">
-            <Camera className="size-3.5" />
-            {photoWarning.label}
-          </Badge>
-        ) : null}
-        {listing.rooms_covered < listing.rooms_required ? (
-          <Badge variant="outline" className="gap-1 text-warning">
-            <Camera className="size-3.5" />
-            {listing.rooms_required - listing.rooms_covered} room
-            {listing.rooms_required - listing.rooms_covered === 1 ? "" : "s"} not shown
-          </Badge>
-        ) : null}
-      </div>
-
-      <p className="mt-auto pt-3 text-[11px] uppercase tracking-wide text-muted-foreground/80">
-        Available {format(new Date(listing.available_from), "d MMM yyyy")}
-      </p>
-      </div>
-    </Link>
+      </Link>
     </div>
   );
 }
