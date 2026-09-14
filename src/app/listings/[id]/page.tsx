@@ -109,6 +109,18 @@ export default async function ListingDetailPage({
   // Same unlock gate as the poster number above, so it can't leak before then.
   const sourceContact = exchange ? await getListingContact(supabase, listing.id) : null;
 
+  // Was this listing sourced from an outside post at all? Its poster is a
+  // placeholder identity, so a sourced listing must never reveal that
+  // placeholder's number — only the real number scraped from the post, or none.
+  // (A `listing_sources` row is the definition of "sourced"; the name/phone in it
+  // may be absent, so its mere existence is the signal, not sourced_broker_name.)
+  const { data: sourceRow } = await supabase
+    .from("listing_sources")
+    .select("property_id")
+    .eq("property_id", id)
+    .maybeSingle();
+  const isSourced = Boolean(sourceRow);
+
   // Already answered? Then don't ask again on this page.
   const [myFeedback, visit] = exchange && user
     ? await Promise.all([
@@ -340,7 +352,16 @@ export default async function ListingDetailPage({
             posterName={listing.posted_by_name}
             posterRole={listing.posted_by_role}
             unlocked={Boolean(exchange)}
-            phone={sourceContact?.phone ?? poster?.phone ?? null}
+            // A sourced (e.g. Facebook) listing reveals the real number scraped
+            // from the post. If the post had none, show nothing rather than the
+            // seeded placeholder that posted the row — never hand a tenant a fake
+            // number. Genuinely-posted listings still fall back to the poster's
+            // own profile number.
+            phone={
+              isSourced
+                ? sourceContact?.phone ?? null
+                : sourceContact?.phone ?? poster?.phone ?? null
+            }
             contactName={sourceContact?.name ?? null}
             sourcedBrokerName={listing.sourced_broker_name}
           />
