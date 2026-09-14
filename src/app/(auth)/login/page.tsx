@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { BrandMark } from "@/components/brand-mark";
 import { signInWithGoogle } from "../actions";
 
 export const dynamic = "force-dynamic";
@@ -22,8 +23,8 @@ export default async function LoginPage({
 
   return (
     <main className="mx-auto flex min-h-dvh max-w-md flex-col justify-center px-6 py-10">
-      <Link href="/" className="mb-8 text-center text-lg font-bold tracking-tight">
-        किराया <span className="text-muted-foreground">Kiraya</span>
+      <Link href="/" className="mb-8 flex justify-center">
+        <BrandMark />
       </Link>
 
       <Card>

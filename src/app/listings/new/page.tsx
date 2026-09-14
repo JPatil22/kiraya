@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { SiteHeader } from "@/components/site-header";
 import { OpenModeSeedHint } from "@/components/open-mode-seed-hint";
+import { PageHeader } from "@/components/ui/page-header";
 import { canPost, getDataClient, getDevRole, getSessionUser } from "@/lib/auth";
 import { OPEN_MODE } from "@/lib/open-mode";
 import { ListingForm } from "@/components/listings/listing-form";
@@ -36,14 +37,11 @@ export default async function NewListingPage() {
     <div className="min-h-dvh">
       <SiteHeader />
 
-      <main className="mx-auto max-w-2xl space-y-6 px-6 py-8">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Post a property</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Costs are itemised on purpose — tenants see exactly what they&apos;ll pay, so you
-            get fewer wasted visits. Your listing goes to review before it appears publicly.
-          </p>
-        </div>
+      <main className="mx-auto max-w-2xl space-y-6 px-6 py-10">
+        <PageHeader
+          title="Post a property"
+          description="Costs are itemised on purpose — tenants see exactly what they'll pay, so you get fewer wasted visits. Your listing goes to review before it appears publicly."
+        />
 
             <ListingForm
               action={createListing}

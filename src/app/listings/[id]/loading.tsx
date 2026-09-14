@@ -6,14 +6,14 @@
  * which queries the database. A Suspense fallback that has to await anything
  * cannot paint immediately, which defeats the entire point of having one.
  */
+import { BrandMark } from "@/components/brand-mark";
+
 export default function LoadingListing() {
   return (
     <div className="min-h-dvh">
-      <header className="border-b">
-        <div className="mx-auto flex max-w-5xl items-center justify-between gap-4 px-6 py-4">
-          <span className="text-lg font-bold tracking-tight">
-            किराया <span className="text-muted-foreground">Kiraya</span>
-          </span>
+      <header className="border-b border-border/70">
+        <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-6 py-3.5">
+          <BrandMark />
           <div className="h-8 w-40 animate-pulse rounded bg-muted" />
         </div>
       </header>
