@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Bell } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { BrandMark } from "@/components/brand-mark";
 import { DevRoleSwitcher } from "@/components/dev-role-switcher";
 import { canPost, getDataClient, getDevRole, getSessionUser } from "@/lib/auth";
 import { OPEN_MODE, OPEN_MODE_IN_PRODUCTION } from "@/lib/open-mode";
@@ -43,13 +44,13 @@ export async function SiteHeader() {
         </div>
       ) : null}
 
-    <header className="sticky top-0 z-40 border-b bg-background/85 backdrop-blur supports-[backdrop-filter]:bg-background/70">
-      <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-6 py-3">
+    <header className="sticky top-0 z-40 border-b border-border/70 bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/70">
+      <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-6 py-3.5">
         <Link
           href="/"
-          className="rounded-md text-lg font-bold tracking-tight focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
+          className="rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
         >
-          किराया <span className="text-muted-foreground">Kiraya</span>
+          <BrandMark />
         </Link>
 
         <nav className="flex items-center gap-1">

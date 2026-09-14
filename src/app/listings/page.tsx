@@ -60,12 +60,12 @@ export default async function ListingsPage({
     <div className="min-h-dvh">
       <SiteHeader />
 
-      <main className="mx-auto max-w-6xl space-y-6 px-6 py-8">
+      <main className="mx-auto max-w-6xl space-y-7 px-6 py-10">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">
+          <h1 className="text-[28px] font-semibold tracking-tight">
             Rentals in {locality?.name ?? "your locality"}
           </h1>
-          <p className="mt-1 text-sm text-muted-foreground">
+          <p className="mt-1.5 max-w-2xl text-[15px] leading-relaxed text-muted-foreground">
             Every listing shows when it was last verified, who posted it, and the full cost —
             rent plus everything else.
           </p>
@@ -93,7 +93,7 @@ export default async function ListingsPage({
         {listings.length === 0 ? (
           <EmptyState hasFilters={hasActiveFilters(filters)} />
         ) : (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {listings.map((listing) => (
               <ListingCard
                 key={listing.id}

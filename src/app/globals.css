@@ -4,10 +4,12 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    /* Canvas is a hair off pure white so white cards read as distinct surfaces
+       floating above it — the foundation of the clean, flat look. */
+    --background: 210 20% 98%;
+    --foreground: 222.2 47% 11%;
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card-foreground: 222.2 47% 11%;
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
     /* Indigo, not slate. Kept clear of the semantic trio: success is green
@@ -28,10 +30,10 @@
     --success-foreground: 210 40% 98%;
     --warning: 38 92% 50%;
     --warning-foreground: 222.2 47.4% 11.2%;
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
+    --border: 214 20% 90%;
+    --input: 214 20% 90%;
     --ring: 245 58% 47%;
-    --radius: 0.75rem;
+    --radius: 0.625rem;
   }
 
   .dark {

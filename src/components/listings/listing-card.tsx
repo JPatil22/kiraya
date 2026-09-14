@@ -31,47 +31,49 @@ export function ListingCard({
 
     <Link
       href={`/listings/${listing.id}`}
-      className="group flex h-full flex-col overflow-hidden rounded-xl border bg-card shadow-sm transition-colors hover:border-primary focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+      className="group flex h-full flex-col overflow-hidden rounded-[var(--radius)] border border-border bg-card transition duration-200 hover:border-foreground/15 hover:shadow-[0_1px_2px_rgba(16,24,40,0.04),0_4px_12px_rgba(16,24,40,0.06)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
     >
       {listing.cover_photo_path ? (
-        <div className="relative">
+        <div className="relative overflow-hidden">
           {/* eslint-disable-next-line @next/next/no-img-element -- runtime Storage
               host and fixture data: URLs both defeat next/image. */}
           <img
             src={photoUrl(listing.cover_photo_thumb_path ?? listing.cover_photo_path)}
             alt=""
             loading="lazy"
-            className="aspect-[4/3] w-full bg-muted object-cover"
+            className="aspect-[4/3] w-full bg-muted object-cover transition duration-300 group-hover:scale-[1.02]"
           />
-          <span className="absolute bottom-2 right-2 flex items-center gap-1 rounded-md bg-background/90 px-1.5 py-0.5 text-xs">
+          <span className="absolute bottom-2 right-2 flex items-center gap-1 rounded-full border border-border bg-card px-2 py-0.5 text-xs font-medium text-muted-foreground shadow-sm">
             <Camera className="size-3" />
-            {listing.rooms_covered}/{listing.rooms_required} rooms
+            {listing.rooms_covered}/{listing.rooms_required}
           </span>
         </div>
       ) : null}
 
       <div className="flex flex-1 flex-col p-4">
-      <div className="flex flex-wrap items-start justify-between gap-3">
+      <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <h2 className="truncate font-semibold group-hover:underline">{listing.title}</h2>
-          <p className="mt-0.5 text-sm text-muted-foreground">
+          <h2 className="truncate text-[15px] font-semibold leading-snug tracking-tight">
+            {listing.title}
+          </h2>
+          <p className="mt-1 text-[13px] text-muted-foreground">
             {labelFor(BHK_OPTIONS, listing.bhk)} ·{" "}
             {labelFor(FURNISHING_OPTIONS, listing.furnishing)}
           </p>
         </div>
-        <div className="text-right">
-          <div className="text-lg font-bold tabular-nums">
+        <div className="shrink-0 text-right">
+          <div className="text-lg font-semibold tabular-nums tracking-tight">
             {formatINR(listing.all_in_monthly)}
-            <span className="text-sm font-normal text-muted-foreground">/mo</span>
+            <span className="text-xs font-normal text-muted-foreground">/mo</span>
           </div>
-          <div className="text-xs text-muted-foreground">
-            all-in · {formatINR(listing.move_in_cost)} to move in
+          <div className="text-[11px] text-muted-foreground">
+            {formatINR(listing.move_in_cost)} to move in
           </div>
         </div>
       </div>
 
       {listing.area_name || listing.address_line ? (
-        <p className="mt-3 flex items-center gap-1.5 text-sm text-muted-foreground">
+        <p className="mt-2.5 flex items-center gap-1.5 text-[13px] text-muted-foreground">
           <MapPin className="size-3.5 shrink-0" />
           <span className="truncate">
             {listing.area_name ? (
@@ -83,7 +85,7 @@ export function ListingCard({
         </p>
       ) : null}
 
-      <div className="mt-4 flex flex-wrap items-center gap-2">
+      <div className="mt-3.5 flex flex-wrap items-center gap-1.5 border-t border-border/70 pt-3.5">
         <FreshnessBadge
           daysSinceVerified={listing.days_since_verified}
           isStale={listing.is_stale}
@@ -131,8 +133,8 @@ export function ListingCard({
         ) : null}
       </div>
 
-      <p className="mt-auto pt-3 text-xs text-muted-foreground">
-        Available from {format(new Date(listing.available_from), "d MMM yyyy")}
+      <p className="mt-auto pt-3 text-[11px] uppercase tracking-wide text-muted-foreground/80">
+        Available {format(new Date(listing.available_from), "d MMM yyyy")}
       </p>
       </div>
     </Link>
