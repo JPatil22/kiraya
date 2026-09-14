@@ -112,14 +112,12 @@ export default async function ListingDetailPage({
   // Was this listing sourced from an outside post at all? Its poster is a
   // placeholder identity, so a sourced listing must never reveal that
   // placeholder's number — only the real number scraped from the post, or none.
-  // (A `listing_sources` row is the definition of "sourced"; the name/phone in it
-  // may be absent, so its mere existence is the signal, not sourced_broker_name.)
-  const { data: sourceRow } = await supabase
-    .from("listing_sources")
-    .select("property_id")
-    .eq("property_id", id)
-    .maybeSingle();
-  const isSourced = Boolean(sourceRow);
+  // Via the SECURITY DEFINER function (0038) so it works under RLS too: a plain
+  // `listing_sources` read is poster/admin-only and would be blocked for a tenant.
+  const { data: sourcedFlag } = await (
+    supabase.rpc as unknown as (fn: string, args: Record<string, unknown>) => Promise<{ data: boolean | null }>
+  )("listing_is_sourced", { p_property: id });
+  const isSourced = Boolean(sourcedFlag);
 
   // Already answered? Then don't ask again on this page.
   const [myFeedback, visit] = exchange && user

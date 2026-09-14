@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/types/database";
+import { OPEN_MODE } from "@/lib/open-mode";
 
 /**
  * The private "where did this come from" note on a listing (0034).
@@ -81,15 +82,36 @@ export async function getListingContact(
   supabase: SupabaseClient<Database>,
   propertyId: string,
 ): Promise<ListingContact | null> {
-  const { data } = await supabase
-    .from("listing_sources")
-    .select("source_name, source_phone")
-    .eq("property_id", propertyId)
-    .maybeSingle();
+  let name: string | null = null;
+  let phone: string | null = null;
 
-  const phone = data?.source_phone?.trim();
+  if (OPEN_MODE) {
+    // Service-role bypasses RLS — read the row directly.
+    const { data } = await supabase
+      .from("listing_sources")
+      .select("source_name, source_phone")
+      .eq("property_id", propertyId)
+      .maybeSingle();
+    name = data?.source_name ?? null;
+    phone = data?.source_phone ?? null;
+  } else {
+    // Auth mode: RLS hides listing_sources from a tenant, so the real name +
+    // number come through the SECURITY DEFINER function that gates on their
+    // contact_exchange (0038) — never falling back to the seeded placeholder.
+    const { data } = await (
+      supabase.rpc as unknown as (
+        fn: string,
+        args: Record<string, unknown>,
+      ) => Promise<{ data: Array<{ source_name: string | null; source_phone: string | null }> | null }>
+    )("listing_contact_for_viewer", { p_property: propertyId });
+    const row = Array.isArray(data) ? data[0] : null;
+    name = row?.source_name ?? null;
+    phone = row?.source_phone ?? null;
+  }
+
+  phone = phone?.trim() || null;
   if (!phone) return null;
-  return { name: data?.source_name?.trim() || null, phone };
+  return { name: name?.trim() || null, phone };
 }
 
 /** Digits only, so "+91 98…", "98…" and "098…" group together. */
