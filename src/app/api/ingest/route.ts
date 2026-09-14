@@ -95,7 +95,7 @@ export async function POST(req: Request) {
         photosStaged: result.photosStaged,
         photosSkipped: result.photosSkipped,
         photosFailed: result.photosFailed,
-        review: `/listings/${result.propertyId}/photos`,
+        review: `/admin/listings/${result.propertyId}`,
       },
       { status: 200, headers: corsHeaders },
     );

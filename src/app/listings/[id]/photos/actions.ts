@@ -49,6 +49,8 @@ async function requirePoster(propertyId: string) {
 function refresh(propertyId: string) {
   revalidatePath(`/listings/${propertyId}/photos`);
   revalidatePath(`/listings/${propertyId}`);
+  revalidatePath(`/admin/listings/${propertyId}`);
+  revalidatePath("/admin/listings");
   revalidatePath("/listings");
 }
 

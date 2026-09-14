@@ -20,18 +20,25 @@ export function ReviewDecision({ propertyId }: { propertyId: string }) {
       <input type="hidden" name="propertyId" value={propertyId} />
       <Input name="note" placeholder="Note for the audit trail (optional)" maxLength={500} />
       <div className="flex flex-wrap gap-2">
-        <Button type="submit" name="decision" value="approve" size="sm" disabled={pending}>
-          <Check /> Approve &amp; verify
+        <Button
+          type="submit"
+          name="decision"
+          value="approve"
+          size="sm"
+          disabled={pending}
+          className="bg-emerald-600 hover:bg-emerald-700 text-white"
+        >
+          <Check className="size-4 mr-1" /> Approve &amp; publish
         </Button>
         <Button
           type="submit"
           name="decision"
           value="reject"
           size="sm"
-          variant="outline"
+          variant="destructive"
           disabled={pending}
         >
-          <X /> Reject
+          <X className="size-4 mr-1" /> Discard (Reject)
         </Button>
       </div>
       <Error message={state?.error} />

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, ExternalLink } from "lucide-react";
+import { ArrowLeft, ExternalLink, FileText, Globe, Phone, User } from "lucide-react";
 import { AdminShell } from "@/components/admin/admin-shell";
 import { OpenModeSeedHint } from "@/components/open-mode-seed-hint";
 import { SiteHeader } from "@/components/site-header";
@@ -95,6 +95,8 @@ export default async function ReviewListingPage({
         ? "Live"
         : listing.status;
 
+  const sourceUrl = stagedRows?.find((r) => r.source_url)?.source_url ?? null;
+
   return (
     <AdminShell
       active="/admin/listings"
@@ -126,6 +128,51 @@ export default async function ReviewListingPage({
         </CardHeader>
         <CardContent>
           <ReviewPageActions propertyId={id} warnings={warnings} />
+        </CardContent>
+      </Card>
+
+      {/* Extracted Source & Text: see what the parser extracted side-by-side */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base flex items-center justify-between">
+            <span className="flex items-center gap-2">
+              <FileText className="size-4 text-muted-foreground" /> Extracted Source &amp; Text
+            </span>
+            {sourceUrl ? (
+              <Button asChild variant="ghost" size="sm" className="h-7 text-xs">
+                <a href={sourceUrl} target="_blank" rel="noopener noreferrer">
+                  <Globe className="size-3.5 mr-1" /> View source post <ExternalLink className="size-3 ml-1" />
+                </a>
+              </Button>
+            ) : null}
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <div className="flex flex-wrap items-center gap-4 text-xs text-muted-foreground">
+            {source?.source_name ? (
+              <span className="flex items-center gap-1.5 font-medium text-foreground">
+                <User className="size-3.5 text-muted-foreground" /> {source.source_name}
+              </span>
+            ) : null}
+            {source?.source_phone ? (
+              <span className="flex items-center gap-1.5 font-mono text-foreground">
+                <Phone className="size-3.5 text-muted-foreground" /> {source.source_phone}
+              </span>
+            ) : null}
+            {source?.note ? (
+              <Badge variant="outline" className="text-[11px] text-amber-700 dark:text-amber-300 border-amber-300">
+                {source.note}
+              </Badge>
+            ) : null}
+          </div>
+
+          {listing.description ? (
+            <div className="rounded-lg border bg-muted/40 p-3 text-xs leading-relaxed font-mono whitespace-pre-wrap max-h-48 overflow-y-auto">
+              {listing.description}
+            </div>
+          ) : (
+            <p className="text-xs text-muted-foreground italic">No post text captured.</p>
+          )}
         </CardContent>
       </Card>
 

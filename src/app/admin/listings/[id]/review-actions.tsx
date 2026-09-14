@@ -40,18 +40,24 @@ export function ReviewPageActions({
 
       <Input name="note" placeholder="Note for the audit trail (optional)" maxLength={500} />
 
-      <div className="flex flex-wrap gap-2">
-        <Button type="submit" name="decision" value="approve" disabled={pending}>
-          <Check /> Approve &amp; publish
+      <div className="flex flex-wrap gap-2.5 pt-1">
+        <Button
+          type="submit"
+          name="decision"
+          value="approve"
+          disabled={pending}
+          className="bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm"
+        >
+          <Check className="size-4 mr-1.5" /> Approve &amp; publish
         </Button>
         <Button
           type="submit"
           name="decision"
           value="reject"
-          variant="outline"
+          variant="destructive"
           disabled={pending}
         >
-          <X /> Reject
+          <X className="size-4 mr-1.5" /> Discard listing (Reject)
         </Button>
       </div>
 
