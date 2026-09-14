@@ -64,7 +64,7 @@ export default async function BrokerIntentsPage() {
 
       <main className="mx-auto max-w-4xl space-y-6 px-6 py-8">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Verified tenant demand</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">Verified tenant demand</h1>
           <p className="mt-1 text-sm text-muted-foreground">
             Phone-verified tenants actively looking in {locality.name}. Suggest a live listing
             and they get a card with the full verified cost — no WhatsApp, no forwarding.

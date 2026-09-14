@@ -69,7 +69,7 @@ export default async function ListingPhotosPage({
         </Button>
 
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Photos</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">Photos</h1>
           <p className="mt-1 text-sm text-muted-foreground">
             {property.title}
           </p>

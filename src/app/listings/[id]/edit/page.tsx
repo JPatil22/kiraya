@@ -71,7 +71,7 @@ export default async function EditListingPage({
         </Button>
 
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Edit listing</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">Edit listing</h1>
           <p className="mt-1 text-sm text-muted-foreground">
             Every change is recorded on the public timeline with the date — tenants see what
             moved and when. Saving also counts as confirming the listing is current.

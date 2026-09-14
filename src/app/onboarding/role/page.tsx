@@ -7,7 +7,7 @@ export default function RolePage() {
     <main className="mx-auto flex min-h-dvh max-w-md flex-col justify-center px-6 py-10">
       <div className="mb-8">
         <p className="text-sm font-medium text-muted-foreground">Step 1 of 2</p>
-        <h1 className="mt-1 text-2xl font-bold tracking-tight">Who are you here as?</h1>
+        <h1 className="mt-1 text-2xl font-semibold tracking-tight">Who are you here as?</h1>
         <p className="mt-1 text-sm text-muted-foreground">
           This shapes your whole experience. You can only be one at a time.
         </p>
