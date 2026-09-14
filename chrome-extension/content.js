@@ -1,23 +1,63 @@
 console.log("[Kiraya Extension] Loading Target Tool...");
 
-// 1. Create a floating button on the body
 const floatingBtn = document.createElement('button');
 floatingBtn.id = 'kiraya-global-target-btn';
 floatingBtn.innerHTML = '\ud83c\udfaf Extract Listing';
-document.body.appendChild(floatingBtn);
+floatingBtn.style.cssText = `
+  position: fixed !important;
+  bottom: 85px !important;
+  right: 25px !important;
+  background-color: #ff4757 !important;
+  color: white !important;
+  border: 3px solid white !important;
+  padding: 12px 22px !important;
+  border-radius: 50px !important;
+  font-family: sans-serif !important;
+  font-size: 15px !important;
+  font-weight: bold !important;
+  cursor: pointer !important;
+  z-index: 2147483647 !important;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.4) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+`;
+
+function ensureButtonMounted() {
+  if (!document.body) return;
+  if (!document.getElementById('kiraya-global-target-btn')) {
+    document.body.appendChild(floatingBtn);
+  }
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', ensureButtonMounted);
+} else {
+  ensureButtonMounted();
+}
+
+// Guard against Facebook SPA page transitions removing dynamic elements
+setInterval(ensureButtonMounted, 2000);
 
 let isTargeting = false;
 // True from the moment a post is clicked until its POST finishes. Guards against
 // re-entry — the gallery-expand `expandBtn.click()` below fires a *synthetic*
 // click that would otherwise re-trigger the document listener and send twice.
 let isExtracting = false;
+// After a successful send, the button becomes an "Open Review" link for a few
+// seconds — one tap opens the review page instead of toggling targeting.
+let pendingReviewUrl = null;
 
 floatingBtn.addEventListener('click', (e) => {
   e.stopPropagation();
+  if (pendingReviewUrl) {
+    window.open(pendingReviewUrl, '_blank');
+    return;
+  }
   isTargeting = !isTargeting;
-  
+
   if (isTargeting) {
-    floatingBtn.innerHTML = 'Click ANY text on the post...';
+    floatingBtn.innerHTML = 'Click post or photo to extract...';
     floatingBtn.style.backgroundColor = '#2ed573';
     document.body.style.cursor = 'crosshair';
   } else {
@@ -35,12 +75,53 @@ function resetTargeting() {
   if (activeTarget) activeTarget.classList.remove('kiraya-current-target');
 }
 
+function extractViewerPostText(modal) {
+  if (!modal) return "";
+  const sidebar = modal.querySelector(
+    '[data-pagelet="MediaViewerFeedbackRoot"], [data-pagelet="TahoeRightRail"], [role="complementary"]'
+  );
+  const target = sidebar || modal;
+  // Post text message container in Facebook viewer sidebar
+  const msgEl = target.querySelector(
+    'div[data-ad-preview="message"], div[data-ad-comet-preview="message"], div[dir="auto"][style*="-webkit-line-clamp"]'
+  );
+  if (msgEl && (msgEl.innerText || "").trim().length >= 30) {
+    return msgEl.innerText.trim();
+  }
+  // If not found, collect text blocks excluding comments and action buttons
+  if (sidebar) {
+    const comments = sidebar.querySelector('ul, [aria-label*="comment" i]');
+    const candidateBlocks = Array.from(sidebar.querySelectorAll('div[dir="auto"], span[dir="auto"]')).filter(
+      (el) => !comments || !comments.contains(el)
+    );
+    for (const b of candidateBlocks) {
+      const t = (b.innerText || "").trim();
+      if (t.length >= 50 && !t.includes('Write a comment') && !t.includes('Like') && !t.includes('Share')) {
+        return t;
+      }
+    }
+  }
+  return "";
+}
+
 /**
  * Text of the single post the user clicked. Prefer Facebook's article wrapper;
  * if there is none, climb from the clicked node to the first ancestor with a
  * post-sized amount of text, stopping before it grows into the whole feed.
  */
 function scopePostText(clicked, fallback) {
+  // If user clicked inside Facebook's Photo Theatre viewer
+  const viewerModal =
+    clicked.closest('[data-pagelet="MediaViewerRoot"]') ||
+    clicked.closest('[aria-label="Photo Viewer"]') ||
+    clicked.closest('[aria-label="Media viewer"]') ||
+    (fallback && fallback.getAttribute && fallback.getAttribute('data-pagelet') === 'MediaViewerRoot' ? fallback : null);
+
+  if (viewerModal) {
+    const vt = extractViewerPostText(viewerModal);
+    if (vt && vt.length >= 30) return vt;
+  }
+
   const article = clicked.closest('[role="article"]');
   if (article) {
     const t = (article.innerText || "").trim();
@@ -82,213 +163,523 @@ async function handleTargetClick(e) {
   }, 60000); // generous: paging a large gallery + server-side photo download
 
   let targetNode = e.target;
-  let postContainer = targetNode.closest('[role="dialog"]') || targetNode.closest('[role="article"]') || targetNode.closest('[role="main"]') || document.querySelector('[role="main"]') || document.body;
 
-  // Scope the TEXT to the single post the user clicked — not the whole group
-  // feed. Grabbing role="main" (the fallback above) drags in the group header,
-  // nav, and every other post below, which then blend into one wrong listing.
-  //   1. Prefer the clicked post's article wrapper.
-  //   2. Else climb from the click to a single-post-sized chunk (enough text to
-  //      be a listing, before it balloons into neighbouring posts).
-  // The server parser then further narrows to one post as a safety net.
+  // Helper to detect if Facebook's photo theatre viewer is ACTUALLY open and visible on screen
+  function findActiveMediaViewer() {
+    const candidates = Array.from(
+      document.querySelectorAll('[role="dialog"], [aria-label*="viewer" i], [aria-label*="Photo" i], [data-pagelet="MediaViewerRoot"]')
+    );
+    for (const c of candidates) {
+      const img = c.querySelector('img[src*="fbcdn"], img[data-visualcompletion="media-vc-image"]');
+      if (img) {
+        const rect = img.getBoundingClientRect();
+        if ((rect.width > 150 && rect.height > 150) || (img.naturalWidth > 150 && img.naturalHeight > 150)) {
+          return c;
+        }
+      }
+    }
+    return null;
+  }
+
+  // 1. Check if user clicked inside an actively displayed photo viewer
+  const activeViewer = findActiveMediaViewer();
+  const clickedInViewer = activeViewer && (activeViewer.contains(targetNode) || targetNode === activeViewer);
+
+  // 2. Locate the clicked post container
+  function findPostContainer(node) {
+    if (clickedInViewer) return activeViewer;
+
+    const dialog = node.closest('[role="dialog"]');
+    if (dialog && dialog === activeViewer) return dialog;
+
+    const post = node.closest('[role="article"]') ||
+                 node.closest('div[data-pagelet^="FeedUnit"]') ||
+                 node.closest('div[data-ad-preview="message"]');
+    if (post) return post;
+
+    let curr = node;
+    let candidate = node;
+    for (let i = 0; i < 10 && curr && curr !== document.body; i++) {
+      const len = (curr.innerText || "").trim().length;
+      if (len >= 40 && len <= 3500) candidate = curr;
+      if (len > 3500) break;
+      curr = curr.parentElement;
+    }
+    return candidate;
+  }
+
+  let postContainer = findPostContainer(targetNode);
   const rawText = scopePostText(targetNode, postContainer);
-  
-  floatingBtn.innerHTML = 'Expanding Gallery...';
 
   const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-  // Keep real photos, drop chrome: emojis, static assets, tiny thumbnails, and
-  // animated keyframe stickers (`/t6/` `.kf`). `.png` is allowed — FB serves real
-  // photos as PNG too.
-  const looksLikePhoto = (src) =>
-    !!src &&
-    src.startsWith('http') &&
-    src.includes('fbcdn') &&
-    !src.includes('emoji') &&
-    !src.includes('rsrc.php') &&
-    !/[ps]\d{2,3}x\d{2,3}/.test(src) && // p50x50, s100x100 → avatars/thumbs
-    !src.includes('-1/') &&
-    !src.includes('/t6/') &&
-    !/\.kf(\?|$)/.test(src);
-
-  const collectImgs = (root) => {
-    const out = [];
-    root.querySelectorAll('img').forEach((img) => {
-      const src = img.currentSrc || img.src || img.getAttribute('data-src') || '';
-      if (looksLikePhoto(src)) out.push(src);
-    });
-    // FB sometimes paints photos as a CSS background-image rather than <img>.
-    root.querySelectorAll('[style*="background-image"]').forEach((el) => {
-      const m = /url\((['"]?)(https:\/\/[^'")]+fbcdn[^'")]+)\1\)/.exec(el.getAttribute('style') || '');
-      if (m && looksLikePhoto(m[2])) out.push(m[2]);
-    });
-    return out;
+  const simulateRealClick = (el) => {
+    if (!el) return;
+    try {
+      const rect = el.getBoundingClientRect();
+      const x = rect.left + rect.width / 2;
+      const y = rect.top + rect.height / 2;
+      const opts = {
+        bubbles: true,
+        cancelable: true,
+        view: window,
+        clientX: x,
+        clientY: y,
+        screenX: x + (window.screenX || 0),
+        screenY: y + (window.screenY || 0),
+        button: 0,
+        buttons: 1,
+        pointerId: 1,
+        pointerType: 'mouse',
+        isPrimary: true
+      };
+      el.dispatchEvent(new PointerEvent('pointerdown', opts));
+      el.dispatchEvent(new MouseEvent('mousedown', opts));
+      el.dispatchEvent(new PointerEvent('pointerup', opts));
+      el.dispatchEvent(new MouseEvent('mouseup', opts));
+      el.dispatchEvent(new MouseEvent('click', opts));
+      el.click();
+    } catch (err) {
+      el.click();
+    }
   };
 
-  // Accumulate every photo we see. Start with what's already in the post (the
-  // feed grid thumbnails).
-  const imageSet = new Set(collectImgs(postContainer));
+  const isFacebook = window.location.hostname.includes('facebook.com');
 
-  // Find the "+15"-style overlay (or a photo link) to open the full gallery.
-  let expandBtn = null;
-  const allClickables = Array.from(postContainer.querySelectorAll('a, div[role="button"], span'));
-  for (const el of allClickables) {
+  const looksLikePhoto = (src) => {
+    if (!src || typeof src !== 'string' || !src.startsWith('http')) return false;
+    if (
+      src.includes('emoji.php') ||
+      src.includes('rsrc.php') ||
+      src.includes('/t6/') ||
+      /\.kf(\?|$)/.test(src) ||
+      src.includes('t39.99422') ||
+      src.includes('t45.') ||
+      // ONLY reject tiny avatars <= 100px (e.g. p50x50, s60x60, s100x100), NEVER 526x296 or 720x720!
+      /[ps](?:[1-9]\d?|100)x(?:[1-9]\d?|100)(?:[\/?]|$)/.test(src)
+    ) {
+      return false;
+    }
+    if (isFacebook && !src.includes('fbcdn')) return false;
+    return true;
+  };
+
+  // Normalizes Facebook CDN URLs by extracting the underlying photo filename
+  // E.g. "482918231_122119283738734279_4634027732296180373_n.jpg"
+  const getPhotoKey = (url) => {
+    if (!url || typeof url !== 'string') return '';
+    try {
+      const u = new URL(url);
+      const parts = u.pathname.split('/');
+      return parts[parts.length - 1] || url;
+    } catch (e) {
+      return url.split('?')[0];
+    }
+  };
+
+  const getLargestFromSrcset = (srcset) => {
+    if (!srcset) return null;
+    let best = null;
+    let maxW = 0;
+    const items = srcset.split(',').map((s) => s.trim());
+    for (const item of items) {
+      const [u, w] = item.split(/\s+/);
+      const width = parseInt(w, 10) || 0;
+      if (width >= maxW && looksLikePhoto(u)) {
+        maxW = width;
+        best = u;
+      }
+    }
+    return best;
+  };
+
+  const getImgBestSrc = (img) => {
+    if (!img) return null;
+    const srcsetBest = getLargestFromSrcset(img.getAttribute('srcset'));
+    const src = srcsetBest || img.currentSrc || img.src || img.getAttribute('data-src') || '';
+    return looksLikePhoto(src) ? src : null;
+  };
+
+  // Extract listing photos from a post container.
+  // CRITICAL: We only look inside photo anchors (a[href*="/photo"], a[href*="photo.php"])
+  // and strictly IGNORE user avatars, comments, icons, and reactions!
+  const collectPostPhotos = (container) => {
+    const photos = [];
+    if (!container) return photos;
+
+    // 1. Preferred: Photos wrapped in Facebook photo links
+    const photoAnchors = Array.from(
+      container.querySelectorAll('a[href*="/photo"], a[href*="photo.php"], a[href*="/photos/"]')
+    ).filter((a) => {
+      // Exclude comments section or user profile links
+      return !a.closest('[role="article"] [role="article"]') &&
+             !a.closest('[aria-label*="comment" i]') &&
+             !a.closest('ul');
+    });
+
+    for (const a of photoAnchors) {
+      // 1. Check <img> tags
+      const img = a.querySelector('img');
+      if (img) {
+        const src = getImgBestSrc(img);
+        if (src && !photos.includes(src)) photos.push(src);
+      }
+
+      // 2. Check CSS background-image on <a> or any descendant tile
+      const bgCandidates = [a, ...Array.from(a.querySelectorAll('[style*="background-image"], [style*="background:"]'))];
+      for (const el of bgCandidates) {
+        const style = el.getAttribute('style') || '';
+        const m = /url\((['"]?)(https:\/\/[^'")]+fbcdn[^'")]+)\1\)/.exec(style);
+        if (m && looksLikePhoto(m[2]) && !photos.includes(m[2])) {
+          photos.push(m[2]);
+        }
+      }
+    }
+
+    // 2. Fallback: check all media containers within the post
+    if (photos.length === 0) {
+      container.querySelectorAll('img').forEach((img) => {
+        if (img.closest('[aria-label*="comment" i]') || img.closest('ul')) return;
+        if (img.width > 0 && img.width < 100 && img.height > 0 && img.height < 100) return;
+        const src = getImgBestSrc(img);
+        if (src && !photos.includes(src)) photos.push(src);
+      });
+
+      container.querySelectorAll('[style*="background-image"]').forEach((el) => {
+        if (el.closest('[aria-label*="comment" i]') || el.closest('ul')) return;
+        const style = el.getAttribute('style') || '';
+        const m = /url\((['"]?)(https:\/\/[^'")]+fbcdn[^'")]+)\1\)/.exec(style);
+        if (m && looksLikePhoto(m[2]) && !photos.includes(m[2])) photos.push(m[2]);
+      });
+    }
+
+    return photos;
+  };
+
+  // Helper to extract ONLY the active displayed photo from the theatre viewport stage
+  // (Excludes the right sidebar containing comments / other post recommendations)
+  const getActiveTheatrePhoto = (modal) => {
+    if (!modal) return null;
+    // Primary: Facebook's main photo viewport image
+    const mainImg =
+      modal.querySelector('img[data-visualcompletion="media-vc-image"]') ||
+      modal.querySelector('div[data-pagelet="MediaViewerRoot"] img[src*="fbcdn"]');
+    if (mainImg) {
+      const src = getImgBestSrc(mainImg);
+      if (src) return src;
+    }
+
+    // Fallback: search all fbcdn images inside modal, excluding right sidebar, sorted by size descending
+    const sidebar = modal.querySelector('[role="complementary"], [data-pagelet="MediaViewerFeedbackRoot"], [data-pagelet="TahoeRightRail"]');
+    const imgs = Array.from(modal.querySelectorAll('img')).filter((img) => {
+      if (sidebar && sidebar.contains(img)) return false;
+      if (img.closest('[aria-label*="comment" i]')) return false;
+      const src = img.currentSrc || img.src || '';
+      return src.includes('fbcdn');
+    });
+
+    imgs.sort((a, b) => {
+      const aArea = (a.naturalWidth || a.clientWidth || 0) * (a.naturalHeight || a.clientHeight || 0);
+      const bArea = (b.naturalWidth || b.clientWidth || 0) * (b.naturalHeight || b.clientHeight || 0);
+      return bArea - aArea;
+    });
+
+    for (const img of imgs) {
+      const src = getImgBestSrc(img);
+      if (src) return src;
+    }
+    return null;
+  };
+
+  const advanceNextPhoto = (modal) => {
+    if (!modal) return;
+    const nextBtn = modal.querySelector(
+      '[aria-label*="next photo" i], [aria-label*="see next photo" i], [aria-label="Next" i], [aria-label="next" i], div[aria-label*="next" i]'
+    );
+    if (nextBtn) {
+      simulateRealClick(nextBtn);
+    }
+    const keyOpts = { key: 'ArrowRight', keyCode: 39, which: 39, code: 'ArrowRight', bubbles: true, cancelable: true };
+    document.dispatchEvent(new KeyboardEvent('keydown', keyOpts));
+    window.dispatchEvent(new KeyboardEvent('keydown', keyOpts));
+    modal.dispatchEvent(new KeyboardEvent('keydown', keyOpts));
+  };
+
+  const waitForNextPhoto = async (modal, currentKey, maxMs = 1200) => {
+    const start = Date.now();
+    while (Date.now() - start < maxMs) {
+      await sleep(150);
+      const candidate = getActiveTheatrePhoto(modal);
+      if (candidate && getPhotoKey(candidate) !== currentKey) {
+        return candidate;
+      }
+    }
+    return getActiveTheatrePhoto(modal);
+  };
+
+  // Check if post displays a "+4", "+5" overlay indicating hidden photos
+  let extraCount = 0;
+  let plusElement = null;
+  for (const el of postContainer.querySelectorAll('span, div, a')) {
     const txt = el.innerText?.trim();
-    if (txt && /^\+\d+$/.test(txt)) {
-      expandBtn = el;
+    const match = txt && txt.match(/^\+(\d+)$/);
+    if (match) {
+      extraCount = parseInt(match[1], 10);
+      plusElement = el;
       break;
     }
   }
-  if (!expandBtn) {
-    const photoLinks = Array.from(postContainer.querySelectorAll('a[href*="/photo"], a[href*="/photos/"]'));
-    if (photoLinks.length > 0) expandBtn = photoLinks[0];
-  }
 
-  let dialogModal = null;
-  if (expandBtn) {
-    console.log('[Kiraya Extension] Opening photo gallery…', expandBtn);
-    try {
-      expandBtn.click();
-      await sleep(1000); // let the theatre open and fetch the first photo
-      dialogModal = document.querySelector('[role="dialog"]');
-    } catch (err) {
-      console.warn('Failed to open gallery:', err);
+  // Initial thumbnails already visible inside this single post
+  const imageSet = new Set(collectPostPhotos(postContainer));
+  const initialThumbCount = imageSet.size;
+
+  // Scope the MAIN-world network interceptor to THIS extraction: clear whatever
+  // it captured from earlier feed scrolling, so from here on it only collects
+  // the photo loads triggered by opening THIS post's gallery.
+  try { window.dispatchEvent(new CustomEvent('KIRAYA_RESET_IMAGES')); } catch (e) {}
+
+  let dialogModal = clickedInViewer ? activeViewer : null;
+
+  // If not already in viewer, open the photo gallery
+  if (!dialogModal) {
+    let expandTarget = null;
+    if (plusElement) {
+      expandTarget = plusElement.querySelector('img') || plusElement.closest('a') || plusElement;
+    }
+    if (!expandTarget && targetNode && targetNode.tagName === 'IMG' && postContainer.contains(targetNode)) {
+      expandTarget = targetNode;
+    }
+    if (!expandTarget) {
+      // Find the first visible photo thumbnail in the post
+      const firstImg = postContainer.querySelector('a[href*="/photo"] img, a[href*="photo.php"] img, div[role="button"] img[src*="fbcdn"]');
+      if (firstImg) expandTarget = firstImg;
+    }
+    if (!expandTarget) {
+      const photoLinks = Array.from(postContainer.querySelectorAll('a[href*="/photo"], a[href*="photo.php"], a[href*="/photos/"]'));
+      if (photoLinks.length > 0) expandTarget = photoLinks[0];
+    }
+    if (!expandTarget) {
+      const photoImg = postContainer.querySelector('img[src*="fbcdn"]');
+      if (photoImg) expandTarget = photoImg;
+    }
+
+    if (expandTarget) {
+      console.log('[Kiraya Extension] Opening photo gallery...', expandTarget, 'extra count:', extraCount);
+      floatingBtn.innerHTML = 'Opening gallery...';
+      simulateRealClick(expandTarget);
+
+      // Wait up to 3.5s for real viewer to appear
+      for (let i = 0; i < 7; i++) {
+        await sleep(500);
+        dialogModal = findActiveMediaViewer();
+        if (dialogModal) break;
+      }
     }
   }
 
-  // Page through the whole gallery. Facebook loads theatre photos lazily — one
-  // per view — so a single grab only ever sees the first. Advancing with the
-  // Next control (or the Right arrow) forces each to load, and both the DOM scan
-  // and the MAIN-world GraphQL interceptor capture it as it comes in.
+  // If theatre opened (or was already open), step through each photo ONE BY ONE
   if (dialogModal) {
-    const MAX_STEPS = 25; // safely past the server's 12-photo cap
-    collectImgs(dialogModal).forEach((u) => imageSet.add(u));
-    let stagnant = 0;
-    for (let i = 0; i < MAX_STEPS && stagnant < 3; i++) {
-      const before = imageSet.size;
-      const nextBtn = dialogModal.querySelector(
-        '[aria-label="Next photo"], [aria-label="Next"], [aria-label="See next photo"]',
-      );
-      if (nextBtn) nextBtn.click();
-      else document.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', keyCode: 39, bubbles: true }));
-      await sleep(550);
-      collectImgs(dialogModal).forEach((u) => imageSet.add(u));
-      stagnant = imageSet.size === before ? stagnant + 1 : 0;
-      floatingBtn.innerHTML = `Loading photos… ${imageSet.size}`;
+    console.log('[Kiraya Extension] Photo theatre active. Stepping through images one by one...');
+    floatingBtn.innerHTML = 'Extracting photos…';
+
+    const visitedKeys = new Set();
+    const theatrePhotos = [];
+
+    // Check if Facebook displays a photo counter like "1 of 5" or "1 / 5"
+    let totalPhotosExpected = 0;
+    try {
+      const counterMatch = dialogModal.innerText?.match(/\b(\d+)\s*(?:of|\/)\s*(\d+)\b/i);
+      if (counterMatch && counterMatch[2]) {
+        const parsedTotal = parseInt(counterMatch[2], 10);
+        if (parsedTotal >= 1 && parsedTotal <= 15) {
+          totalPhotosExpected = parsedTotal;
+          console.log(`[Kiraya Extension] Detected gallery count: ${totalPhotosExpected}`);
+        }
+      }
+    } catch (e) {}
+
+    // 1. Grab first photo currently on screen
+    let activePhoto = getActiveTheatrePhoto(dialogModal);
+    if (activePhoto) {
+      const k = getPhotoKey(activePhoto);
+      visitedKeys.add(k);
+      theatrePhotos.push(activePhoto);
+      floatingBtn.innerHTML = `Extracting photo 1...`;
+    }
+
+    // 2. Step forward through the remaining photos
+    let stagnantCount = 0;
+    const maxSteps = totalPhotosExpected > 0 ? totalPhotosExpected + 2 : (extraCount > 0 ? initialThumbCount + extraCount + 2 : 14);
+
+    for (let step = 0; step < maxSteps; step++) {
+      if (theatrePhotos.length >= 12) break; // Kiraya DB schema limit
+      if (totalPhotosExpected > 0 && theatrePhotos.length >= totalPhotosExpected) {
+        console.log(`[Kiraya Extension] Collected all ${totalPhotosExpected} photos. Done.`);
+        break;
+      }
+
+      const prevKey = theatrePhotos.length > 0 ? getPhotoKey(theatrePhotos[theatrePhotos.length - 1]) : '';
+      advanceNextPhoto(dialogModal);
+
+      activePhoto = await waitForNextPhoto(dialogModal, prevKey, 1200);
+      if (activePhoto) {
+        const k = getPhotoKey(activePhoto);
+        if (visitedKeys.has(k)) {
+          // If we've seen at least 2 photos and encounter an already visited photo, the album has looped!
+          if (visitedKeys.size >= 2) {
+            console.log('[Kiraya Extension] Gallery looped to start. All photos in post extracted.');
+            break;
+          }
+          stagnantCount++;
+        } else {
+          visitedKeys.add(k);
+          theatrePhotos.push(activePhoto);
+          stagnantCount = 0;
+          floatingBtn.innerHTML = `Extracting photo ${theatrePhotos.length}...`;
+        }
+      } else {
+        stagnantCount++;
+      }
+
+      if (stagnantCount >= 3) {
+        console.log('[Kiraya Extension] No new photo detected after 3 attempts. Stopping.');
+        break;
+      }
+    }
+
+    // Merge high-resolution theatre photos into imageSet, replacing thumbnails
+    for (const tp of theatrePhotos) {
+      const tpKey = getPhotoKey(tp);
+      for (const existing of Array.from(imageSet)) {
+        if (getPhotoKey(existing) === tpKey) {
+          imageSet.delete(existing);
+        }
+      }
+      imageSet.add(tp);
+    }
+
+    // Close theatre only if WE opened it (leave open if user was already viewing it)
+    if (!clickedInViewer && dialogModal) {
+      try {
+        const closeBtn = dialogModal.querySelector('[aria-label="Close"], [aria-label="close"], [aria-label="Back"]');
+        if (closeBtn) {
+          simulateRealClick(closeBtn);
+        } else {
+          document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', keyCode: 27, code: 'Escape', bubbles: true }));
+        }
+      } catch (err) {}
     }
   }
 
-  const sourceContainer = dialogModal || postContainer;
-
-  // Mark container for Main World injected.js
-  const oldTarget = document.querySelector('.kiraya-current-target');
-  if (oldTarget) oldTarget.classList.remove('kiraya-current-target');
-  sourceContainer.classList.add('kiraya-current-target');
-
-  floatingBtn.innerHTML = 'Extracting All Photos...';
-
-  const domImages = [...imageSet];
-  console.log(
-    '[Kiraya Extension] DOM images =', domImages.length, '| gallery opened:', !!dialogModal,
-  );
-
-  const onReactData = async (event) => {
-    window.removeEventListener('KIRAYA_REACT_DATA_RESPONSE', onReactData);
-    
-    const reactImages = event.detail?.images || [];
-    const allImages = [...new Set([...domImages, ...reactImages])];
-
-    console.log(
-      `[Kiraya Extension] Photos — DOM: ${domImages.length}, GraphQL/interceptor: ${reactImages.length}, merged unique: ${allImages.length}`,
-    );
-
-    // Auto-close the gallery modal if we opened it
-    if (dialogModal) {
-      try {
-        const closeBtn = dialogModal.querySelector('[aria-label="Close"], [aria-label="close"]');
-        if (closeBtn) {
-          closeBtn.click();
-        } else {
-          // Press Escape key as fallback
-          document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', keyCode: 27, bubbles: true }));
-        }
-      } catch (err) {
-        console.warn("Could not auto-close modal:", err);
+  // Fold in whatever the MAIN-world interceptor captured while the gallery was
+  // open — GraphQL photo URLs the DOM walk couldn't see (lazy / off-screen album
+  // images). Buffer was reset above, so these belong to this post. Dedupe by
+  // photo key so a thumbnail and its hi-res twin don't both survive.
+  try {
+    const reactImages = await new Promise((resolve) => {
+      let settled = false;
+      const onData = (ev) => {
+        settled = true;
+        window.removeEventListener('KIRAYA_REACT_DATA_RESPONSE', onData);
+        resolve((ev.detail && ev.detail.images) || []);
+      };
+      window.addEventListener('KIRAYA_REACT_DATA_RESPONSE', onData);
+      window.dispatchEvent(new CustomEvent('KIRAYA_EXTRACT_REACT'));
+      setTimeout(() => {
+        if (settled) return;
+        window.removeEventListener('KIRAYA_REACT_DATA_RESPONSE', onData);
+        resolve([]);
+      }, 1500);
+    });
+    const haveKeys = new Set([...imageSet].map(getPhotoKey));
+    for (const u of reactImages) {
+      if (!looksLikePhoto(u)) continue;
+      const k = getPhotoKey(u);
+      if (!haveKeys.has(k)) {
+        haveKeys.add(k);
+        imageSet.add(u);
       }
     }
+    console.log(`[Kiraya Extension] Interceptor added ${reactImages.length} candidate(s); total now ${imageSet.size}.`);
+  } catch (e) {}
 
-    floatingBtn.innerHTML = 'Sending to Next.js...';
+  floatingBtn.innerHTML = 'Sending to Next.js...';
 
-    // Safe retrieval of storage settings (handles Chrome extension context invalidation gracefully)
-    const getSettings = () => {
-      return new Promise((resolve) => {
-        if (typeof chrome !== 'undefined' && chrome?.storage?.local) {
-          chrome.storage.local.get(['apiEndpoint', 'apiKey'], (res) => resolve(res || {}));
-        } else {
-          // Fallback if extension context was invalidated by reload
-          resolve({
-            apiEndpoint: 'http://localhost:3000/api/ingest',
-            apiKey: 'my-super-secret-key'
-          });
-        }
-      });
-    };
+  // allImages is strictly scoped to the clicked post: DOM thumbnails + theatre
+  // hi-res + this-post GraphQL captures, deduped, capped at the DB's 12.
+  const allImages = [...imageSet].slice(0, 12);
+  console.log(`[Kiraya Extension] Scoped photos for upload: ${allImages.length}`, allImages);
 
-    const settings = await getSettings();
-    const apiEndpoint = settings.apiEndpoint || 'http://localhost:3000/api/ingest';
-    const apiKey = settings.apiKey || 'my-super-secret-key';
-
-    try {
-      const response = await fetch(apiEndpoint, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${apiKey}`
-        },
-        body: JSON.stringify({
-          source: window.location.href,
-          text: rawText,
-          images: allImages,
-          videos: []
-        })
-      });
-
-      if (response.ok) {
-        // New /api/ingest returns { propertyId, photosStaged, role, review }.
-        let staged = null;
-        try {
-          const json = await response.json();
-          staged = json?.photosStaged;
-          console.log('[Kiraya Extension] Listing created for review:', json);
-        } catch (e) {}
-        floatingBtn.innerHTML =
-          staged != null ? `Sent \u2705 (${staged} photos)` : 'Sent \u2705';
+  // Safe retrieval of storage settings (handles Chrome extension context invalidation gracefully)
+  const getSettings = () => {
+    return new Promise((resolve) => {
+      if (typeof chrome !== 'undefined' && chrome?.storage?.local) {
+        chrome.storage.local.get(['apiEndpoint', 'apiKey'], (res) => resolve(res || {}));
       } else {
-        let msg = '';
-        try {
-          msg = (await response.json())?.error || '';
-        } catch (e) {}
-        console.warn('[Kiraya Extension] Ingest failed:', response.status, msg);
-        floatingBtn.innerHTML = 'Failed \u274c';
+        resolve({
+          apiEndpoint: 'http://localhost:3000/api/ingest',
+          apiKey: 'my-super-secret-key'
+        });
       }
-    } catch (error) {
-      console.error("Kiraya Request Error:", error);
-      floatingBtn.innerHTML = 'Error \u274c';
-    }
-
-    clearTimeout(watchdog);
-    isExtracting = false;
-    setTimeout(() => {
-      floatingBtn.innerHTML = '\ud83c\udfaf Extract Listing';
-      floatingBtn.classList.remove('active');
-      resetTargeting();
-    }, 3000);
+    });
   };
 
-  window.addEventListener('KIRAYA_REACT_DATA_RESPONSE', onReactData);
+  const settings = await getSettings();
+  const apiEndpoint = settings.apiEndpoint || 'http://localhost:3000/api/ingest';
+  const apiKey = settings.apiKey || 'my-super-secret-key';
 
-  // Trigger Main World extraction
-  window.dispatchEvent(new CustomEvent('KIRAYA_EXTRACT_REACT'));
+  try {
+    const response = await fetch(apiEndpoint, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`
+      },
+      body: JSON.stringify({
+        source: window.location.href,
+        text: rawText,
+        images: allImages,
+        videos: []
+      })
+    });
+
+    if (response.ok) {
+      let staged = null;
+      let reviewUrl = null;
+      try {
+        const json = await response.json();
+        staged = json?.photosStaged;
+        reviewUrl = json?.review;
+        console.log('[Kiraya Extension] Listing created for review:', json);
+      } catch (e) {}
+      floatingBtn.innerHTML =
+        staged != null ? `Sent \u2705 (${staged} photos) \u2014 Open Review \u2197` : 'Sent \u2705 \u2014 Open Review \u2197';
+      if (reviewUrl) {
+        const base = apiEndpoint.replace(/\/api\/ingest.*$/, '');
+        pendingReviewUrl = `${base}${reviewUrl}`;
+      }
+    } else {
+      let msg = '';
+      try {
+        msg = (await response.json())?.error || '';
+      } catch (e) {}
+      console.warn('[Kiraya Extension] Ingest failed:', response.status, msg);
+      floatingBtn.innerHTML = 'Failed \u274c';
+    }
+  } catch (error) {
+    console.error("Kiraya Request Error:", error);
+    floatingBtn.innerHTML = 'Error \u274c';
+  }
+
+  clearTimeout(watchdog);
+  isExtracting = false;
+  setTimeout(() => {
+    pendingReviewUrl = null;
+    floatingBtn.innerHTML = '\ud83c\udfaf Extract Listing';
+    floatingBtn.classList.remove('active');
+    resetTargeting();
+  }, 4500);
 }
 
 // Listen for clicks on the document in the capture phase

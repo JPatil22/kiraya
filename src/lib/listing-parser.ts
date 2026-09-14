@@ -29,18 +29,31 @@ const NAME_STOP =
  * guess. Never a phone or a common word.
  */
 function extractSourceName(text: string): string | null {
+  // A person's name: one to three capitalised words. Broad enough for "Rajesh
+  // Sharma", tight enough to skip a sentence.
+  const NAME = "[A-Za-z][a-zA-Z]{1,19}(?:\\s+[A-Za-z][a-zA-Z]{1,19}){0,2}";
   const cands: string[] = [];
   let m: RegExpExecArray | null;
-  const re1 = /(?:contact|call|whats?\s?app|name)\b[^\n]{0,40}?[-–—]\s*([A-Za-z][a-zA-Z]{2,19})/gi;
+  // "Contact: Rajesh Sharma - 98…" — full name between the label and the number.
+  const re0 = new RegExp(`(?:contact|call|whats?\\s?app|name|posted by|broker)\\s*[:\\-]?\\s*(${NAME})\\s*[-–—:]?\\s*(?:\\+?91[\\s-]?)?[6-9]\\d{9}`, "gi");
+  while ((m = re0.exec(text))) cands.push(m[1]);
+  // "Name - 98…" / "SACHIN--98…"
+  const re1 = new RegExp(`\\b(${NAME})\\s*[-–—]{1,2}\\s*(?:\\+?91[\\s-]?)?[6-9]\\d{9}`, "g");
   while ((m = re1.exec(text))) cands.push(m[1]);
-  const re2 = /\b([A-Za-z][a-zA-Z]{2,19})\s*[-–—]{1,2}\s*(?:\+?91[\s-]?)?[6-9]\d{9}/g;
+  // "Contact … – Name" (name after the number/label)
+  const re2 = /(?:contact|call|whats?\s?app|name)\b[^\n]{0,40}?[-–—]\s*([A-Za-z][a-zA-Z]{2,19})/gi;
   while ((m = re2.exec(text))) cands.push(m[1]);
+  // "98… - Name"
   const re3 = /[6-9]\d{9}\s*[-–—]\s*([A-Za-z][a-zA-Z]{2,19})/g;
   while ((m = re3.exec(text))) cands.push(m[1]);
-  const raw = cands.find((c) => !NAME_STOP.test(c));
+  // Accept the first candidate whose FIRST word isn't listing vocabulary.
+  const raw = cands.map((c) => c.trim()).find((c) => c && !NAME_STOP.test(c.split(/\s+/)[0]));
   if (!raw) return null;
-  // Title-case an all-caps name (SACHIN → Sachin); leave mixed case alone.
-  return raw === raw.toUpperCase() ? raw[0] + raw.slice(1).toLowerCase() : raw;
+  // Title-case each word of an all-caps name (SACHIN → Sachin); leave the rest.
+  return raw
+    .split(/\s+/)
+    .map((w) => (w === w.toUpperCase() ? w[0] + w.slice(1).toLowerCase() : w))
+    .join(" ");
 }
 
 /**
@@ -138,7 +151,10 @@ export function parseListingText(rawText: string): ParsedRentalListing {
     .filter((l) => l.length > 5 && !isFacebookChrome(l));
   const focus = focusListing(cleanLines);
   const scopeLines = focus.lines;
-  const text = scopeLines.join(' ').replace(/\s+/g, ' ');
+  // Drop thousands-separator commas (28,000 → 28000) so amount regexes see the
+  // whole number, not just the first group. Only commas *between digits* go —
+  // "family, single" keeps its comma.
+  const text = scopeLines.join(' ').replace(/\s+/g, ' ').replace(/(?<=\d),(?=\d)/g, '');
 
   // 1. Extract BHK
   let bhk: ParsedRentalListing['bhk'] = "2bhk";

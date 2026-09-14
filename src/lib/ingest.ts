@@ -121,7 +121,10 @@ async function stageOnePhoto(
       headers: {
         "User-Agent":
           "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36",
-        Accept: "image/avif,image/webp,image/png,image/jpeg,*/*",
+        // Only ask for formats the bucket can actually store. Requesting AVIF
+        // makes format-negotiating hosts (e.g. Unsplash `auto=format`) serve
+        // AVIF, which we then have to skip — so leave it out entirely.
+        Accept: "image/webp,image/png,image/jpeg,*/*;q=0.8",
         Referer: "https://www.facebook.com/",
       },
       redirect: "follow",
