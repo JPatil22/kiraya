@@ -7,10 +7,13 @@ import {
   CheckCircle2,
   CalendarDays,
   Camera,
+  Flag,
   History,
+  Info,
   KeyRound,
   MapPin,
   Pencil,
+  ReceiptText,
 } from "lucide-react";
 import { SiteHeader } from "@/components/site-header";
 import { CostBreakdown } from "@/components/listings/cost-breakdown";
@@ -23,6 +26,8 @@ import { PostedByBadge } from "@/components/listings/posted-by-badge";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { IconTile } from "@/components/ui/icon-tile";
+import { formatINR } from "@/lib/utils";
 import { getDataClient, getSessionUser } from "@/lib/auth";
 import { getPublicListing } from "@/lib/listings";
 import { getMyOpenReport, getPropertyUpdates } from "@/lib/history";
@@ -127,7 +132,7 @@ export default async function ListingDetailPage({
     <div className="min-h-dvh">
       <SiteHeader />
 
-      <main className="mx-auto max-w-3xl space-y-6 px-6 py-8">
+      <main className="mx-auto max-w-3xl space-y-6 px-6 py-10">
         <Button asChild variant="ghost" size="sm" className="-ml-3">
           <Link href="/listings">
             <ArrowLeft /> All listings
@@ -135,12 +140,22 @@ export default async function ListingDetailPage({
         </Button>
 
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">{listing.title}</h1>
-          <p className="mt-1 text-muted-foreground">
+          <h1 className="text-2xl font-semibold tracking-tight sm:text-[30px]">{listing.title}</h1>
+          <p className="mt-1.5 text-[15px] text-muted-foreground">
             {labelFor(BHK_OPTIONS, listing.bhk)} ·{" "}
             {labelFor(FURNISHING_OPTIONS, listing.furnishing)} ·{" "}
             {labelFor(OCCUPANCY_OPTIONS, listing.occupancy_pref)}
           </p>
+
+          <div className="mt-4 flex flex-wrap items-baseline gap-x-3 gap-y-1">
+            <span className="text-3xl font-semibold tabular-nums tracking-tight">
+              {formatINR(listing.all_in_monthly)}
+              <span className="text-base font-normal text-muted-foreground">/mo</span>
+            </span>
+            <span className="text-sm text-muted-foreground">
+              all-in · {formatINR(listing.move_in_cost)} to move in
+            </span>
+          </div>
 
           <div className="mt-4 flex flex-wrap items-center gap-2">
             <FreshnessBadge
@@ -285,7 +300,10 @@ export default async function ListingDetailPage({
 
         <Card>
           <CardHeader>
-            <CardTitle>What it actually costs</CardTitle>
+            <div className="flex items-center gap-2">
+              <IconTile icon={ReceiptText} />
+              <CardTitle>What it actually costs</CardTitle>
+            </div>
             <CardDescription>
               Every component, itemised. No &ldquo;brokerage negotiable&rdquo; surprises on site.
             </CardDescription>
@@ -342,7 +360,10 @@ export default async function ListingDetailPage({
 
         <Card>
           <CardHeader>
-            <CardTitle>Details</CardTitle>
+            <div className="flex items-center gap-2">
+              <IconTile icon={Info} />
+              <CardTitle>Details</CardTitle>
+            </div>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex items-center gap-2 text-sm">
@@ -394,7 +415,7 @@ export default async function ListingDetailPage({
         <Card>
           <CardHeader>
             <div className="flex items-center gap-2">
-              <History className="size-5 text-muted-foreground" />
+              <IconTile icon={History} />
               <CardTitle>Update history</CardTitle>
             </div>
             <CardDescription>
@@ -414,7 +435,10 @@ export default async function ListingDetailPage({
         {canReport ? (
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">Did this listing match reality?</CardTitle>
+              <div className="flex items-center gap-2">
+                <IconTile icon={Flag} />
+                <CardTitle className="text-base">Did this listing match reality?</CardTitle>
+              </div>
               <CardDescription>
                 If the price, availability or details were different when you called or
                 visited, say so — it&apos;s what keeps the rest of the feed honest.
