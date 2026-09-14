@@ -7,6 +7,7 @@ import { OpenModeSeedHint } from "@/components/open-mode-seed-hint";
 import { ListingCard } from "@/components/listings/listing-card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { PageHeader } from "@/components/ui/page-header";
 import { getDataClient, getDevRole, getSessionUser } from "@/lib/auth";
 import { OPEN_MODE } from "@/lib/open-mode";
 import { getInbox } from "@/lib/suggestions";
@@ -52,14 +53,11 @@ export default async function SuggestionsPage() {
     <div className="min-h-dvh">
       <SiteHeader />
 
-      <main className="mx-auto max-w-3xl space-y-6 px-6 py-8">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Suggestions for you</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Brokers can only suggest listings that are already live and verified on Kiraya —
-            so every card here has the full cost breakdown you&apos;d see in the feed.
-          </p>
-        </div>
+      <main className="mx-auto max-w-3xl space-y-6 px-6 py-10">
+        <PageHeader
+          title="Suggestions for you"
+          description="Brokers can only suggest listings that are already live and verified on Kiraya — so every card here has the full cost breakdown you'd see in the feed."
+        />
 
         {inbox.length === 0 ? (
           <div className="rounded-xl border border-dashed p-10 text-center">

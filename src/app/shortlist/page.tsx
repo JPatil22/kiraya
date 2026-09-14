@@ -7,6 +7,7 @@ import { OpenModeSeedHint } from "@/components/open-mode-seed-hint";
 import { ListingCard } from "@/components/listings/listing-card";
 import { SaveButton } from "@/components/listings/save-button";
 import { Button } from "@/components/ui/button";
+import { PageHeader } from "@/components/ui/page-header";
 import { getDataClient, getDevRole, getSessionUser } from "@/lib/auth";
 import { OPEN_MODE } from "@/lib/open-mode";
 import { getSavedListings, type SavedListing } from "@/lib/shortlist";
@@ -38,23 +39,21 @@ export default async function ShortlistPage() {
     <div className="min-h-dvh">
       <SiteHeader />
 
-      <main className="mx-auto max-w-3xl space-y-6 px-6 py-8">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Saved listings</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {movedCount > 0 ? (
+      <main className="mx-auto max-w-3xl space-y-6 px-6 py-10">
+        <PageHeader
+          title="Saved listings"
+          description={
+            movedCount > 0 ? (
               <>
-                <span className="font-medium text-foreground">
-                  {movedCount} of these changed
-                </span>{" "}
-                since you saved {movedCount === 1 ? "it" : "them"} — the price, the
-                availability or a fresh confirmation.
+                <span className="font-medium text-foreground">{movedCount} of these changed</span>{" "}
+                since you saved {movedCount === 1 ? "it" : "them"} — the price, the availability or
+                a fresh confirmation.
               </>
             ) : (
               "Nothing you've saved has changed since you saved it."
-            )}
-          </p>
-        </div>
+            )
+          }
+        />
 
         {saved.length === 0 ? (
           <div className="rounded-xl border border-dashed p-10 text-center">

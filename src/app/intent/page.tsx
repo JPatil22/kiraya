@@ -5,6 +5,7 @@ import { SiteHeader } from "@/components/site-header";
 import { OpenModeSeedHint } from "@/components/open-mode-seed-hint";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { PageHeader } from "@/components/ui/page-header";
 import { IntentForm } from "@/components/intents/intent-form";
 import { getDataClient, getDevRole, getSessionUser } from "@/lib/auth";
 import { OPEN_MODE } from "@/lib/open-mode";
@@ -56,22 +57,17 @@ export default async function IntentPage() {
     <div className="min-h-dvh">
       <SiteHeader />
 
-      <main className="mx-auto max-w-2xl space-y-6 px-6 py-8">
+      <main className="mx-auto max-w-2xl space-y-6 px-6 py-10">
         <Button asChild variant="ghost" size="sm" className="-ml-3">
           <Link href="/dashboard">
             <ArrowLeft /> Dashboard
           </Link>
         </Button>
 
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">
-            {intent ? "What you're looking for" : "Tell us what you're looking for"}
-          </h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Brokers in {locality?.name ?? "your locality"} see this — the requirements, never your contact details. Keeping
-            it current is what gets you suggestions worth reading.
-          </p>
-        </div>
+        <PageHeader
+          title={intent ? "What you're looking for" : "Tell us what you're looking for"}
+          description={`Brokers in ${locality?.name ?? "your locality"} see this — the requirements, never your contact details. Keeping it current is what gets you suggestions worth reading.`}
+        />
 
         <Card>
           <CardContent className="pt-6">

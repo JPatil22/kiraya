@@ -17,6 +17,7 @@ import {
 import { SiteHeader } from "@/components/site-header";
 import { OpenModeSeedHint } from "@/components/open-mode-seed-hint";
 import { Button } from "@/components/ui/button";
+import { PageHeader } from "@/components/ui/page-header";
 import { getDataClient, getDevRole, getSessionUser } from "@/lib/auth";
 import { OPEN_MODE } from "@/lib/open-mode";
 import { getNotifications } from "@/lib/notifications";
@@ -66,17 +67,15 @@ export default async function NotificationsPage() {
     <div className="min-h-dvh">
       <SiteHeader />
 
-      <main className="mx-auto max-w-2xl space-y-6 px-6 py-8">
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight">Activity</h1>
-            <p className="mt-1 text-sm text-muted-foreground">
-              {unread > 0
-                ? `${unread} new since you last looked.`
-                : "Everything here is something that happened to you, not a digest."}
-            </p>
-          </div>
-
+      <main className="mx-auto max-w-2xl space-y-6 px-6 py-10">
+        <PageHeader
+          title="Activity"
+          description={
+            unread > 0
+              ? `${unread} new since you last looked.`
+              : "Everything here is something that happened to you, not a digest."
+          }
+        >
           {unread > 0 ? (
             <form action={markAllRead}>
               <Button type="submit" variant="outline" size="sm">
@@ -84,7 +83,7 @@ export default async function NotificationsPage() {
               </Button>
             </form>
           ) : null}
-        </div>
+        </PageHeader>
 
         <EmailPreference current={user.email} />
 
