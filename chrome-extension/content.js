@@ -393,52 +393,22 @@ async function handleTargetClick(e) {
 
   const advanceNextPhoto = (modal) => {
     if (!modal) return;
+    // 1. The viewer's own Next control, by any of the labels FB uses.
     const nextBtn = modal.querySelector(
-      '[aria-label*="next photo" i], [aria-label*="see next photo" i], [aria-label="Next" i], [aria-label="next" i], div[aria-label*="next" i]'
+      '[aria-label="Next photo"], [aria-label="Next"], [aria-label*="next photo" i], [aria-label*="see next" i], div[role="button"][aria-label*="next" i], a[aria-label*="next" i]'
     );
-    if (nextBtn) {
-      simulateRealClick(nextBtn);
-    }
+    if (nextBtn) simulateRealClick(nextBtn);
+
+    // 2. Keyboard fallback. FB's theatre listens for ArrowRight, but only when it
+    // has focus — so focus the modal (and the active image) first, then fire the
+    // key at every plausible target.
+    try { if (modal.focus) modal.focus(); } catch (e) {}
     const keyOpts = { key: 'ArrowRight', keyCode: 39, which: 39, code: 'ArrowRight', bubbles: true, cancelable: true };
-    document.dispatchEvent(new KeyboardEvent('keydown', keyOpts));
-    window.dispatchEvent(new KeyboardEvent('keydown', keyOpts));
-    modal.dispatchEvent(new KeyboardEvent('keydown', keyOpts));
-  };
-
-  // Is the viewer's photo with this key fully decoded, not the blurry preview
-  // Facebook paints first? Reading the URL before it loads grabs the preview.
-  const isPhotoLoaded = (modal, key) => {
-    try {
-      const imgs = modal.querySelectorAll(
-        'img[data-visualcompletion="media-vc-image"], div[data-pagelet="MediaViewerRoot"] img[src*="fbcdn"]'
-      );
-      for (const img of imgs) {
-        if (getPhotoKey(img.currentSrc || img.src || '') === key) {
-          return img.complete && img.naturalWidth > 400;
-        }
-      }
-    } catch (e) {}
-    return true; // element not found — don't block on it
-  };
-
-  // Wait for the viewer to swap to a NEW photo AND for that photo to finish
-  // loading. Patient on purpose: photos hidden behind a "+N" overlay load slower,
-  // and stepping too fast skips them or captures the preview.
-  const waitForNextPhoto = async (modal, currentKey, maxMs = 3500) => {
-    const start = Date.now();
-    let changed = null;
-    while (Date.now() - start < maxMs) {
-      await sleep(200);
-      const candidate = getActiveTheatrePhoto(modal);
-      if (candidate && getPhotoKey(candidate) !== currentKey) {
-        changed = candidate;
-        if (isPhotoLoaded(modal, getPhotoKey(candidate))) {
-          await sleep(250); // brief settle so the hi-res URL is the one we read
-          return getActiveTheatrePhoto(modal) || candidate;
-        }
-      }
+    const targets = [document.activeElement, modal, document.body, document, window].filter(Boolean);
+    for (const t of targets) {
+      try { t.dispatchEvent(new KeyboardEvent('keydown', keyOpts)); } catch (e) {}
+      try { t.dispatchEvent(new KeyboardEvent('keyup', keyOpts)); } catch (e) {}
     }
-    return changed || getActiveTheatrePhoto(modal);
   };
 
   // Check if post displays a "+4", "+5" overlay indicating hidden photos
@@ -523,61 +493,35 @@ async function handleTargetClick(e) {
       }
     } catch (e) {}
 
-    // 1. Grab first photo currently on screen
-    let activePhoto = getActiveTheatrePhoto(dialogModal);
-    if (activePhoto) {
-      const k = getPhotoKey(activePhoto);
-      visitedKeys.add(k);
-      theatrePhotos.push(activePhoto);
-      floatingBtn.innerHTML = `Extracting photo 1...`;
-    }
-
-    // 2. Step forward through the remaining photos. Let stagnation — not a tight
-    // step budget — decide when the album is exhausted, so nothing behind a "+N"
-    // overlay is left behind. Cap the steps generously as a safety net only.
-    let stagnantCount = 0;
+    // How many photos to walk to. Prefer FB's own "1 of N"; else visible tiles +
+    // the "+N" overlay count. Walk a few extra as a safety margin.
     const expected = totalPhotosExpected > 0
       ? totalPhotosExpected
-      : (extraCount > 0 ? initialThumbCount + extraCount : 12);
-    const maxSteps = Math.min(24, expected + 6);
+      : Math.max(initialThumbCount + extraCount, 6);
+    const steps = Math.min(22, expected + 3);
 
-    for (let step = 0; step < maxSteps; step++) {
-      if (theatrePhotos.length >= 12) break; // Kiraya DB schema limit
-      if (totalPhotosExpected > 0 && theatrePhotos.length >= totalPhotosExpected) {
-        console.log(`[Kiraya Extension] Collected all ${totalPhotosExpected} photos. Done.`);
-        break;
-      }
-
-      const prevKey = theatrePhotos.length > 0 ? getPhotoKey(theatrePhotos[theatrePhotos.length - 1]) : '';
-      await sleep(200); // let the current frame settle before advancing
-      advanceNextPhoto(dialogModal);
-
-      activePhoto = await waitForNextPhoto(dialogModal, prevKey, 3500);
-      if (activePhoto) {
-        const k = getPhotoKey(activePhoto);
-        if (visitedKeys.has(k)) {
-          // Seen this one already and we have a couple — the album looped back.
-          if (visitedKeys.size >= 2) {
-            console.log('[Kiraya Extension] Gallery looped to start. All photos in post extracted.');
-            break;
-          }
-          stagnantCount++;
-        } else {
+    // Blind-advance through the whole album. Crucially we do NOT stop when the
+    // on-screen image "looks the same" — FB's theatre DOM is unreliable to read,
+    // and last time that false-stagnation quit after one frame. Instead we just
+    // navigate `steps` times with a pause, capturing whatever's on screen best-
+    // effort. Every navigation makes FB fetch that photo, and the MAIN-world
+    // interceptor (drained after this) captures the URL — so even photos the DOM
+    // read misses still arrive. This is what reaches the ones behind "+N".
+    for (let step = 0; step < steps; step++) {
+      const photo = getActiveTheatrePhoto(dialogModal);
+      if (photo) {
+        const k = getPhotoKey(photo);
+        if (!visitedKeys.has(k)) {
           visitedKeys.add(k);
-          theatrePhotos.push(activePhoto);
-          stagnantCount = 0;
-          floatingBtn.innerHTML = `Extracting photo ${theatrePhotos.length}...`;
+          theatrePhotos.push(photo);
+          floatingBtn.innerHTML = `Extracting photo ${theatrePhotos.length}…`;
         }
-      } else {
-        stagnantCount++;
       }
-
-      // Be patient — a slow "+N" photo can miss a beat or two before it loads.
-      if (stagnantCount >= 5) {
-        console.log('[Kiraya Extension] No new photo after several attempts. Stopping.');
-        break;
-      }
+      if (theatrePhotos.length >= 12) break;
+      advanceNextPhoto(dialogModal);
+      await sleep(750); // let the next photo load so the interceptor catches it
     }
+    console.log(`[Kiraya Extension] Walked ${steps} step(s); DOM-read ${theatrePhotos.length} distinct photo(s).`);
 
     // Merge high-resolution theatre photos into imageSet, replacing thumbnails
     for (const tp of theatrePhotos) {
