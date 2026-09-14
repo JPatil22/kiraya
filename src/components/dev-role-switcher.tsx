@@ -1,47 +1,49 @@
-import { headers } from "next/headers";
+"use client";
+
+import { usePathname } from "next/navigation";
+import { Check, ChevronDown } from "lucide-react";
+import { Menu, menuItemClass } from "@/components/ui/menu";
 import { setDevRole } from "@/app/dev/actions";
-import { DEV_PATH_HEADER, DEV_ROLES } from "@/lib/open-mode";
+import { DEV_ROLES } from "@/lib/open-mode";
 import { cn } from "@/lib/utils";
 import type { UserRole } from "@/types/database";
 
 /**
- * Open-mode role switcher. Plain form + server action — no client JS — so the
- * whole sandbox identity is one cookie you can also clear by hand.
+ * Open-mode role switcher, collapsed into a single dropdown so the four
+ * identities don't spread four pills across the bar. Still a plain form +
+ * server action per role — the sandbox identity remains one cookie.
  */
-export async function DevRoleSwitcher({ active }: { active: UserRole | null }) {
-  // Set by the middleware; the action redirects here so the new cookie is read
-  // on a fresh request.
-  const returnTo = (await headers()).get(DEV_PATH_HEADER) ?? "/dashboard";
+export function DevRoleSwitcher({ active }: { active: UserRole | null }) {
+  const pathname = usePathname() || "/dashboard";
 
   return (
-    <form
-      action={setDevRole}
-      className="hidden items-center gap-2 rounded-full border border-dashed bg-muted/40 py-1 pl-3 pr-1 md:flex"
+    <Menu
+      label="Switch sandbox role"
+      align="end"
+      triggerClassName="h-9 rounded-full border border-dashed border-border bg-muted/40 px-3 text-muted-foreground hover:text-foreground"
+      trigger={
+        <>
+          <span className="text-[11px] font-medium uppercase tracking-wider">Sandbox</span>
+          <span className="font-semibold capitalize text-foreground">{active ?? "—"}</span>
+          <ChevronDown className="size-3.5" />
+        </>
+      }
     >
-      <input type="hidden" name="returnTo" value={returnTo} />
-      <span className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
-        Sandbox
-      </span>
-      {/* A segmented control on its own dashed ground: this is a development
-          affordance and should not read as product navigation. */}
-      <div className="flex items-center gap-0.5 rounded-full bg-background/80 p-0.5">
-        {DEV_ROLES.map((role) => (
+      <div className="px-2.5 py-1.5 text-xs text-muted-foreground">Acting as</div>
+      {DEV_ROLES.map((role) => (
+        <form key={role} action={setDevRole}>
+          <input type="hidden" name="returnTo" value={pathname} />
           <button
-            key={role}
             type="submit"
             name="role"
             value={role}
-            aria-pressed={role === active}
-            className={cn(
-              "rounded-full px-2.5 py-1 text-xs font-medium capitalize transition-colors",
-              "text-muted-foreground hover:text-foreground",
-              role === active && "bg-primary text-primary-foreground hover:text-primary-foreground",
-            )}
+            className={cn(menuItemClass, "justify-between capitalize", role === active && "font-medium")}
           >
             {role}
+            {role === active ? <Check className="size-4 text-primary" /> : null}
           </button>
-        ))}
-      </div>
-    </form>
+        </form>
+      ))}
+    </Menu>
   );
 }

@@ -34,8 +34,8 @@ export function ListingCard({
         {/* Photo is the hook — big, with the price and freshness read straight off it. */}
         <div className="relative aspect-[4/3] overflow-hidden bg-muted">
           {listing.cover_photo_path ? (
-            // eslint-disable-next-line @next/next/no-img-element -- runtime Storage
-            // host and fixture data: URLs both defeat next/image.
+            /* Storage host + fixture data: URLs both defeat next/image. */
+            // eslint-disable-next-line @next/next/no-img-element
             <img
               src={photoUrl(listing.cover_photo_thumb_path ?? listing.cover_photo_path)}
               alt=""
