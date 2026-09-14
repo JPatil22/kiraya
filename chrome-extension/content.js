@@ -160,7 +160,7 @@ async function handleTargetClick(e) {
     isExtracting = false;
     floatingBtn.innerHTML = 'Timed out — reload page & retry';
     resetTargeting();
-  }, 60000); // generous: paging a large gallery + server-side photo download
+  }, 120000); // generous: patient gallery stepping + server-side photo download
 
   let targetNode = e.target;
 
@@ -405,16 +405,40 @@ async function handleTargetClick(e) {
     modal.dispatchEvent(new KeyboardEvent('keydown', keyOpts));
   };
 
-  const waitForNextPhoto = async (modal, currentKey, maxMs = 1200) => {
+  // Is the viewer's photo with this key fully decoded, not the blurry preview
+  // Facebook paints first? Reading the URL before it loads grabs the preview.
+  const isPhotoLoaded = (modal, key) => {
+    try {
+      const imgs = modal.querySelectorAll(
+        'img[data-visualcompletion="media-vc-image"], div[data-pagelet="MediaViewerRoot"] img[src*="fbcdn"]'
+      );
+      for (const img of imgs) {
+        if (getPhotoKey(img.currentSrc || img.src || '') === key) {
+          return img.complete && img.naturalWidth > 400;
+        }
+      }
+    } catch (e) {}
+    return true; // element not found — don't block on it
+  };
+
+  // Wait for the viewer to swap to a NEW photo AND for that photo to finish
+  // loading. Patient on purpose: photos hidden behind a "+N" overlay load slower,
+  // and stepping too fast skips them or captures the preview.
+  const waitForNextPhoto = async (modal, currentKey, maxMs = 3500) => {
     const start = Date.now();
+    let changed = null;
     while (Date.now() - start < maxMs) {
-      await sleep(150);
+      await sleep(200);
       const candidate = getActiveTheatrePhoto(modal);
       if (candidate && getPhotoKey(candidate) !== currentKey) {
-        return candidate;
+        changed = candidate;
+        if (isPhotoLoaded(modal, getPhotoKey(candidate))) {
+          await sleep(250); // brief settle so the hi-res URL is the one we read
+          return getActiveTheatrePhoto(modal) || candidate;
+        }
       }
     }
-    return getActiveTheatrePhoto(modal);
+    return changed || getActiveTheatrePhoto(modal);
   };
 
   // Check if post displays a "+4", "+5" overlay indicating hidden photos
@@ -508,9 +532,14 @@ async function handleTargetClick(e) {
       floatingBtn.innerHTML = `Extracting photo 1...`;
     }
 
-    // 2. Step forward through the remaining photos
+    // 2. Step forward through the remaining photos. Let stagnation — not a tight
+    // step budget — decide when the album is exhausted, so nothing behind a "+N"
+    // overlay is left behind. Cap the steps generously as a safety net only.
     let stagnantCount = 0;
-    const maxSteps = totalPhotosExpected > 0 ? totalPhotosExpected + 2 : (extraCount > 0 ? initialThumbCount + extraCount + 2 : 14);
+    const expected = totalPhotosExpected > 0
+      ? totalPhotosExpected
+      : (extraCount > 0 ? initialThumbCount + extraCount : 12);
+    const maxSteps = Math.min(24, expected + 6);
 
     for (let step = 0; step < maxSteps; step++) {
       if (theatrePhotos.length >= 12) break; // Kiraya DB schema limit
@@ -520,13 +549,14 @@ async function handleTargetClick(e) {
       }
 
       const prevKey = theatrePhotos.length > 0 ? getPhotoKey(theatrePhotos[theatrePhotos.length - 1]) : '';
+      await sleep(200); // let the current frame settle before advancing
       advanceNextPhoto(dialogModal);
 
-      activePhoto = await waitForNextPhoto(dialogModal, prevKey, 1200);
+      activePhoto = await waitForNextPhoto(dialogModal, prevKey, 3500);
       if (activePhoto) {
         const k = getPhotoKey(activePhoto);
         if (visitedKeys.has(k)) {
-          // If we've seen at least 2 photos and encounter an already visited photo, the album has looped!
+          // Seen this one already and we have a couple — the album looped back.
           if (visitedKeys.size >= 2) {
             console.log('[Kiraya Extension] Gallery looped to start. All photos in post extracted.');
             break;
@@ -542,8 +572,9 @@ async function handleTargetClick(e) {
         stagnantCount++;
       }
 
-      if (stagnantCount >= 3) {
-        console.log('[Kiraya Extension] No new photo detected after 3 attempts. Stopping.');
+      // Be patient — a slow "+N" photo can miss a beat or two before it loads.
+      if (stagnantCount >= 5) {
+        console.log('[Kiraya Extension] No new photo after several attempts. Stopping.');
         break;
       }
     }
