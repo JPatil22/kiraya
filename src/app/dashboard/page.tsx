@@ -24,6 +24,7 @@ import { OpenModeSeedHint } from "@/components/open-mode-seed-hint";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { IconTile } from "@/components/ui/icon-tile";
 import {
   BHK_OPTIONS,
   FURNISHING_OPTIONS,
@@ -82,16 +83,21 @@ export default async function DashboardPage({
     <div className="min-h-dvh">
       <SiteHeader />
 
-      <main className="mx-auto max-w-4xl space-y-6 px-6 py-8">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">
-            Welcome{user.fullName ? `, ${user.fullName}` : ""} 👋
-          </h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {user.isDev ? "Open-mode sandbox" : "You're verified on Kiraya"} ·{" "}
-            {locality?.name ?? "your locality"} ·{" "}
-            <span className="font-mono">{user.phone}</span>
-          </p>
+      <main className="mx-auto max-w-4xl space-y-5 px-6 py-10">
+        <div className="flex items-center gap-4">
+          <span className="flex size-12 shrink-0 items-center justify-center rounded-full bg-primary/10 text-lg font-semibold text-primary">
+            {(user.fullName ?? "K").trim().charAt(0).toUpperCase()}
+          </span>
+          <div>
+            <h1 className="text-2xl font-semibold tracking-tight">
+              Welcome{user.fullName ? `, ${user.fullName}` : ""}
+            </h1>
+            <p className="mt-0.5 text-sm text-muted-foreground">
+              {user.isDev ? "Open-mode sandbox" : "Verified on Kiraya"} ·{" "}
+              {locality?.name ?? "your locality"} ·{" "}
+              <span className="font-mono">{user.phone}</span>
+            </p>
+          </div>
         </div>
 
         {user.isDev ? (
@@ -148,7 +154,7 @@ export default async function DashboardPage({
             <Card>
               <CardHeader>
                 <div className="flex items-center gap-2">
-                  <Search className="size-5 text-primary" />
+                  <IconTile icon={Search} />
                   <CardTitle>Browse verified listings</CardTitle>
                 </div>
                 <CardDescription>
@@ -169,9 +175,9 @@ export default async function DashboardPage({
               <div className="flex items-center justify-between gap-4">
                 <div className="flex items-center gap-2">
                   {role === "owner" ? (
-                    <Building2 className="size-5 text-primary" />
+                    <IconTile icon={Building2} />
                   ) : (
-                    <Megaphone className="size-5 text-primary" />
+                    <IconTile icon={Megaphone} />
                   )}
                   <CardTitle>Your listings</CardTitle>
                 </div>
@@ -248,7 +254,7 @@ export default async function DashboardPage({
             <Card>
               <CardHeader>
                 <div className="flex items-center gap-2">
-                  <Home className="size-5 text-primary" />
+                  <IconTile icon={Home} />
                   <CardTitle>Looking for a place yourself?</CardTitle>
                 </div>
                 <CardDescription>
@@ -269,7 +275,7 @@ export default async function DashboardPage({
           <Card>
             <CardHeader>
               <div className="flex items-center gap-2">
-                <PhoneCall className="size-5 text-primary" />
+                <IconTile icon={PhoneCall} />
                 <CardTitle>People trying to reach you</CardTitle>
               </div>
               <CardDescription>
@@ -340,7 +346,7 @@ function IntentCard({ intent }: { intent: TenantIntent | null }) {
       <CardHeader>
         <div className="flex items-center justify-between gap-4">
           <div className="flex items-center gap-2">
-            <Home className="size-5 text-primary" />
+            <IconTile icon={Home} />
             <CardTitle>Your rental intent</CardTitle>
           </div>
           <Button asChild size="sm" variant={intent ? "outline" : "default"}>
