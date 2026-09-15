@@ -132,7 +132,13 @@ export function ListingCard({
           </div>
 
           <p className="mt-auto pt-3 text-[11px] uppercase tracking-wide text-muted-foreground/80">
-            Available {format(new Date(listing.available_from), "d MMM yyyy")}
+            {/* Past-or-today reads as "now", not a stale date — matches the
+                detail page, and keeps sourced listings (available_from = ingest
+                day) from advertising a move-in date in the past. */}
+            Available{" "}
+            {new Date(listing.available_from) <= new Date()
+              ? "now"
+              : format(new Date(listing.available_from), "d MMM yyyy")}
           </p>
         </div>
       </Link>

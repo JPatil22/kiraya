@@ -387,10 +387,23 @@ export default async function ListingDetailPage({
           <CardContent className="space-y-4">
             <div className="flex items-center gap-2 text-sm">
               <CalendarDays className="size-4 shrink-0 text-muted-foreground" />
-              Available from{" "}
-              <span className="font-medium">
-                {format(new Date(listing.available_from), "d MMM yyyy")}
-              </span>
+              {/* A date that has arrived is availability now, not a stale future
+                  promise — collapse today-or-past to "Available now" so a listing
+                  can't advertise a move-in date in the past. Sourced listings stamp
+                  available_from = ingest day (the parser finds no real date), so
+                  without this every one of them goes stale the day after ingest. */}
+              {new Date(listing.available_from) <= new Date() ? (
+                <>
+                  Available <span className="font-medium">now</span>
+                </>
+              ) : (
+                <>
+                  Available from{" "}
+                  <span className="font-medium">
+                    {format(new Date(listing.available_from), "d MMM yyyy")}
+                  </span>
+                </>
+              )}
             </div>
 
             {listing.address_line ? (
@@ -410,6 +423,16 @@ export default async function ListingDetailPage({
             */}
             {coords ? (
               <LocationMap latitude={coords.lat} longitude={coords.lng} title={listing.title} />
+            ) : listing.sourced_broker_name ? (
+              // Sourced from a public post: there's no owner here to drop a pin,
+              // and we don't geocode the scraped address — so "…yet" would imply a
+              // pin that is never coming. State plainly what we know (the area) and
+              // defer the exact spot to the contact, in the same key as the listing.
+              <p className="text-sm text-muted-foreground">
+                {listing.area_name
+                  ? `No exact map pin — the area is ${listing.area_name}. Confirm the spot with the contact.`
+                  : "No exact map pin — confirm the exact location with the contact."}
+              </p>
             ) : (
               <p className="rounded-md border border-dashed px-3 py-2 text-sm text-muted-foreground">
                 Nobody has pinned this one on the map yet.
