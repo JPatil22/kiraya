@@ -476,7 +476,9 @@ const SEED_PROPERTIES: Property[] = [
     brokerage_disclosed: true,
     one_time_charges: 4000,
     available_from: dateIn(3),
-    // Never verified → sinks to the bottom of the freshness sort.
+    // Never verified, but posted recently: under the 0039 freshness sort it
+    // ranks by created_at (6 days ago), above an older *verified* listing —
+    // proof a sourced/unverified listing no longer sinks out of sight.
     last_verified_at: null,
     created_at: daysAgo(6),
   }),
@@ -773,6 +775,8 @@ export function listingsPublic(): ListingPublic[] {
       rooms_required: roomsRequiredForBhk(p.bhk),
       rooms_covered: roomsCovered,
       created_at: p.created_at,
+      // Mirrors 0039's coalesce(last_verified_at, created_at) for the feed sort.
+      last_activity_at: p.last_verified_at ?? p.created_at,
     };
   });
 }

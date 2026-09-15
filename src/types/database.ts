@@ -212,6 +212,13 @@ export type ListingPublic = {
   rooms_required: number;
   rooms_covered: number;
   created_at: string;
+  /**
+   * 0039 — coalesce(last_verified_at, created_at): the freshness key the feed
+   * ranks by, so a never-verified listing sorts by when it was posted rather
+   * than sinking to the bottom. Never null (created_at is NOT NULL). Trust
+   * badges still key off last_verified_at; only the sort uses this.
+   */
+  last_activity_at: string;
 };
 
 /** `property_updates` — append-only audit log, written by the 0003 trigger. */

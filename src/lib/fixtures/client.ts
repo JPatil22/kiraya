@@ -77,6 +77,8 @@ const ok = <T>(data: T, count?: number | null): Result<T> => ({ data, error: nul
 class FixtureQuery<T extends Row> implements PromiseLike<Result<T[]>> {
   /** Filters accumulated so far, replayed by `update()` against the live store. */
   private predicates: ((row: Row) => boolean)[] = [];
+  /** Sort keys in call order (first = primary), composed by `order()`. */
+  private orderKeys: { column: string; ascending: boolean; nullsFirst: boolean }[] = [];
   private wantsCount = false;
   private total: number | null = null;
   private patch: Row | null = null;
@@ -165,24 +167,36 @@ class FixtureQuery<T extends Row> implements PromiseLike<Result<T[]>> {
     return this;
   }
 
-  /** Mirrors PostgREST: `nullsFirst` decides where NULLs land, not the direction. */
+  /**
+   * Mirrors PostgREST: `nullsFirst` decides where NULLs land, not the direction,
+   * and multiple `.order()` calls compose — the FIRST call is the primary key,
+   * later calls break ties (e.g. `.order("last_activity_at").order("id")`). Keys
+   * are accumulated and applied as one comparator, because sorting eagerly per
+   * call would (JS sort being stable) make the LAST call primary — the opposite
+   * of PostgREST, and enough to make fixture paging disagree with the database.
+   */
   order(
     column: string,
     { ascending = true, nullsFirst = false }: { ascending?: boolean; nullsFirst?: boolean } = {},
   ): this {
+    this.orderKeys.push({ column, ascending, nullsFirst });
+    const keys = this.orderKeys;
     this.rows = [...this.rows].sort((a, b) => {
-      const x = a[column];
-      const y = b[column];
-      const xNull = x === null || x === undefined;
-      const yNull = y === null || y === undefined;
+      for (const k of keys) {
+        const x = a[k.column];
+        const y = b[k.column];
+        const xNull = x === null || x === undefined;
+        const yNull = y === null || y === undefined;
 
-      if (xNull && yNull) return 0;
-      if (xNull) return nullsFirst ? -1 : 1;
-      if (yNull) return nullsFirst ? 1 : -1;
-      if (x === y) return 0;
+        if (xNull && yNull) continue;
+        if (xNull) return k.nullsFirst ? -1 : 1;
+        if (yNull) return k.nullsFirst ? 1 : -1;
+        if (x === y) continue;
 
-      const less = typeof x === "number" && typeof y === "number" ? x < y : String(x) < String(y);
-      return (less ? -1 : 1) * (ascending ? 1 : -1);
+        const less = typeof x === "number" && typeof y === "number" ? x < y : String(x) < String(y);
+        return (less ? -1 : 1) * (k.ascending ? 1 : -1);
+      }
+      return 0;
     });
     return this;
   }

@@ -185,8 +185,11 @@ takedown, suspend — is attributable and reviewable.
 ## Derived views
 
 - `v_listings_public` — `live` properties joined to poster role + computed `all_in_monthly`,
-  `move_in_cost`, `is_stale`, `days_since_verified`, and `open_mismatch_count`. This is what the
-  tenant feed and cards read from.
+  `move_in_cost`, `is_stale`, `days_since_verified`, `open_mismatch_count`, and `last_activity_at`
+  = `coalesce(last_verified_at, created_at)` (`0039`) — the key the feed ranks by, so a
+  never-verified listing sorts by when it was posted instead of sinking to the bottom. Staleness
+  still keys off `last_verified_at`; only the ranking uses activity. This is what the tenant feed
+  and cards read from.
 - `v_locality_health` (MVP5) — per-locality fresh/stale/live counts, open mismatches, active
   verified tenants for the admin dashboard.
 - `v_listing_price_context` (`0016`) — median all-in of comparable live listings, the listing

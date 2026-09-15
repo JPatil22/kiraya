@@ -119,10 +119,22 @@ export async function getPublicListings(
       break;
     case "verified":
     default:
-      // Freshest verification first; never-verified listings sink to the bottom.
-      query = query.order("last_verified_at", { ascending: false, nullsFirst: false });
+      // "Freshest first" = most recently active. last_activity_at is
+      // coalesce(last_verified_at, created_at) (0039): a recently verified
+      // listing ranks by its verification, a brand-new never-verified one by
+      // when it was posted — instead of every sourced listing sinking into a
+      // NULL block at the bottom of the last page. Trust badges still key off
+      // last_verified_at; only the ranking changed.
+      query = query.order("last_activity_at", { ascending: false });
       break;
   }
+
+  // Stable tiebreaker so offset paging (.range below) can't drop or repeat a
+  // row when the primary key ties — identical timestamps from a batch import,
+  // or shared rents on a price sort. id is unique and immutable, and as a
+  // secondary .order() it matches PostgREST (first key primary, this one breaks
+  // ties); the fixture client composes multiple orders the same way.
+  query = query.order("id", { ascending: true });
 
   const from = (filters.page - 1) * PAGE_SIZE;
   const { data, error, count } = await query.range(from, from + PAGE_SIZE - 1);
