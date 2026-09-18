@@ -56,7 +56,6 @@ report back → moderate.
   OpenStreetMap fallback behind one env var.
 - ✅ **UI refresh** — every native `<select>` replaced, indigo accent, 40px controls, sandbox
   switcher demoted out of the product nav.
-- ✅ **CI** — typecheck, lint, build and migration-numbering on every push.
 - ✅ **Fixtures mode restored** — the four views that had only ever existed as SQL.
 
 ## Open
