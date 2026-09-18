@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { getDataClient, getSessionUser } from "@/lib/auth";
 import { OPEN_MODE } from "@/lib/open-mode";
+import { PageHeader } from "@/components/ui/page-header";
 import { PhoneForm } from "./phone-form";
 
 export const dynamic = "force-dynamic";
@@ -28,13 +29,12 @@ export default async function PhonePage() {
   return (
     <main className="mx-auto flex min-h-dvh max-w-md flex-col justify-center px-6 py-10">
       <div className="mb-8">
-        <p className="text-sm font-medium text-muted-foreground">Step 2 of 3</p>
-        <h1 className="mt-1 text-2xl font-semibold tracking-tight">Your mobile number</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Nobody sees it until you ask for someone&apos;s details, or they ask for yours —
-          and then you both get each other&apos;s at the same moment. Never shown on a
-          listing, never sold.
-        </p>
+        <p className="text-sm font-medium text-muted-foreground">Step 2</p>
+        <PageHeader
+          className="mt-1"
+          title="Your mobile number"
+          description="Nobody sees it until you ask for someone's details, or they ask for yours — and then you both get each other's at the same moment. Never shown on a listing, never sold."
+        />
       </div>
 
       <PhoneForm initial={user.phone ?? ""} />

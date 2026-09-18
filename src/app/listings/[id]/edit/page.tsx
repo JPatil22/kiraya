@@ -3,6 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { SiteHeader } from "@/components/site-header";
 import { Button } from "@/components/ui/button";
+import { PageHeader } from "@/components/ui/page-header";
 import { ListingForm } from "@/components/listings/listing-form";
 import { getDataClient, getSessionUser } from "@/lib/auth";
 import { OPEN_MODE } from "@/lib/open-mode";
@@ -70,13 +71,10 @@ export default async function EditListingPage({
           </Link>
         </Button>
 
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Edit listing</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Every change is recorded on the public timeline with the date — tenants see what
-            moved and when. Saving also counts as confirming the listing is current.
-          </p>
-        </div>
+        <PageHeader
+          title="Edit listing"
+          description="Every change is recorded on the public timeline with the date — tenants see what moved and when. Saving also counts as confirming the listing is current."
+        />
 
             <ListingForm
               action={updateListing}

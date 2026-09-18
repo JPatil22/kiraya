@@ -4,6 +4,7 @@ import { ArrowLeft } from "lucide-react";
 import { SiteHeader } from "@/components/site-header";
 import { OpenModeSeedHint } from "@/components/open-mode-seed-hint";
 import { Button } from "@/components/ui/button";
+import { PageHeader } from "@/components/ui/page-header";
 import { getDataClient, getDevRole, getSessionUser } from "@/lib/auth";
 import { OPEN_MODE } from "@/lib/open-mode";
 import { getPhotos } from "@/lib/photos";
@@ -68,17 +69,17 @@ export default async function ListingPhotosPage({
           </Link>
         </Button>
 
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Photos</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {property.title}
-          </p>
-          <p className="mt-3 text-sm text-muted-foreground">
-            One photo per room, not a pile. Tenants see exactly which rooms you&apos;ve shown
-            and which you haven&apos;t — a missing bedroom reads as something hidden. Each
-            photo also carries its own date, shown next to the verification date.
-          </p>
-        </div>
+        <PageHeader
+          title="Photos"
+          description={
+            <>
+              <span className="font-medium text-foreground">{property.title}</span>. One photo
+              per room, not a pile. Tenants see exactly which rooms you&apos;ve shown and which
+              you haven&apos;t — a missing bedroom reads as something hidden. Each photo also
+              carries its own date, shown next to the verification date.
+            </>
+          }
+        />
 
         <PhotoManager propertyId={id} bhk={property.bhk} photos={photos} staged={staged} />
       </main>
