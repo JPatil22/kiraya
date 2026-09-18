@@ -85,9 +85,9 @@ See `src/lib/open-mode.ts` and the README.
 - `node scripts/compare-geocoders.mjs` — measure OSM vs Google on real Pune society names
 - `npm run db:types` — regenerate `src/types/database.ts` from the local DB
 
-CI (`.github/workflows/ci.yml`) runs typecheck, lint, build, the migration-numbering check and the
-`test:e2e` journeys on every push. `verify:rls` is deliberately excluded — it needs a service-role
-key and writes real rows; the e2e suite belongs in CI precisely because fixtures need neither.
+**No CI.** There is no GitHub Actions workflow — nothing runs on push. Checks are local: run
+`typecheck`, `lint`, `build` and `test:e2e` yourself before a push worth trusting. (`verify:rls`
+was never automatable here anyway — it needs a service-role key and writes real rows.)
 
 ## Gotchas
 - `@supabase/ssr` and `@supabase/supabase-js` must be a compatible pair (currently `^0.12` + `^2.112`).
