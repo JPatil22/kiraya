@@ -1,8 +1,9 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { canPost, getDataClient, getSessionUser, needsPhone } from "@/lib/auth";
+import { LISTINGS_CACHE_TAG } from "@/lib/listings";
 import { OPEN_MODE } from "@/lib/open-mode";
 import { getActiveLocality } from "@/lib/locality";
 import { checkboxOn, resolveBrokerage } from "@/lib/brokerage";
@@ -113,6 +114,9 @@ export async function createListing(
   }
 
   revalidatePath("/dashboard");
+  // A post enters the feed at admin approval (which busts the cache too), but
+  // drop the cached feed now as well so nothing lags a fresh listing.
+  revalidateTag(LISTINGS_CACHE_TAG);
   redirect("/dashboard?posted=1");
 }
 

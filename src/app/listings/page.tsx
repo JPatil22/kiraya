@@ -8,7 +8,7 @@ import { getDataClient, getSessionUser } from "@/lib/auth";
 import { getShortlistIds } from "@/lib/shortlist";
 import { getAreas } from "@/lib/areas";
 import { getActiveLocality } from "@/lib/locality";
-import { getPublicListings, PAGE_SIZE } from "@/lib/listings";
+import { getCachedPublicListings, PAGE_SIZE } from "@/lib/listings";
 import { listingFilterSchema } from "@/lib/validators";
 
 export const dynamic = "force-dynamic";
@@ -41,7 +41,7 @@ export default async function ListingsPage({
   const supabase = await getDataClient();
   const [locality, result, user, areas] = await Promise.all([
     getActiveLocality(supabase),
-    getPublicListings(supabase, filters),
+    getCachedPublicListings(supabase, filters),
     getSessionUser(supabase),
     getAreas(supabase),
   ]);

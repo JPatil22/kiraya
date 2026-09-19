@@ -1,8 +1,9 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { getDataClient, getSessionUser, needsPhone } from "@/lib/auth";
+import { LISTINGS_CACHE_TAG } from "@/lib/listings";
 import { OPEN_MODE } from "@/lib/open-mode";
 import { availabilitySchema, listingSchema, mismatchSchema } from "@/lib/validators";
 import { saveListingSource } from "@/lib/listing-source";
@@ -74,6 +75,7 @@ export async function reportMismatch(
 
   revalidatePath(`/listings/${v.propertyId}`);
   revalidatePath("/listings");
+  revalidateTag(LISTINGS_CACHE_TAG);
   return { ok: true };
 }
 
@@ -161,6 +163,7 @@ export async function confirmListing(
 
   revalidatePath(`/listings/${propertyId}`);
   revalidatePath("/listings");
+  revalidateTag(LISTINGS_CACHE_TAG);
   revalidatePath("/dashboard");
 
   return { ok: CONFIRM_MESSAGE[availability] };
@@ -287,6 +290,7 @@ export async function updateListing(_prev: EditState, formData: FormData): Promi
 
   revalidatePath(`/listings/${propertyId}`);
   revalidatePath("/listings");
+  revalidateTag(LISTINGS_CACHE_TAG);
   revalidatePath("/dashboard");
 
   // The admin review page (0037) edits a listing in place and wants to land back

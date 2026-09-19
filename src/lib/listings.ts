@@ -1,7 +1,9 @@
+import { unstable_cache } from "next/cache";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database, ListingPublic, Property } from "@/types/database";
 import type { ListingFilters } from "@/lib/validators";
 import { ACTIVE_LOCALITY_SLUG } from "@/lib/locality";
+import { USE_FIXTURES } from "@/lib/open-mode";
 import { logRead } from "@/lib/errors";
 
 /**
@@ -157,6 +159,37 @@ export async function getPublicListings(
     page: filters.page,
     pageCount: Math.max(1, Math.ceil(total / PAGE_SIZE)),
   };
+}
+
+/**
+ * Cache tag for the public feed. Any write that changes what the feed shows
+ * must `revalidateTag(LISTINGS_CACHE_TAG)` so the 60s cache never goes stale.
+ */
+export const LISTINGS_CACHE_TAG = "listings";
+
+/**
+ * The feed query is the heaviest read in the app and is identical for every
+ * viewer — `v_listings_public` is live-only and carries no per-user data — so
+ * cache it for 60s, keyed by the filter set. The per-user parts of `/listings`
+ * (the saved-heart overlay, the header) stay dynamic on the page; only this
+ * shared query is cached, and writes bust it by tag.
+ *
+ * Fixtures/dev is skipped: it is all in-memory, so there is no remote round-trip
+ * to cache and caching would only hide writes. In the real-DB path the cached
+ * callback reads through the same `getDataClient` client — a plain select that
+ * never touches request cookies, so it is safe to run inside `unstable_cache`.
+ */
+export function getCachedPublicListings(
+  supabase: SupabaseClient<Database>,
+  filters: ListingFilters,
+): Promise<ListingPage> {
+  if (USE_FIXTURES) return getPublicListings(supabase, filters);
+
+  return unstable_cache(
+    (f: ListingFilters) => getPublicListings(supabase, f),
+    ["public-listings"],
+    { revalidate: 60, tags: [LISTINGS_CACHE_TAG] },
+  )(filters);
 }
 
 /** A single live listing for the public detail page. */

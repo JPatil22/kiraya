@@ -1,8 +1,9 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { getDataClient, getSessionUser } from "@/lib/auth";
+import { LISTINGS_CACHE_TAG } from "@/lib/listings";
 import { OPEN_MODE } from "@/lib/open-mode";
 import {
   resolveReport,
@@ -40,6 +41,7 @@ function refresh() {
   revalidatePath("/admin/reports");
   revalidatePath("/admin/people");
   revalidatePath("/listings");
+  revalidateTag(LISTINGS_CACHE_TAG);
 }
 
 /** Approve (→ live + verified) or reject a pending listing. */
