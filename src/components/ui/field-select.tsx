@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import {
   Select,
   SelectContent,
@@ -49,35 +50,68 @@ export function FieldSelect({
   groups?: SelectChoiceGroup[];
   className?: string;
 }) {
+  // Radix's <SelectValue> renders empty during SSR and only fills the selected
+  // label in on the client, which hydration flags as a mismatch. Render the
+  // label ourselves from the choices so server and client agree, tracking the
+  // selection in state so uncontrolled selects still update when changed.
+  const all = [...(choices ?? []), ...(groups?.flatMap((g) => g.choices) ?? [])];
+  const [selected, setSelected] = useState(value ?? defaultValue);
+  const current = value ?? selected;
+  const selectedLabel = all.find((c) => c.value === current)?.label;
+
+  // Radix's hidden native <select> collects its <option>s from the items below
+  // on the client only — it is empty on the server — so rendering the items from
+  // the first paint is what still mismatches. Hold them back until after mount:
+  // server and first client render then agree, and the dropdown fills in a tick
+  // later. The visible label and the submitted value are both ours (above), so
+  // nothing the user sees or submits is missing in the meantime.
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
   return (
-    <Select
-      name={name}
-      value={value}
-      defaultValue={defaultValue}
-      onValueChange={onValueChange}
-    >
-      <SelectTrigger id={id} className={className}>
-        <SelectValue placeholder={placeholder} />
-      </SelectTrigger>
-      <SelectContent className="max-h-80">
-        {choices?.map((choice) => (
-          <SelectItem key={choice.value} value={choice.value}>
-            {choice.label}
-          </SelectItem>
-        ))}
-        {groups?.map(({ group, choices: inGroup }) => (
-          <SelectGroup key={group}>
-            <SelectLabel className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-              {group}
-            </SelectLabel>
-            {inGroup.map((choice) => (
+    <>
+      {/*
+        Carry the value in our own hidden input rather than letting Radix render
+        its built-in hidden <select name>: that native select's <option>s are
+        collected on the client only, so it is empty on the server and hydration
+        flags the mismatch. `current` tracks the live selection, so uncontrolled
+        selects still submit what the user picked. `readOnly` keeps it in
+        FormData (a disabled input would be dropped).
+      */}
+      <input type="hidden" name={name} value={current ?? ""} readOnly />
+      <Select
+        value={value}
+        defaultValue={defaultValue}
+        onValueChange={(next) => {
+          setSelected(next);
+          onValueChange?.(next);
+        }}
+      >
+        <SelectTrigger id={id} className={className}>
+          <SelectValue placeholder={placeholder}>{selectedLabel}</SelectValue>
+        </SelectTrigger>
+        {mounted ? (
+          <SelectContent className="max-h-80">
+            {choices?.map((choice) => (
               <SelectItem key={choice.value} value={choice.value}>
                 {choice.label}
               </SelectItem>
             ))}
-          </SelectGroup>
-        ))}
-      </SelectContent>
-    </Select>
+            {groups?.map(({ group, choices: inGroup }) => (
+              <SelectGroup key={group}>
+                <SelectLabel className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                  {group}
+                </SelectLabel>
+                {inGroup.map((choice) => (
+                  <SelectItem key={choice.value} value={choice.value}>
+                    {choice.label}
+                  </SelectItem>
+                ))}
+              </SelectGroup>
+            ))}
+          </SelectContent>
+        ) : null}
+      </Select>
+    </>
   );
 }
