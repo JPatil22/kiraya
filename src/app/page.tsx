@@ -14,6 +14,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { IconTile } from "@/components/ui/icon-tile";
 import { BrandMark } from "@/components/brand-mark";
+import { Reveal } from "@/components/reveal";
+import { CountUp } from "@/components/count-up";
 import { ACTIVE_LOCALITY_SLUG } from "@/lib/locality";
 import { OPEN_MODE } from "@/lib/open-mode";
 
@@ -110,6 +112,12 @@ export default async function LandingPage({
 
   return (
     <div className="flex min-h-dvh flex-col">
+      {/* If JS never runs, the scroll-reveal sections must still be visible. */}
+      <noscript
+        dangerouslySetInnerHTML={{
+          __html: "<style>.reveal-up{opacity:1!important;transform:none!important}</style>",
+        }}
+      />
       <header className="sticky top-0 z-40 border-b border-border/70 bg-background/80 backdrop-blur">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-3.5">
           <Link href="/" className="rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40">
@@ -128,31 +136,42 @@ export default async function LandingPage({
         </div>
       </header>
 
-      {/* Hero — the one place a soft accent wash is allowed, kept whisper-light. */}
+      {/* Hero — the one place the clean-minimal system leans into motion. */}
       <section className="relative overflow-hidden border-b border-border/70">
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-x-0 top-0 h-[340px] bg-[radial-gradient(55%_100%_at_50%_0%,hsl(var(--primary)/0.06),transparent_70%)]"
-        />
-        <div className="relative mx-auto max-w-6xl px-6 py-14 sm:py-20 text-center">
+        {/* A drifting accent aurora — whisper-light, held to the top. */}
+        <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
+          <div className="animate-aurora absolute -top-40 left-1/2 h-[520px] w-[900px] -translate-x-1/2 rounded-full bg-[radial-gradient(closest-side,hsl(var(--primary)/0.16),transparent)] blur-3xl" />
+          <div className="animate-aurora absolute -top-24 left-[20%] h-[360px] w-[460px] rounded-full bg-[radial-gradient(closest-side,hsl(268_80%_62%/0.12),transparent)] blur-3xl [animation-delay:-7s]" />
+          <div className="animate-aurora absolute -top-16 right-[16%] h-[320px] w-[420px] rounded-full bg-[radial-gradient(closest-side,hsl(210_90%_58%/0.10),transparent)] blur-3xl [animation-delay:-12s]" />
+        </div>
+        <div className="relative mx-auto max-w-6xl px-6 py-16 sm:py-24 text-center">
           <Badge
             variant="outline"
-            className="mb-6 gap-1.5 rounded-full border-primary/20 bg-primary/5 px-3 py-1 text-primary"
+            className="animate-fade-up mb-6 gap-1.5 rounded-full border-primary/20 bg-primary/5 px-3 py-1 text-primary"
           >
             <span className="inline-block size-1.5 rounded-full bg-primary" />
             Now serving {localityName}
           </Badge>
-          <h1 className="mx-auto max-w-3xl text-balance text-4xl font-semibold leading-[1.05] tracking-tight sm:text-6xl">
+          <h1
+            className="animate-fade-up mx-auto max-w-3xl text-balance text-4xl font-semibold leading-[1.05] tracking-tight sm:text-6xl"
+            style={{ animationDelay: "80ms" }}
+          >
             Fewer listings.
             <br />
             <span className="text-primary">All of them true.</span>
           </h1>
-          <p className="mx-auto mt-6 max-w-2xl text-pretty text-lg leading-relaxed text-muted-foreground">
+          <p
+            className="animate-fade-up mx-auto mt-6 max-w-2xl text-pretty text-lg leading-relaxed text-muted-foreground"
+            style={{ animationDelay: "160ms" }}
+          >
             Most rental sites compete on how many flats they can show you. Kiraya competes on
             whether the flat is still available, at the price it says, from the person it claims.
             One locality at a time.
           </p>
-          <div className="mt-9 flex flex-wrap items-center justify-center gap-3">
+          <div
+            className="animate-fade-up mt-9 flex flex-wrap items-center justify-center gap-3"
+            style={{ animationDelay: "240ms" }}
+          >
             <Button asChild size="lg" className="h-11 px-6">
               <Link href={OPEN_MODE ? "/listings" : "/login"}>
                 {OPEN_MODE ? "Browse listings" : "Get started"} <ArrowRight />
@@ -162,15 +181,18 @@ export default async function LandingPage({
               <Link href="/dashboard">{OPEN_MODE ? "Open the sandbox" : "Dashboard"}</Link>
             </Button>
           </div>
-          <p className="mt-5 text-sm text-muted-foreground">
+          <p
+            className="animate-fade-up mt-5 text-sm text-muted-foreground"
+            style={{ animationDelay: "300ms" }}
+          >
             {OPEN_MODE
               ? "Open preview · no sign-in, switch roles from the header"
               : "One phone number, one code. No documents, ever."}
           </p>
 
-          {/* Show, don't tell — one listing with the claims above made concrete. */}
-          <div className="mx-auto mt-16 max-w-md">
-            <div className="rounded-2xl border border-border bg-card p-6 text-left shadow-[0_1px_2px_rgba(16,24,40,0.04),0_16px_40px_-8px_rgba(16,24,40,0.12)] sm:p-7">
+          {/* Show, don't tell — one listing, floating, with the claims made concrete. */}
+          <div className="animate-fade-up mx-auto mt-16 max-w-md" style={{ animationDelay: "420ms" }}>
+            <div className="animate-float rounded-2xl border border-border bg-card p-6 text-left shadow-[0_1px_2px_rgba(16,24,40,0.04),0_32px_64px_-24px_hsl(var(--primary)/0.32)] sm:p-7">
               <div className="flex items-center justify-between gap-3">
                 <span className="inline-flex items-center gap-1.5 rounded-full bg-success/10 px-2.5 py-1 text-xs font-medium text-success">
                   <BadgeCheck className="size-3.5" />
@@ -183,7 +205,7 @@ export default async function LandingPage({
               <p className="text-sm text-muted-foreground">Semi-furnished · Available now</p>
 
               <div className="mt-4 flex flex-wrap items-baseline gap-x-2 gap-y-1 border-t pt-4">
-                <span className="text-2xl font-bold tabular-nums">₹28,000</span>
+                <CountUp to={28000} prefix="₹" className="text-2xl font-bold tabular-nums" />
                 <span className="text-sm text-muted-foreground">/mo all-in · ₹50,000 to move in</span>
               </div>
 
@@ -218,56 +240,57 @@ export default async function LandingPage({
 
       <main className="mx-auto w-full max-w-6xl flex-1 px-6">
         <section className="py-16 sm:py-20">
-          <div className="mx-auto max-w-2xl text-center">
+          <Reveal className="mx-auto max-w-2xl text-center">
             <p className="text-sm font-semibold uppercase tracking-widest text-primary">
               Why Kiraya
             </p>
             <h2 className="mt-2 text-3xl font-semibold tracking-tight">
               What makes a listing true here
             </h2>
-          </div>
+          </Reveal>
           <div className="mt-12 grid gap-4 sm:grid-cols-2">
-            {PILLARS.map(({ icon: Icon, title, body }) => (
-              <div
-                key={title}
-                className="group rounded-xl border border-border bg-card p-6 transition duration-200 hover:border-foreground/15 hover:shadow-[0_1px_2px_rgba(16,24,40,0.04),0_8px_24px_rgba(16,24,40,0.06)]"
-              >
-                <IconTile icon={Icon} className="size-11" />
-                <h3 className="mt-4 font-semibold tracking-tight">{title}</h3>
-                <p className="mt-1.5 text-[15px] leading-relaxed text-muted-foreground">{body}</p>
-              </div>
+            {PILLARS.map(({ icon: Icon, title, body }, i) => (
+              <Reveal key={title} delay={i * 90}>
+                <div className="group h-full rounded-xl border border-border bg-card p-6 transition duration-200 hover:-translate-y-0.5 hover:border-foreground/15 hover:shadow-[0_1px_2px_rgba(16,24,40,0.04),0_10px_28px_rgba(16,24,40,0.08)]">
+                  <IconTile icon={Icon} className="size-11" />
+                  <h3 className="mt-4 font-semibold tracking-tight">{title}</h3>
+                  <p className="mt-1.5 text-[15px] leading-relaxed text-muted-foreground">{body}</p>
+                </div>
+              </Reveal>
             ))}
           </div>
         </section>
 
         <section className="border-t border-border/70 py-16 sm:py-20">
-          <div className="mx-auto max-w-2xl text-center">
+          <Reveal className="mx-auto max-w-2xl text-center">
             <p className="text-sm font-semibold uppercase tracking-widest text-primary">
               For tenants
             </p>
             <h2 className="mt-2 text-3xl font-semibold tracking-tight">
               If you&apos;re looking for a place
             </h2>
-          </div>
+          </Reveal>
           <div className="mt-12 grid gap-8 sm:grid-cols-3">
             {TENANT_STEPS.map(({ icon: Icon, title, body }, i) => (
-              <div key={title} className="relative">
-                <div className="flex items-center gap-3">
-                  <span className="font-mono text-sm font-semibold text-primary">
-                    0{i + 1}
-                  </span>
-                  <span className="h-px flex-1 bg-border" />
-                  <Icon className="size-5 text-muted-foreground" />
+              <Reveal key={title} delay={i * 90}>
+                <div className="relative">
+                  <div className="flex items-center gap-3">
+                    <span className="font-mono text-sm font-semibold text-primary">
+                      0{i + 1}
+                    </span>
+                    <span className="h-px flex-1 bg-border" />
+                    <Icon className="size-5 text-muted-foreground" />
+                  </div>
+                  <h3 className="mt-4 font-semibold tracking-tight">{title}</h3>
+                  <p className="mt-1.5 text-[15px] leading-relaxed text-muted-foreground">{body}</p>
                 </div>
-                <h3 className="mt-4 font-semibold tracking-tight">{title}</h3>
-                <p className="mt-1.5 text-[15px] leading-relaxed text-muted-foreground">{body}</p>
-              </div>
+              </Reveal>
             ))}
           </div>
         </section>
 
         <section className="pb-20">
-          <div className="overflow-hidden rounded-2xl border border-border bg-card">
+          <Reveal className="overflow-hidden rounded-2xl border border-border bg-card">
             <div className="flex flex-col gap-6 p-8 sm:flex-row sm:items-center sm:justify-between sm:p-10">
               <div className="max-w-2xl">
                 <h2 className="text-2xl font-semibold tracking-tight">Listing a flat?</h2>
@@ -284,7 +307,7 @@ export default async function LandingPage({
                 </Link>
               </Button>
             </div>
-          </div>
+          </Reveal>
         </section>
       </main>
 
