@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { IconTile } from "@/components/ui/icon-tile";
 import { BrandMark } from "@/components/brand-mark";
 import { ACTIVE_LOCALITY_SLUG } from "@/lib/locality";
 import { OPEN_MODE } from "@/lib/open-mode";
@@ -67,6 +68,16 @@ const TENANT_STEPS = [
 const localityName = ACTIVE_LOCALITY_SLUG.split("-")
   .map((w) => w[0]?.toUpperCase() + w.slice(1))
   .join(" ");
+
+/** One itemised line in the hero's sample listing — mirrors CostBreakdown. */
+function CostRow({ label, value, muted }: { label: string; value: string; muted?: boolean }) {
+  return (
+    <div className="flex items-baseline justify-between gap-2 py-1 text-sm">
+      <span className={muted ? "text-muted-foreground" : ""}>{label}</span>
+      <span className="font-medium tabular-nums">{value}</span>
+    </div>
+  );
+}
 
 export default async function LandingPage({
   searchParams,
@@ -156,6 +167,52 @@ export default async function LandingPage({
               ? "Open preview · no sign-in, switch roles from the header"
               : "One phone number, one code. No documents, ever."}
           </p>
+
+          {/* Show, don't tell — one listing with the claims above made concrete. */}
+          <div className="mx-auto mt-16 max-w-md">
+            <div className="rounded-2xl border border-border bg-card p-6 text-left shadow-[0_1px_2px_rgba(16,24,40,0.04),0_16px_40px_-8px_rgba(16,24,40,0.12)] sm:p-7">
+              <div className="flex items-center justify-between gap-3">
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-success/10 px-2.5 py-1 text-xs font-medium text-success">
+                  <BadgeCheck className="size-3.5" />
+                  Verified 2 days ago
+                </span>
+                <span className="text-xs text-muted-foreground">Posted by owner</span>
+              </div>
+
+              <h3 className="mt-4 text-lg font-semibold tracking-tight">2 BHK in Baner</h3>
+              <p className="text-sm text-muted-foreground">Semi-furnished · Available now</p>
+
+              <div className="mt-4 flex flex-wrap items-baseline gap-x-2 gap-y-1 border-t pt-4">
+                <span className="text-2xl font-bold tabular-nums">₹28,000</span>
+                <span className="text-sm text-muted-foreground">/mo all-in · ₹50,000 to move in</span>
+              </div>
+
+              <div className="mt-4 grid gap-4 border-t pt-4 sm:grid-cols-2">
+                <div>
+                  <p className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                    Every month
+                  </p>
+                  <CostRow label="Rent" value="₹26,000" />
+                  <CostRow label="Maintenance" value="₹2,000" muted />
+                </div>
+                <div>
+                  <p className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                    At move-in
+                  </p>
+                  <CostRow label="Deposit" value="₹50,000" muted />
+                  <div className="flex items-baseline justify-between gap-2 py-1 text-sm">
+                    <span className="text-muted-foreground">Brokerage</span>
+                    <span className="font-medium text-success">
+                      None <span className="font-normal text-muted-foreground">· owner</span>
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <p className="mt-3 text-center text-xs text-muted-foreground">
+              An example — every listing carries this, enforced by the database, not the poster.
+            </p>
+          </div>
         </div>
       </section>
 
@@ -175,9 +232,7 @@ export default async function LandingPage({
                 key={title}
                 className="group rounded-xl border border-border bg-card p-6 transition duration-200 hover:border-foreground/15 hover:shadow-[0_1px_2px_rgba(16,24,40,0.04),0_8px_24px_rgba(16,24,40,0.06)]"
               >
-                <div className="flex size-11 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                  <Icon className="size-5" />
-                </div>
+                <IconTile icon={Icon} className="size-11" />
                 <h3 className="mt-4 font-semibold tracking-tight">{title}</h3>
                 <p className="mt-1.5 text-[15px] leading-relaxed text-muted-foreground">{body}</p>
               </div>
