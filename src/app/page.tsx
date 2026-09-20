@@ -35,8 +35,8 @@ const PILLARS = [
   {
     icon: CalendarClock,
     title: "Confirmed on a date",
-    body: "Every listing carries the day someone last confirmed it, and goes stale on its own. Owners get chased before that happens, so what you see has usually been checked this week.",
-    tag: "Auto-expires in 7 days",
+    body: "Every listing carries the day someone last confirmed it with the contact, keeping availability accurate and fresh so you never waste time on unavailable flats.",
+    tag: "Fresh availability guaranteed",
   },
   {
     icon: ReceiptText,
@@ -193,7 +193,7 @@ export default async function LandingPage({
             className="animate-fade-up mx-auto mt-6 max-w-2xl text-pretty text-base sm:text-lg leading-relaxed text-stone-600 dark:text-stone-400 font-normal"
             style={{ animationDelay: "170ms" }}
           >
-            No ghost listings, phantom pricing, or unstated broker fees. Every flat on Kiraya is physically verified, itemizes all deposits and charges, and auto-expires in 7 days.
+            No ghost listings, phantom pricing, or unstated broker fees. Every flat on Kiraya is physically verified, itemizes all deposits and charges, and guarantees real-time availability.
           </p>
 
           {/* Search-First Console */}
@@ -348,8 +348,8 @@ export default async function LandingPage({
                 <Clock className="size-4.5" />
               </div>
               <div>
-                <h4 className="text-sm font-semibold">7-Day Expiry</h4>
-                <p className="text-xs text-muted-foreground">Listings auto-expire without prompt verification</p>
+                <h4 className="text-sm font-semibold">Fresh Availability</h4>
+                <p className="text-xs text-muted-foreground">Listings actively confirmed to prevent ghost posts</p>
               </div>
             </div>
 
