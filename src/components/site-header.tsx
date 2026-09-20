@@ -99,7 +99,7 @@ export async function SiteHeader() {
           {OPEN_MODE ? <DevRoleSwitcher active={role} /> : null}
 
           {user ? (
-            <AccountMenu items={menuItems} roleLabel={role} showSignOut={!OPEN_MODE} />
+            <AccountMenu items={menuItems} roleLabel={role} showSignOut={true} />
           ) : (
             <Button asChild size="sm">
               <Link href="/login">Sign in</Link>

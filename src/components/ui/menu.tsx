@@ -61,7 +61,12 @@ export function Menu({
       {open ? (
         <div
           role="menu"
-          onClick={() => setOpen(false)}
+          onClick={(e) => {
+            const target = e.target as HTMLElement;
+            if (target.closest("a")) {
+              setOpen(false);
+            }
+          }}
           className={cn(
             "absolute z-50 mt-2 min-w-52 overflow-hidden rounded-lg border border-border bg-popover p-1 text-popover-foreground shadow-lg",
             align === "end" ? "right-0" : "left-0",

@@ -2,7 +2,9 @@
 
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
+import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { DEV_ROLE_COOKIE } from "@/lib/open-mode";
 import { indianMobileSchema, otpSchema, toE164 } from "@/lib/validators";
 import type { OnboardingStep } from "@/types/database";
 
@@ -122,7 +124,15 @@ export async function verifyOtp(_prev: AuthState, formData: FormData): Promise<A
 
 /** Sign out and return to the landing page. */
 export async function signOut() {
-  const supabase = await createClient();
-  await supabase.auth.signOut();
+  try {
+    const cookieStore = await cookies();
+    cookieStore.delete(DEV_ROLE_COOKIE);
+    const supabase = await createClient();
+    await supabase.auth.signOut();
+  } catch (err) {
+    console.error("Error signing out:", err);
+  }
+
+  revalidatePath("/", "layout");
   redirect("/");
 }
