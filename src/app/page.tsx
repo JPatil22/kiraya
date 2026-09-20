@@ -152,83 +152,86 @@ export default async function LandingPage({
         </div>
       </header>
 
-      {/* Hero Section with Atmospheric Background */}
-      <section className="relative overflow-hidden border-b border-border/60 bg-gradient-to-b from-background via-background/95 to-secondary/30">
+      {/* Hero Section — Editorial & Architectural */}
+      <section className="relative overflow-hidden border-b border-border/70 bg-stone-50/50 dark:bg-stone-950/20">
         {/* Subtle Architectural Dot Grid */}
         <div
           aria-hidden
-          className="pointer-events-none absolute inset-0 bg-dot-grid opacity-60 dark:opacity-40 [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)]"
+          className="pointer-events-none absolute inset-0 bg-dot-grid opacity-35 dark:opacity-20 [mask-image:radial-gradient(ellipse_70%_60%_at_50%_0%,#000_60%,transparent_100%)]"
         />
 
-        {/* Luminous Animated Fluid Auroras */}
-        <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
-          <div className="animate-aurora absolute -top-48 left-1/2 h-[580px] w-[980px] -translate-x-1/2 rounded-full bg-[radial-gradient(closest-side,hsl(var(--primary)/0.18),transparent)] blur-3xl" />
-          <div className="animate-aurora absolute -top-32 left-[15%] h-[400px] w-[500px] rounded-full bg-[radial-gradient(closest-side,hsl(270_85%_65%/0.12),transparent)] blur-3xl [animation-delay:-6s]" />
-          <div className="animate-aurora absolute -top-24 right-[12%] h-[380px] w-[460px] rounded-full bg-[radial-gradient(closest-side,hsl(165_80%_45%/0.10),transparent)] blur-3xl [animation-delay:-11s]" />
-        </div>
+        {/* Soft Natural Light Falloff — No Gimmicky Neon Auroras */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-x-0 -top-40 h-80 bg-radial from-stone-200/40 via-stone-100/10 to-transparent dark:from-stone-800/20 dark:via-transparent blur-2xl"
+        />
 
         <div className="relative mx-auto max-w-6xl px-6 pt-16 pb-20 sm:pt-24 sm:pb-28 text-center">
-          {/* Status Badge */}
-          <div className="animate-fade-up inline-flex items-center gap-2 rounded-full border border-primary/25 bg-primary/10 px-4 py-1.5 text-xs font-semibold text-primary shadow-sm backdrop-blur-md">
-            <span className="relative flex size-2">
-              <span className="absolute inline-flex size-full animate-ping rounded-full bg-emerald-500 opacity-75" />
-              <span className="relative inline-flex size-2 rounded-full bg-emerald-500" />
+          {/* Architectural Registry Pill */}
+          <div className="animate-fade-up inline-flex items-center gap-2 rounded-full border border-stone-300/80 dark:border-stone-800 bg-stone-100/90 dark:bg-stone-900/90 px-3.5 py-1 text-xs text-stone-700 dark:text-stone-300 shadow-2xs backdrop-blur-sm">
+            <span className="size-1.5 rounded-full bg-emerald-600 dark:bg-emerald-400" />
+            <span className="font-semibold uppercase tracking-wider text-[11px] text-stone-500 dark:text-stone-400">
+              Pune Rental Registry
             </span>
-            <span>Now serving {localityName} · 100% Verified Truth</span>
+            <span className="text-stone-300 dark:text-stone-700">·</span>
+            <span>Direct & verified flats</span>
           </div>
 
-          {/* Headline */}
+          {/* Solid Editorial Black Headline — No Neon Gradients */}
           <h1
-            className="animate-fade-up mx-auto mt-6 max-w-4xl text-balance text-4xl font-extrabold tracking-tight sm:text-6xl md:text-7xl"
+            className="animate-fade-up mx-auto mt-7 max-w-4xl text-balance text-4xl font-extrabold tracking-tight text-stone-900 dark:text-stone-50 sm:text-6xl md:text-7xl"
             style={{ animationDelay: "90ms", lineHeight: 1.08 }}
           >
             Fewer listings.{" "}
-            <span className="block bg-gradient-to-r from-primary via-indigo-600 to-violet-600 bg-clip-text text-transparent">
+            <span className="block text-stone-900 dark:text-stone-100">
               All of them true.
             </span>
           </h1>
 
-          {/* Subtitle */}
+          {/* Grounded Journalistic Subtitle */}
           <p
-            className="animate-fade-up mx-auto mt-6 max-w-2xl text-pretty text-base sm:text-lg leading-relaxed text-muted-foreground"
+            className="animate-fade-up mx-auto mt-6 max-w-2xl text-pretty text-base sm:text-lg leading-relaxed text-stone-600 dark:text-stone-400 font-normal"
             style={{ animationDelay: "170ms" }}
           >
-            Most rental portals flood you with ghost listings, phantom pricing, and silent broker fees.
-            Kiraya verifies every flat physically, mandates full cost itemization, and guarantees availability.
+            No ghost listings, phantom pricing, or unstated broker fees. Every flat on Kiraya is physically verified, itemizes all deposits and charges, and auto-expires in 7 days.
           </p>
 
-          {/* Hero Locality Search Bar */}
+          {/* Search-First Console */}
           <div className="animate-fade-up mx-auto mt-9 max-w-2xl" style={{ animationDelay: "250ms" }}>
             <form
               action="/listings"
               method="GET"
-              className="flex flex-col sm:flex-row items-center gap-2 rounded-2xl border border-border/80 bg-card/90 p-2 shadow-lg shadow-black/[0.04] backdrop-blur-xl transition focus-within:border-primary/50 focus-within:ring-2 focus-within:ring-primary/20"
+              className="flex flex-col sm:flex-row items-center gap-2 rounded-2xl border border-stone-300 dark:border-stone-800 bg-white dark:bg-stone-900 p-2 shadow-sm transition focus-within:border-stone-900 dark:focus-within:border-stone-100 focus-within:ring-1 focus-within:ring-stone-900/10"
             >
               <div className="relative flex flex-1 items-center w-full px-3">
-                <Search className="size-4.5 text-muted-foreground/80 shrink-0" />
+                <Search className="size-4.5 text-stone-400 shrink-0" />
                 <input
                   type="text"
                   name="q"
-                  placeholder="Search Baner, Koregaon Park, 2 BHK, Kharadi..."
-                  className="w-full bg-transparent px-3 py-2 text-sm placeholder:text-muted-foreground/60 focus:outline-none"
+                  placeholder="Search by neighborhood, society, or BHK (e.g. Baner 2 BHK)..."
+                  className="w-full bg-transparent px-3 py-2 text-sm text-stone-900 dark:text-stone-100 placeholder:text-stone-400 focus:outline-none"
                 />
               </div>
-              <Button type="submit" size="default" className="w-full sm:w-auto h-10 px-5 shadow-sm">
-                <span>Find verified flats</span>
+              <Button
+                type="submit"
+                size="default"
+                className="w-full sm:w-auto h-10 px-5 bg-stone-900 hover:bg-stone-800 text-white dark:bg-stone-100 dark:hover:bg-stone-200 dark:text-stone-900 font-medium transition"
+              >
+                <span>Browse flats</span>
                 <ArrowRight className="size-4 ml-1.5" />
               </Button>
             </form>
 
             {/* Quick Area Filter Pills */}
-            <div className="mt-4 flex flex-wrap items-center justify-center gap-1.5 text-xs text-muted-foreground">
+            <div className="mt-4 flex flex-wrap items-center justify-center gap-1.5 text-xs text-stone-500 dark:text-stone-400">
               <span className="font-medium mr-1 flex items-center gap-1">
-                <MapPin className="size-3 text-primary" /> Popular in Pune:
+                <MapPin className="size-3 text-stone-400" /> Active neighborhoods:
               </span>
               {PUNE_LOCALITIES.slice(0, 5).map((loc) => (
                 <Link
                   key={loc.slug}
                   href={`/listings?area=${loc.slug}`}
-                  className="rounded-full border border-border/70 bg-background/80 px-2.5 py-1 transition hover:border-primary/40 hover:bg-primary/5 hover:text-primary"
+                  className="rounded-md border border-stone-200 dark:border-stone-800 bg-white/80 dark:bg-stone-900/80 px-2.5 py-1 text-stone-700 dark:text-stone-300 transition hover:border-stone-400 dark:hover:border-stone-600 hover:text-stone-900 dark:hover:text-stone-100 shadow-2xs"
                 >
                   {loc.name}
                 </Link>
@@ -238,7 +241,7 @@ export default async function LandingPage({
 
           {/* Subtext info */}
           <p
-            className="animate-fade-up mt-5 text-xs sm:text-sm text-muted-foreground"
+            className="animate-fade-up mt-5 text-xs sm:text-sm text-stone-500 dark:text-stone-400"
             style={{ animationDelay: "320ms" }}
           >
             {OPEN_MODE
@@ -251,21 +254,19 @@ export default async function LandingPage({
             className="animate-fade-up mx-auto mt-14 max-w-lg"
             style={{ animationDelay: "420ms" }}
           >
-            <div className="animate-float group overflow-hidden rounded-2xl border border-border/80 bg-card p-0 text-left shadow-[0_4px_24px_rgba(15,23,42,0.06),0_24px_54px_-16px_hsl(var(--primary)/0.25)] transition duration-300">
+            <div className="overflow-hidden rounded-2xl border border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-900 text-left shadow-md transition duration-200">
               {/* Photo Preview */}
-              <div className="relative aspect-[16/9] w-full overflow-hidden bg-muted">
-                {/* Real Apartment Photograph Asset */}
-                {/* eslint-disable-next-line @next/next/no-img-element */}
+              <div className="relative aspect-[16/9] w-full overflow-hidden bg-stone-100 dark:bg-stone-800">
                 <img
                   src="/images/hero-apartment.jpg"
                   alt="Modern 2 BHK apartment in Baner Pune"
-                  className="size-full object-cover transition duration-700 group-hover:scale-105"
+                  className="size-full object-cover"
                 />
                 <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/75 via-black/20 to-transparent" />
 
                 {/* Top Badges */}
                 <div className="absolute inset-x-3.5 top-3.5 flex items-center justify-between gap-2">
-                  <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/90 px-3 py-1 text-xs font-semibold text-white shadow-sm backdrop-blur-sm">
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-600/90 px-3 py-1 text-xs font-semibold text-white shadow-xs backdrop-blur-sm">
                     <CheckCircle2 className="size-3.5" />
                     Verified 2 days ago
                   </span>
@@ -293,45 +294,45 @@ export default async function LandingPage({
               <div className="p-6 sm:p-7">
                 <div className="flex flex-wrap items-baseline justify-between gap-2">
                   <div className="flex items-baseline gap-2">
-                    <CountUp to={28000} prefix="₹" className="text-3xl font-extrabold tracking-tight text-foreground tabular-nums" />
-                    <span className="text-sm font-medium text-muted-foreground">/mo all-in</span>
+                    <CountUp to={28000} prefix="₹" className="text-3xl font-extrabold tracking-tight text-stone-900 dark:text-stone-100 tabular-nums" />
+                    <span className="text-sm font-medium text-stone-500">/mo all-in</span>
                   </div>
-                  <Badge variant="outline" className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 border-emerald-500/30 bg-emerald-500/10">
+                  <Badge variant="outline" className="text-xs font-semibold text-emerald-700 dark:text-emerald-400 border-emerald-500/30 bg-emerald-500/10">
                     Direct Owner · ₹0 Brokerage
                   </Badge>
                 </div>
 
-                <div className="mt-5 grid gap-4 rounded-xl border border-border/70 bg-muted/30 p-4 sm:grid-cols-2">
+                <div className="mt-5 grid gap-4 rounded-xl border border-stone-200 dark:border-stone-800 bg-stone-50/70 dark:bg-stone-800/40 p-4 sm:grid-cols-2">
                   <div>
-                    <p className="mb-1 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                    <p className="mb-1 text-[11px] font-bold uppercase tracking-wider text-stone-500">
                       Every Month
                     </p>
                     <CostRow label="Flat Rent" value="₹26,000" />
                     <CostRow label="Maintenance" value="₹2,000" muted />
                   </div>
                   <div>
-                    <p className="mb-1 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                    <p className="mb-1 text-[11px] font-bold uppercase tracking-wider text-stone-500">
                       Move-In Breakdown
                     </p>
                     <CostRow label="Security Deposit" value="₹50,000" muted />
                     <div className="flex items-baseline justify-between gap-2 py-1.5 text-sm">
-                      <span className="text-muted-foreground">Brokerage</span>
-                      <span className="font-bold text-emerald-600 dark:text-emerald-400">₹0 (Owner)</span>
+                      <span className="text-stone-500">Brokerage</span>
+                      <span className="font-bold text-emerald-700 dark:text-emerald-400">₹0 (Owner)</span>
                     </div>
                   </div>
                 </div>
 
-                <div className="mt-4 flex items-center justify-between text-xs text-muted-foreground pt-2 border-t border-border/50">
+                <div className="mt-4 flex items-center justify-between text-xs text-stone-500 pt-2 border-t border-stone-200 dark:border-stone-800">
                   <span className="flex items-center gap-1">
-                    <ShieldCheck className="size-3.5 text-primary" /> Verified physical inventory
+                    <ShieldCheck className="size-3.5 text-stone-700 dark:text-stone-300" /> Verified physical inventory
                   </span>
-                  <Link href="/listings" className="font-medium text-primary hover:underline flex items-center gap-0.5">
+                  <Link href="/listings" className="font-medium text-stone-900 dark:text-stone-100 hover:underline flex items-center gap-0.5">
                     View in feed <ArrowRight className="size-3" />
                   </Link>
                 </div>
               </div>
             </div>
-            <p className="mt-3 text-center text-xs text-muted-foreground">
+            <p className="mt-3 text-center text-xs text-stone-500">
               Guaranteed by database constraints — posters cannot inflate or conceal prices.
             </p>
           </div>
