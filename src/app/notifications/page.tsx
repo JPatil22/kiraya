@@ -64,10 +64,14 @@ export default async function NotificationsPage() {
   const unread = notifications.filter((n) => !n.read_at).length;
 
   return (
-    <div className="min-h-dvh">
+    <div className="relative min-h-dvh overflow-hidden bg-background">
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 bg-dot-grid opacity-50 dark:opacity-30 [mask-image:radial-gradient(ellipse_70%_50%_at_50%_0%,#000_60%,transparent_100%)]"
+      />
       <SiteHeader />
 
-      <main className="mx-auto max-w-2xl space-y-6 px-6 py-10">
+      <main className="relative mx-auto max-w-2xl space-y-6 px-6 py-10">
         <PageHeader
           title="Activity"
           description={

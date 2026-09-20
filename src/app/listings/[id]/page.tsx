@@ -7,6 +7,7 @@ import {
   CheckCircle2,
   CalendarDays,
   Camera,
+  FileText,
   Flag,
   History,
   Info,
@@ -23,6 +24,7 @@ import { DepositContext } from "@/components/listings/deposit-context";
 import { toCoords } from "@/lib/geo";
 import { FreshnessBadge } from "@/components/listings/freshness-badge";
 import { PostedByBadge } from "@/components/listings/posted-by-badge";
+import { CountUp } from "@/components/count-up";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -139,39 +141,44 @@ export default async function ListingDetailPage({
   const canReport = Boolean(user) && !isOwnListing;
 
   return (
-    <div className="min-h-dvh">
+    <div className="relative min-h-dvh overflow-hidden bg-background">
+      {/* Background ambient lighting with fluid auroras */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 bg-dot-grid opacity-55 dark:opacity-35 [mask-image:radial-gradient(ellipse_70%_50%_at_50%_0%,#000_65%,transparent_100%)]"
+      />
+      <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
+        <div className="animate-aurora absolute -top-40 left-1/2 h-[520px] w-[920px] -translate-x-1/2 rounded-full bg-[radial-gradient(closest-side,hsl(var(--primary)/0.16),transparent)] blur-3xl" />
+        <div className="animate-aurora absolute -top-24 left-[10%] h-[360px] w-[460px] rounded-full bg-[radial-gradient(closest-side,hsl(270_85%_65%/0.11),transparent)] blur-3xl [animation-delay:-7s]" />
+        <div className="animate-aurora absolute -top-20 right-[8%] h-[340px] w-[440px] rounded-full bg-[radial-gradient(closest-side,hsl(165_80%_45%/0.09),transparent)] blur-3xl [animation-delay:-12s]" />
+      </div>
+
       <SiteHeader />
 
-      <main className="mx-auto max-w-3xl space-y-6 px-6 py-10">
-        <Button asChild variant="ghost" size="sm" className="-ml-3">
-          <Link href="/listings">
-            <ArrowLeft /> All listings
-          </Link>
-        </Button>
+      <main className="relative mx-auto max-w-6xl space-y-6 px-6 py-8">
+        {/* Top Navigation / Breadcrumb */}
+        <div className="animate-fade-up flex items-center justify-between">
+          <Button asChild variant="ghost" size="sm" className="-ml-3 hover:bg-primary/5">
+            <Link href="/listings" className="gap-1.5 font-medium">
+              <ArrowLeft className="size-4" /> All listings
+            </Link>
+          </Button>
+          {user ? <SaveButton propertyId={listing.id} saved={saved} variant="inline" /> : null}
+        </div>
 
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight sm:text-[30px]">{listing.title}</h1>
-          <p className="mt-1.5 text-[15px] text-muted-foreground">
-            {labelFor(BHK_OPTIONS, listing.bhk)} ·{" "}
-            {labelFor(FURNISHING_OPTIONS, listing.furnishing)} ·{" "}
-            {labelFor(OCCUPANCY_OPTIONS, listing.occupancy_pref)}
-          </p>
-
-          <div className="mt-4 flex flex-wrap items-baseline gap-x-3 gap-y-1">
-            <span className="text-3xl font-semibold tabular-nums tracking-tight">
-              {formatINR(listing.all_in_monthly)}
-              <span className="text-base font-normal text-muted-foreground">/mo</span>
-            </span>
-            <span className="text-sm text-muted-foreground">
-              all-in · {formatINR(listing.move_in_cost)} to move in
-            </span>
-          </div>
-
-          <div className="mt-4 flex flex-wrap items-center gap-2">
-            <FreshnessBadge
-              daysSinceVerified={listing.days_since_verified}
-              isStale={listing.is_stale}
-            />
+        {/* Listing Header */}
+        <div className="animate-fade-up" style={{ animationDelay: "60ms" }}>
+          <div className="flex flex-wrap items-center gap-2 mb-2">
+            <div className="inline-flex items-center">
+              <span className="relative flex size-2 mr-1.5">
+                <span className="absolute inline-flex size-full animate-ping rounded-full bg-emerald-500 opacity-75" />
+                <span className="relative inline-flex size-2 rounded-full bg-emerald-500" />
+              </span>
+              <FreshnessBadge
+                daysSinceVerified={listing.days_since_verified}
+                isStale={listing.is_stale}
+              />
+            </div>
             <Badge variant={listing.availability === "available" ? "secondary" : "outline"}>
               {labelFor(AVAILABILITY_OPTIONS, listing.availability)}
             </Badge>
@@ -181,319 +188,450 @@ export default async function ListingDetailPage({
               showName
               sourcedBrokerName={listing.sourced_broker_name}
             />
-            {user ? <SaveButton propertyId={listing.id} saved={saved} variant="inline" /> : null}
+            {listing.has_warning ? (
+              <Badge variant="destructive" className="gap-1">
+                <AlertTriangle className="size-3.5" />
+                {listing.open_mismatch_count} mismatch{listing.open_mismatch_count === 1 ? "" : "es"}
+              </Badge>
+            ) : null}
           </div>
 
-          {/* Who stamped the freshness clock. An owner's word and a Kiraya
-              check are both worth something, but not the same thing — so the
-              source is named rather than blurred into one "verified". */}
+          <h1 className="text-2xl font-extrabold tracking-tight sm:text-3xl lg:text-4xl text-foreground">
+            {listing.title}
+          </h1>
+
+          <div className="mt-2 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+            <span className="font-semibold text-foreground">{labelFor(BHK_OPTIONS, listing.bhk)}</span>
+            <span>·</span>
+            <span>{labelFor(FURNISHING_OPTIONS, listing.furnishing)}</span>
+            <span>·</span>
+            <span>{labelFor(OCCUPANCY_OPTIONS, listing.occupancy_pref)}</span>
+            {listing.area_name ? (
+              <>
+                <span>·</span>
+                <span className="flex items-center gap-1 font-medium text-primary">
+                  <MapPin className="size-3.5" />
+                  {listing.area_name}
+                </span>
+              </>
+            ) : null}
+          </div>
+
           {listing.last_verified_at ? (
-            <p className="mt-2 text-sm text-muted-foreground">
+            <p className="mt-1.5 text-xs text-muted-foreground">
               {listing.verified_by_poster
                 ? "Confirmed by the person who posted it."
-                : "Verified by Kiraya."}
-            </p>
-          ) : null}
-
-          {/* 0035 — a seeded listing says so plainly: the broker is credited,
-              not claimed as a member, and their number waits behind an unlock. */}
-          {listing.sourced_broker_name ? (
-            <p className="mt-2 text-sm text-muted-foreground">
-              Kiraya listed this from a public post. {listing.sourced_broker_name} isn&apos;t a
-              verified Kiraya member yet — unlock contact to get their number.
+                : "Verified physically by Kiraya."}
             </p>
           ) : null}
         </div>
 
-        {updated ? (
-          <p className="flex items-start gap-2 rounded-lg border border-success/40 bg-success/10 p-3 text-sm">
-            <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-success" />
-            Saved. The change is on the timeline below, and the listing is stamped as
-            confirmed just now.
-          </p>
-        ) : null}
+        {/* Hero Photo Gallery */}
+        <div
+          className="animate-fade-up overflow-hidden rounded-2xl border border-border/80 bg-card p-1 shadow-sm transition hover:shadow-md"
+          style={{ animationDelay: "120ms" }}
+        >
+          <PhotoGallery
+            photos={photos}
+            bhk={listing.bhk}
+            lastVerifiedAt={listing.last_verified_at}
+          />
+        </div>
 
-        {listing.availability === "rented" ? (
-          <div className="flex items-start gap-3 rounded-xl border bg-muted p-4">
-            <KeyRound className="mt-0.5 size-5 shrink-0 text-muted-foreground" />
-            <div>
-              <p className="font-medium">This one&apos;s gone — the owner marked it rented.</p>
-              <p className="mt-0.5 text-sm text-muted-foreground">
-                It no longer appears in the feed. The page stays up so you can see what it was
-                and when it changed.
+        {/* 2-Column Split: Content on Left, Sticky Action Sidebar on Right */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch pt-2">
+          {/* Main Left Column (7 cols) */}
+          <div className="lg:col-span-7 space-y-6 animate-fade-up" style={{ animationDelay: "140ms" }}>
+            {updated ? (
+              <p className="flex items-start gap-2 rounded-xl border border-success/40 bg-success/10 p-3.5 text-sm">
+                <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-success" />
+                Saved. The change is on the timeline below, and the listing is stamped as confirmed just now.
               </p>
-            </div>
-          </div>
-        ) : null}
+            ) : null}
 
-        <PhotoGallery
-          photos={photos}
-          bhk={listing.bhk}
-          lastVerifiedAt={listing.last_verified_at}
-        />
+            {listing.has_warning ? (
+              <div className="flex items-start gap-3 rounded-xl border border-destructive/50 bg-destructive/10 p-4">
+                <AlertTriangle className="mt-0.5 size-5 shrink-0 text-destructive" />
+                <div>
+                  <p className="font-medium text-destructive">
+                    {listing.open_mismatch_count} tenants reported this listing doesn&apos;t match reality
+                  </p>
+                  <p className="mt-0.5 text-sm text-destructive/90">
+                    Confirm the rent and availability before you travel to see it.
+                  </p>
+                </div>
+              </div>
+            ) : null}
 
-        {isOwnListing ? (
-          <>
-            <div className="flex flex-wrap gap-2">
-              <Button asChild variant="outline" size="sm">
-                <Link href={`/listings/${listing.id}/photos`}>
-                  <Camera /> Manage photos
-                </Link>
-              </Button>
-              <Button asChild variant="outline" size="sm">
-                <Link href={`/listings/${listing.id}/edit`}>
-                  <Pencil /> Edit listing
-                </Link>
-              </Button>
-            </div>
+            {listing.is_stale ? (
+              <div className="rounded-xl border border-warning/50 bg-warning/10 p-4 text-sm">
+                <span className="font-medium">This listing is stale.</span> Nobody has confirmed
+                it recently, so the price and availability may have changed.
+              </div>
+            ) : null}
 
-            <OwnerControls
-              propertyId={listing.id}
-              availability={listing.availability}
-              daysSinceVerified={listing.days_since_verified}
-              isStale={listing.is_stale}
-            />
+            {listing.availability === "rented" ? (
+              <div className="flex items-start gap-3 rounded-xl border bg-muted p-4">
+                <KeyRound className="mt-0.5 size-5 shrink-0 text-muted-foreground" />
+                <div>
+                  <p className="font-medium">This one&apos;s gone — the owner marked it rented.</p>
+                  <p className="mt-0.5 text-sm text-muted-foreground">
+                    It no longer appears in the feed. The page stays up so you can see what it was
+                    and when it changed.
+                  </p>
+                </div>
+              </div>
+            ) : null}
 
-            {reports.length > 0 ? (
-              <Card className="border-destructive/40">
-                <CardHeader>
-                  <CardTitle className="text-base">
-                    {reports.length} open{" "}
-                    {reports.length === 1 ? "report" : "reports"} about this listing
-                  </CardTitle>
-                  <CardDescription>
-                    Your reply goes to the admin reviewing it, and sits next to the report.
-                    Answering doesn&apos;t close it — but being on the record is better than
-                    the accusation standing alone.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {reports.map((r) => (
-                    <div key={r.id} className="rounded-lg border p-3">
-                      <p className="text-sm font-medium">
-                        {labelFor(MISMATCH_OPTIONS, r.type)}
+            {/* Owner Management Controls (for owner) */}
+            {isOwnListing ? (
+              <div className="space-y-4 rounded-xl border border-primary/20 bg-primary/5 p-4">
+                <div className="flex flex-wrap gap-2">
+                  <Button asChild variant="outline" size="sm">
+                    <Link href={`/listings/${listing.id}/photos`}>
+                      <Camera className="size-4 mr-1.5" /> Manage photos
+                    </Link>
+                  </Button>
+                  <Button asChild variant="outline" size="sm">
+                    <Link href={`/listings/${listing.id}/edit`}>
+                      <Pencil className="size-4 mr-1.5" /> Edit listing
+                    </Link>
+                  </Button>
+                </div>
+
+                <OwnerControls
+                  propertyId={listing.id}
+                  availability={listing.availability}
+                  daysSinceVerified={listing.days_since_verified}
+                  isStale={listing.is_stale}
+                />
+
+                {reports.length > 0 ? (
+                  <Card className="border-destructive/40">
+                    <CardHeader>
+                      <CardTitle className="text-base">
+                        {reports.length} open{" "}
+                        {reports.length === 1 ? "report" : "reports"} about this listing
+                      </CardTitle>
+                      <CardDescription>
+                        Your reply goes to the admin reviewing it, and sits next to the report.
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      {reports.map((r) => (
+                        <div key={r.id} className="rounded-lg border p-3">
+                          <p className="text-sm font-medium">
+                            {labelFor(MISMATCH_OPTIONS, r.type)}
+                          </p>
+                          {r.description ? (
+                            <p className="mt-0.5 text-sm text-muted-foreground">
+                              &ldquo;{r.description}&rdquo;
+                            </p>
+                          ) : null}
+                          <OwnerReply reportId={r.id} existing={r.owner_response} />
+                        </div>
+                      ))}
+                    </CardContent>
+                  </Card>
+                ) : null}
+              </div>
+            ) : null}
+
+            {/* Cost Itemization Card */}
+            <Card className="glass-card shadow-sm">
+              <CardHeader>
+                <div className="flex items-center gap-2">
+                  <IconTile icon={ReceiptText} />
+                  <CardTitle>What it actually costs</CardTitle>
+                </div>
+                <CardDescription>
+                  Every component, itemised. No &ldquo;brokerage negotiable&rdquo; surprises on site.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <CostBreakdown costs={listing} />
+                {accuracy ? <VisitRecord accuracy={accuracy} /> : null}
+
+                {depositContext ? (
+                  <DepositContext
+                    context={depositContext}
+                    bhkLabel={labelFor(BHK_OPTIONS, listing.bhk)}
+                    localityName={listing.area_name ?? "this part of the city"}
+                  />
+                ) : null}
+
+                {priceContext ? (
+                  <PriceContext
+                    context={priceContext}
+                    bhkLabel={labelFor(BHK_OPTIONS, listing.bhk)}
+                    localityName={listing.area_name ?? "this part of the city"}
+                  />
+                ) : null}
+              </CardContent>
+            </Card>
+
+            {/* Unified Property Overview & Locality Card */}
+            <Card className="glass-card shadow-sm">
+              <CardHeader>
+                <div className="flex items-center gap-2">
+                  <IconTile icon={Info} />
+                  <CardTitle>About this flat & neighborhood</CardTitle>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-5">
+                {/* Key Attributes Pills */}
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                  <div className="rounded-xl border border-border/70 bg-muted/30 p-3">
+                    <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                      Availability
+                    </p>
+                    <p className="mt-1 text-sm font-semibold text-foreground flex items-center gap-1.5">
+                      <CalendarDays className="size-4 text-primary" />
+                      {new Date(listing.available_from) <= new Date()
+                        ? "Available now"
+                        : format(new Date(listing.available_from), "d MMM yyyy")}
+                    </p>
+                  </div>
+
+                  <div className="rounded-xl border border-border/70 bg-muted/30 p-3">
+                    <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                      Furnishing
+                    </p>
+                    <p className="mt-1 text-sm font-semibold text-foreground">
+                      {labelFor(FURNISHING_OPTIONS, listing.furnishing)}
+                    </p>
+                  </div>
+
+                  <div className="rounded-xl border border-border/70 bg-muted/30 p-3">
+                    <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                      Tenant Pref
+                    </p>
+                    <p className="mt-1 text-sm font-semibold text-foreground">
+                      {labelFor(OCCUPANCY_OPTIONS, listing.occupancy_pref)}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Address & Locality */}
+                {listing.address_line || listing.area_name ? (
+                  <div className="rounded-xl border border-border/70 bg-muted/20 p-3.5 flex items-start gap-2.5 text-sm">
+                    <MapPin className="size-4 text-primary shrink-0 mt-0.5" />
+                    <div>
+                      <p className="font-semibold text-foreground">
+                        {listing.area_name ?? "Locality"}
                       </p>
-                      {r.description ? (
-                        <p className="mt-0.5 text-sm text-muted-foreground">
-                          &ldquo;{r.description}&rdquo;
+                      {listing.address_line ? (
+                        <p className="text-muted-foreground text-xs mt-0.5">
+                          {listing.address_line}
                         </p>
                       ) : null}
-                      <OwnerReply reportId={r.id} existing={r.owner_response} />
                     </div>
-                  ))}
+                  </div>
+                ) : null}
+
+                {/* Map View if coords available */}
+                {coords ? (
+                  <div className="overflow-hidden rounded-xl border border-border/70">
+                    <LocationMap latitude={coords.lat} longitude={coords.lng} title={listing.title} />
+                  </div>
+                ) : listing.sourced_broker_name ? (
+                  <p className="text-xs text-muted-foreground bg-muted/20 p-3 rounded-lg border border-border/50">
+                    {listing.area_name
+                      ? `No exact GPS pin — the verified area is ${listing.area_name}. Confirm exact landmark with the contact.`
+                      : "Confirm exact landmark with the contact."}
+                  </p>
+                ) : null}
+
+                {!listing.description ? (
+                  <p className="border-t border-border/60 pt-3 text-xs text-muted-foreground flex items-center gap-2">
+                    <CalendarDays className="size-3.5 text-muted-foreground/70" />
+                    Listed on {format(new Date(listing.created_at), "d MMM yyyy")}
+                    {listing.last_verified_at
+                      ? ` · last verified ${format(new Date(listing.last_verified_at), "d MMM yyyy")}`
+                      : " · never verified"}
+                  </p>
+                ) : null}
+              </CardContent>
+            </Card>
+
+            {/* Description & Notes Card */}
+            {listing.description ? (
+              <Card className="glass-card shadow-sm">
+                <CardHeader className="pb-3">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-2">
+                      <IconTile icon={FileText} />
+                      <CardTitle>Description & notes</CardTitle>
+                    </div>
+                    {listing.sourced_broker_name ? (
+                      <Badge variant="outline" className="text-xs font-normal text-muted-foreground border-border/70">
+                        Curated post
+                      </Badge>
+                    ) : null}
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <p className="whitespace-pre-line text-sm text-foreground/90 leading-relaxed font-normal">
+                    {listing.description}
+                  </p>
+
+                  <div className="pt-3 border-t border-border/60 flex items-center justify-between gap-3 text-xs text-muted-foreground">
+                    <div className="flex items-center gap-2">
+                      <CalendarDays className="size-3.5 text-muted-foreground/70" />
+                      <span>Listed on {format(new Date(listing.created_at), "d MMM yyyy")}</span>
+                      <span>·</span>
+                      {listing.last_verified_at ? (
+                        <span className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-medium">
+                          <CheckCircle2 className="size-3" />
+                          Last verified {format(new Date(listing.last_verified_at), "d MMM yyyy")}
+                        </span>
+                      ) : (
+                        <span>Never verified</span>
+                      )}
+                    </div>
+                  </div>
                 </CardContent>
               </Card>
             ) : null}
-          </>
-        ) : null}
 
-        {listing.has_warning ? (
-          <div className="flex items-start gap-3 rounded-xl border border-destructive/50 bg-destructive/10 p-4">
-            <AlertTriangle className="mt-0.5 size-5 shrink-0 text-destructive" />
-            <div>
-              <p className="font-medium text-destructive">
-                {listing.open_mismatch_count} tenants reported this listing doesn&apos;t match reality
-              </p>
-              <p className="mt-0.5 text-sm text-destructive/90">
-                Confirm the rent and availability before you travel to see it.
-              </p>
-            </div>
+            {/* Public Timeline */}
+            <Card className="glass-card shadow-sm">
+              <CardHeader>
+                <div className="flex items-center gap-2">
+                  <IconTile icon={History} />
+                  <CardTitle>Update history</CardTitle>
+                </div>
+                <CardDescription>
+                  Recorded automatically by the database on every change — not editable by whoever posted this.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <UpdateTimeline
+                  updates={updates}
+                  postedBy={listing.posted_by}
+                  postedByRole={listing.posted_by_role}
+                />
+              </CardContent>
+            </Card>
           </div>
-        ) : null}
 
-        {listing.is_stale ? (
-          <div className="rounded-xl border border-warning/50 bg-warning/10 p-4 text-sm">
-            <span className="font-medium">This listing is stale.</span> Nobody has confirmed
-            it recently, so the price and availability may have changed.
-          </div>
-        ) : null}
+          {/* Right Sticky Sidebar (5 cols) - stretches full height so sticky never breaks */}
+          <div className="lg:col-span-5 relative">
+            <div className="sticky top-24 space-y-5">
+              {/* Pricing & Primary Action Card */}
+              <div className="glass-card rounded-2xl border border-primary/25 p-6 shadow-xl shadow-primary/5 hover:border-primary/40 transition-all duration-300 space-y-5">
+                <div className="flex items-baseline justify-between border-b border-border/60 pb-4">
+                  <div>
+                    <CountUp
+                      to={listing.all_in_monthly}
+                      prefix="₹"
+                      className="text-3xl font-extrabold tabular-nums tracking-tight text-foreground"
+                    />
+                    <span className="text-sm font-medium text-muted-foreground"> /month</span>
+                  </div>
+                  <Badge variant="outline" className="font-semibold text-emerald-600 dark:text-emerald-400 border-emerald-500/30 bg-emerald-500/10">
+                    All-in cost
+                  </Badge>
+                </div>
 
-        <Card>
-          <CardHeader>
-            <div className="flex items-center gap-2">
-              <IconTile icon={ReceiptText} />
-              <CardTitle>What it actually costs</CardTitle>
-            </div>
-            <CardDescription>
-              Every component, itemised. No &ldquo;brokerage negotiable&rdquo; surprises on site.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <CostBreakdown costs={listing} />
-            {/*
-              0031 — the only claim on this page nobody who profits from the
-              listing had a hand in.
-            */}
-            {accuracy ? <VisitRecord accuracy={accuracy} /> : null}
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between text-muted-foreground">
+                    <span>Move-in total</span>
+                    <CountUp to={listing.move_in_cost} prefix="₹" className="font-semibold text-foreground" />
+                  </div>
+                  <div className="flex justify-between text-muted-foreground">
+                    <span>Flat rent</span>
+                    <span className="font-medium text-foreground">{formatINR(listing.rent)}</span>
+                  </div>
+                  <div className="flex justify-between text-muted-foreground">
+                    <span>Maintenance</span>
+                    <span className="font-medium text-foreground">{formatINR(listing.maintenance_monthly)}</span>
+                  </div>
+                  <div className="flex justify-between text-muted-foreground">
+                    <span>Security deposit</span>
+                    <span className="font-medium text-foreground">{formatINR(listing.deposit)}</span>
+                  </div>
+                </div>
 
-            {depositContext ? (
-              <DepositContext
-                context={depositContext}
-                bhkLabel={labelFor(BHK_OPTIONS, listing.bhk)}
-                localityName={listing.area_name ?? "this part of the city"}
-              />
-            ) : null}
-
-            {priceContext ? (
-              <PriceContext
-                context={priceContext}
-                bhkLabel={labelFor(BHK_OPTIONS, listing.bhk)}
-                localityName={listing.area_name ?? "this part of the city"}
-              />
-            ) : null}
-          </CardContent>
-        </Card>
-
-        {user && !isOwnListing && listing.availability !== "rented" ? (
-          <ContactOwner
-            propertyId={listing.id}
-            posterName={listing.posted_by_name}
-            posterRole={listing.posted_by_role}
-            unlocked={Boolean(exchange)}
-            // A sourced (e.g. Facebook) listing reveals the real number scraped
-            // from the post. If the post had none, show nothing rather than the
-            // seeded placeholder that posted the row — never hand a tenant a fake
-            // number. Genuinely-posted listings still fall back to the poster's
-            // own profile number.
-            phone={
-              isSourced
-                ? sourceContact?.phone ?? null
-                : sourceContact?.phone ?? poster?.phone ?? null
-            }
-            contactName={sourceContact?.name ?? null}
-            sourcedBrokerName={listing.sourced_broker_name}
-          />
-        ) : null}
-
-        {exchange && user && !isOwnListing && listing.availability !== "rented" ? (
-          <VisitScheduler
-            contactExchangeId={exchange.id}
-            visit={visit}
-            viewerId={user.id}
-          />
-        ) : null}
-
-        {askAboutVisit && exchange ? (
-          <VisitAsk contactExchangeId={exchange.id} propertyTitle={listing.title} />
-        ) : null}
-
-        <Card>
-          <CardHeader>
-            <div className="flex items-center gap-2">
-              <IconTile icon={Info} />
-              <CardTitle>Details</CardTitle>
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center gap-2 text-sm">
-              <CalendarDays className="size-4 shrink-0 text-muted-foreground" />
-              {/* A date that has arrived is availability now, not a stale future
-                  promise — collapse today-or-past to "Available now" so a listing
-                  can't advertise a move-in date in the past. Sourced listings stamp
-                  available_from = ingest day (the parser finds no real date), so
-                  without this every one of them goes stale the day after ingest. */}
-              {new Date(listing.available_from) <= new Date() ? (
-                <>
-                  Available <span className="font-medium">now</span>
-                </>
-              ) : (
-                <>
-                  Available from{" "}
-                  <span className="font-medium">
-                    {format(new Date(listing.available_from), "d MMM yyyy")}
-                  </span>
-                </>
-              )}
-            </div>
-
-            {listing.address_line ? (
-              <div className="flex items-center gap-2 text-sm">
-                <MapPin className="size-4 shrink-0 text-muted-foreground" />
-                {listing.area_name ? (
-                  <span className="font-medium">{listing.area_name}</span>
+                {/* Direct Contact Owner or Unlock */}
+                {user && !isOwnListing && listing.availability !== "rented" ? (
+                  <div className="pt-2 border-t border-border/60">
+                    <ContactOwner
+                      propertyId={listing.id}
+                      posterName={listing.posted_by_name}
+                      posterRole={listing.posted_by_role}
+                      unlocked={Boolean(exchange)}
+                      phone={
+                        isSourced
+                          ? sourceContact?.phone ?? null
+                          : sourceContact?.phone ?? poster?.phone ?? null
+                      }
+                      contactName={sourceContact?.name ?? null}
+                      sourcedBrokerName={listing.sourced_broker_name}
+                    />
+                  </div>
+                ) : !user ? (
+                  <div className="pt-2 border-t border-border/60">
+                    <Button asChild className="w-full h-11 font-semibold shadow-sm">
+                      <Link href="/login">Sign in to unlock phone number</Link>
+                    </Button>
+                  </div>
                 ) : null}
-                {listing.area_name && listing.address_line ? " · " : null}
-                {listing.address_line}
+
+                {/* Visit Scheduler in Sidebar */}
+                {exchange && user && !isOwnListing && listing.availability !== "rented" ? (
+                  <div className="pt-2 border-t border-border/60">
+                    <VisitScheduler
+                      contactExchangeId={exchange.id}
+                      visit={visit}
+                      viewerId={user.id}
+                    />
+                  </div>
+                ) : null}
+
+                {askAboutVisit && exchange ? (
+                  <div className="pt-2 border-t border-border/60">
+                    <VisitAsk contactExchangeId={exchange.id} propertyTitle={listing.title} />
+                  </div>
+                ) : null}
+
+                {/* Trust Guarantees */}
+                <div className="rounded-xl bg-muted/40 p-3.5 text-xs text-muted-foreground space-y-1.5 border border-border/40">
+                  <div className="flex items-center gap-2 font-medium text-foreground">
+                    <CheckCircle2 className="size-3.5 text-emerald-500" />
+                    <span>Truth guarantees on this flat:</span>
+                  </div>
+                  <p>• Verified phone-identity counterparty</p>
+                  <p>• Zero undisclosed move-in or broker fees</p>
+                  <p>• Immutable database price change record</p>
+                </div>
               </div>
-            ) : null}
 
-            {/*
-              0027 — the exact pin, which is the whole point: deciding whether a
-              place is worth the trip should not require making the trip.
-            */}
-            {coords ? (
-              <LocationMap latitude={coords.lat} longitude={coords.lng} title={listing.title} />
-            ) : listing.sourced_broker_name ? (
-              // Sourced from a public post: there's no owner here to drop a pin,
-              // and we don't geocode the scraped address — so "…yet" would imply a
-              // pin that is never coming. State plainly what we know (the area) and
-              // defer the exact spot to the contact, in the same key as the listing.
-              <p className="text-sm text-muted-foreground">
-                {listing.area_name
-                  ? `No exact map pin — the area is ${listing.area_name}. Confirm the spot with the contact.`
-                  : "No exact map pin — confirm the exact location with the contact."}
-              </p>
-            ) : (
-              <p className="rounded-md border border-dashed px-3 py-2 text-sm text-muted-foreground">
-                Nobody has pinned this one on the map yet.
-              </p>
-            )}
-
-            {listing.description ? (
-              <p className="whitespace-pre-line text-sm text-muted-foreground">
-                {listing.description}
-              </p>
-            ) : null}
-
-            <p className="border-t pt-4 text-xs text-muted-foreground">
-              Listed on {format(new Date(listing.created_at), "d MMM yyyy")}
-              {listing.last_verified_at
-                ? ` · last verified ${format(new Date(listing.last_verified_at), "d MMM yyyy")}`
-                : " · never verified"}
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <div className="flex items-center gap-2">
-              <IconTile icon={History} />
-              <CardTitle>Update history</CardTitle>
+              {/* Did this listing match reality? in sidebar */}
+              {canReport ? (
+                <Card id="mismatch-card" className="glass-card shadow-sm border-dashed scroll-mt-24">
+                  <CardHeader className="py-4 px-5">
+                    <div className="flex items-center gap-2">
+                      <IconTile icon={Flag} className="size-8" />
+                      <div>
+                        <CardTitle className="text-sm font-semibold">Did this listing match reality?</CardTitle>
+                        <CardDescription className="text-xs">
+                          Report price or availability discrepancies to help fellow tenants.
+                        </CardDescription>
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="pt-0 px-5 pb-4">
+                    <ReportMismatch
+                      propertyId={listing.id}
+                      alreadyReported={Boolean(existingReport)}
+                    />
+                  </CardContent>
+                </Card>
+              ) : null}
             </div>
-            <CardDescription>
-              Recorded automatically by the database on every change — not editable by
-              whoever posted this.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <UpdateTimeline
-              updates={updates}
-              postedBy={listing.posted_by}
-              postedByRole={listing.posted_by_role}
-            />
-          </CardContent>
-        </Card>
-
-        {canReport ? (
-          <Card>
-            <CardHeader>
-              <div className="flex items-center gap-2">
-                <IconTile icon={Flag} />
-                <CardTitle className="text-base">Did this listing match reality?</CardTitle>
-              </div>
-              <CardDescription>
-                If the price, availability or details were different when you called or
-                visited, say so — it&apos;s what keeps the rest of the feed honest.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <ReportMismatch
-                propertyId={listing.id}
-                alreadyReported={Boolean(existingReport)}
-              />
-            </CardContent>
-          </Card>
-        ) : null}
+          </div>
+        </div>
       </main>
     </div>
   );

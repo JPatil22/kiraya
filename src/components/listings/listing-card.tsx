@@ -29,7 +29,7 @@ export function ListingCard({
 
       <Link
         href={`/listings/${listing.id}`}
-        className="flex h-full flex-col overflow-hidden rounded-xl border border-border bg-card transition duration-200 hover:-translate-y-0.5 hover:border-foreground/10 hover:shadow-[0_2px_4px_rgba(16,24,40,0.04),0_12px_28px_rgba(16,24,40,0.10)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
+        className="flex h-full flex-col overflow-hidden rounded-2xl border border-border/80 bg-card transition-all duration-300 hover:-translate-y-1 hover:border-primary/30 hover:shadow-[0_12px_32px_rgba(15,23,42,0.08),0_0_20px_-4px_hsl(var(--primary)/0.15)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
       >
         {/* Photo is the hook — big, with the price and freshness read straight off it. */}
         <div className="relative aspect-[4/3] overflow-hidden bg-muted">

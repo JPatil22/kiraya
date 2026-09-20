@@ -51,9 +51,13 @@ export default async function DashboardPage({
     if (!OPEN_MODE) redirect("/login");
     const devRole = await getDevRole();
     return (
-      <div className="min-h-dvh">
+      <div className="relative min-h-dvh overflow-hidden bg-background">
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0 bg-dot-grid opacity-50 dark:opacity-30 [mask-image:radial-gradient(ellipse_70%_50%_at_50%_0%,#000_60%,transparent_100%)]"
+        />
         <SiteHeader />
-        <main className="mx-auto max-w-4xl px-6 py-8">
+        <main className="relative mx-auto max-w-4xl px-6 py-8">
           <OpenModeSeedHint role={devRole} />
         </main>
       </div>
@@ -80,10 +84,20 @@ export default async function DashboardPage({
   ]);
 
   return (
-    <div className="min-h-dvh">
+    <div className="relative min-h-dvh overflow-hidden bg-background">
+      {/* Background ambient lighting */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 bg-dot-grid opacity-50 dark:opacity-30 [mask-image:radial-gradient(ellipse_70%_50%_at_50%_0%,#000_60%,transparent_100%)]"
+      />
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -top-40 left-1/2 -translate-x-1/2 h-96 w-[900px] rounded-full bg-[radial-gradient(closest-side,hsl(var(--primary)/0.12),transparent)] blur-3xl"
+      />
+
       <SiteHeader />
 
-      <main className="mx-auto max-w-4xl space-y-5 px-6 py-10">
+      <main className="relative mx-auto max-w-4xl space-y-5 px-6 py-10">
         <div className="flex items-center gap-4">
           <span className="flex size-12 shrink-0 items-center justify-center rounded-full bg-primary/10 text-lg font-semibold text-primary">
             {(user.fullName ?? "K").trim().charAt(0).toUpperCase()}

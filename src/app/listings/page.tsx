@@ -57,17 +57,31 @@ export default async function ListingsPage({
   const freshCount = listings.filter((l) => !l.is_stale).length;
 
   return (
-    <div className="min-h-dvh">
+    <div className="relative min-h-dvh overflow-hidden bg-background">
+      {/* Background ambient lighting with animated auroras */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 bg-dot-grid opacity-55 dark:opacity-35 [mask-image:radial-gradient(ellipse_70%_50%_at_50%_0%,#000_65%,transparent_100%)]"
+      />
+      <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
+        <div className="animate-aurora absolute -top-40 left-1/2 h-[520px] w-[920px] -translate-x-1/2 rounded-full bg-[radial-gradient(closest-side,hsl(var(--primary)/0.15),transparent)] blur-3xl" />
+        <div className="animate-aurora absolute -top-24 left-[12%] h-[360px] w-[460px] rounded-full bg-[radial-gradient(closest-side,hsl(270_85%_65%/0.10),transparent)] blur-3xl [animation-delay:-6s]" />
+        <div className="animate-aurora absolute -top-20 right-[10%] h-[340px] w-[420px] rounded-full bg-[radial-gradient(closest-side,hsl(165_80%_45%/0.08),transparent)] blur-3xl [animation-delay:-11s]" />
+      </div>
+
       <SiteHeader />
 
-      <main className="mx-auto max-w-6xl space-y-7 px-6 py-10">
+      <main className="relative mx-auto max-w-6xl space-y-8 px-6 py-10">
         <div>
-          <h1 className="text-[28px] font-semibold tracking-tight">
+          <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-3 py-1 text-xs font-semibold text-primary mb-3">
+            <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse" />
+            Verified City Feed
+          </div>
+          <h1 className="text-3xl font-extrabold tracking-tight sm:text-4xl">
             Rentals in {locality?.name ?? "your locality"}
           </h1>
-          <p className="mt-1.5 max-w-2xl text-[15px] leading-relaxed text-muted-foreground">
-            Every listing shows when it was last verified, who posted it, and the full cost —
-            rent plus everything else.
+          <p className="mt-2 max-w-2xl text-[15px] leading-relaxed text-muted-foreground">
+            Every flat is verified physically, stamped with its last confirmation date, and displays the 100% transparent all-in monthly and move-in cost.
           </p>
         </div>
 

@@ -4,62 +4,69 @@
 
 @layer base {
   :root {
-    /* Canvas is a hair off pure white so white cards read as distinct surfaces
-       floating above it — the foundation of the clean, flat look. */
-    --background: 210 20% 98%;
-    --foreground: 222.2 47% 11%;
+    /* Atmospheric canvas: luminous, clean architectural ivory-slate */
+    --background: 220 25% 98.2%;
+    --foreground: 224 50% 10%;
     --card: 0 0% 100%;
-    --card-foreground: 222.2 47% 11%;
+    --card-foreground: 224 50% 10%;
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-    /* Indigo, not slate. Kept clear of the semantic trio: success is green
-       (142), warning amber (38), destructive red (0), so the accent had to sit
-       somewhere none of those live or a coloured icon would read as a status. */
-    --primary: 245 58% 47%;
+    --popover-foreground: 224 50% 10%;
+    
+    /* Vibrant Royal Indigo / Deep Electric Violet */
+    --primary: 243 78% 54%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    /* Hover surfaces carry a trace of the accent so they belong to it. */
-    --accent: 245 60% 96%;
-    --accent-foreground: 245 58% 32%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-    --success: 142 71% 45%;
-    --success-foreground: 210 40% 98%;
-    --warning: 38 92% 50%;
-    --warning-foreground: 222.2 47.4% 11.2%;
-    --border: 214 20% 90%;
-    --input: 214 20% 90%;
-    --ring: 245 58% 47%;
-    --radius: 0.625rem;
+    --secondary: 220 30% 95.5%;
+    --secondary-foreground: 224 50% 15%;
+    --muted: 220 25% 95%;
+    --muted-foreground: 220 16% 44%;
+    
+    /* Hover surfaces carry a subtle luminous violet tint */
+    --accent: 243 85% 96.5%;
+    --accent-foreground: 243 75% 38%;
+    
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --success: 154 75% 36%;
+    --success-foreground: 0 0% 100%;
+    --warning: 38 95% 48%;
+    --warning-foreground: 224 50% 12%;
+    
+    --border: 220 20% 90%;
+    --input: 220 20% 90%;
+    --ring: 243 78% 54%;
+    --radius: 0.75rem;
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 245 80% 72%;
-    --primary-foreground: 245 60% 12%;
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-    --accent: 245 30% 20%;
-    --accent-foreground: 245 80% 88%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-    --success: 142 71% 45%;
-    --success-foreground: 210 40% 98%;
-    --warning: 38 92% 50%;
-    --warning-foreground: 222.2 47.4% 11.2%;
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 245 80% 72%;
+    /* Deep midnight obsidian canvas with luminous highlights */
+    --background: 224 38% 6.5%;
+    --foreground: 210 30% 98%;
+    --card: 224 32% 10%;
+    --card-foreground: 210 30% 98%;
+    --popover: 224 32% 10%;
+    --popover-foreground: 210 30% 98%;
+    
+    /* Glowing violet-indigo in dark mode */
+    --primary: 243 85% 68%;
+    --primary-foreground: 243 60% 10%;
+    --secondary: 224 25% 15%;
+    --secondary-foreground: 210 30% 98%;
+    --muted: 224 25% 15%;
+    --muted-foreground: 218 18% 65%;
+    
+    --accent: 243 35% 20%;
+    --accent-foreground: 243 85% 88%;
+    
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+    --success: 154 70% 45%;
+    --success-foreground: 0 0% 100%;
+    --warning: 38 95% 52%;
+    --warning-foreground: 224 50% 12%;
+    
+    --border: 224 22% 17%;
+    --input: 224 22% 17%;
+    --ring: 243 85% 68%;
   }
 }
 
@@ -73,15 +80,72 @@
   }
 }
 
-/* ── Landing motion ──────────────────────────────────────────────────────────
-   The one screen where the clean-minimal system leans into motion: a staggered
-   entrance, a breathing hero card, a drifting accent wash, and sections that
-   reveal on scroll. Every one of these is switched off under
-   prefers-reduced-motion, so the page still reads calmly when asked to. */
+/* ── Atmospheric background textures ────────────────────────────────────────── */
+.bg-dot-grid {
+  background-image: radial-gradient(rgba(99, 102, 241, 0.12) 1px, transparent 1px);
+  background-size: 28px 28px;
+}
+
+.dark .bg-dot-grid {
+  background-image: radial-gradient(rgba(147, 151, 255, 0.14) 1px, transparent 1px);
+  background-size: 28px 28px;
+}
+
+.bg-architectural-grid {
+  background-image: 
+    linear-gradient(to right, rgba(99, 102, 241, 0.05) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(99, 102, 241, 0.05) 1px, transparent 1px);
+  background-size: 44px 44px;
+}
+
+/* ── Modern Glassmorphic Surfaces ────────────────────────────────────────── */
+.glass-panel {
+  background: rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  box-shadow: 0 8px 32px 0 rgba(15, 23, 42, 0.06);
+}
+
+.dark .glass-panel {
+  background: rgba(15, 20, 34, 0.75);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.35);
+}
+
+.glass-card {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid hsl(var(--border) / 0.8);
+  box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.05), 0 2px 6px -1px rgba(15, 23, 42, 0.02);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.glass-card:hover {
+  transform: translateY(-2px);
+  border-color: hsl(var(--primary) / 0.25);
+  box-shadow: 0 16px 36px -6px rgba(15, 23, 42, 0.09), 0 0 20px -4px hsl(var(--primary) / 0.12);
+}
+
+.dark .glass-card {
+  background: rgba(20, 26, 44, 0.8);
+  border-color: hsl(var(--border) / 0.7);
+  box-shadow: 0 4px 24px -2px rgba(0, 0, 0, 0.35);
+}
+
+.dark .glass-card:hover {
+  border-color: hsl(var(--primary) / 0.4);
+  box-shadow: 0 16px 40px -6px rgba(0, 0, 0, 0.6), 0 0 28px -4px hsl(var(--primary) / 0.25);
+}
+
+/* ── Landing motion & micro-interactions ──────────────────────────────────── */
 @keyframes fade-up {
   from {
     opacity: 0;
-    transform: translateY(18px);
+    transform: translateY(20px);
   }
   to {
     opacity: 1;
@@ -90,27 +154,37 @@
 }
 
 @keyframes float-soft {
-  0%,
-  100% {
+  0%, 100% {
     transform: translateY(0);
   }
   50% {
-    transform: translateY(-10px);
+    transform: translateY(-8px);
   }
 }
 
 @keyframes aurora {
   0% {
-    transform: translate(-6%, -2%) scale(1);
+    transform: translate(-5%, -2%) scale(1);
     opacity: 0.85;
   }
   50% {
-    transform: translate(6%, 3%) scale(1.15);
+    transform: translate(5%, 3%) scale(1.12);
     opacity: 1;
   }
   100% {
-    transform: translate(-6%, -2%) scale(1);
+    transform: translate(-5%, -2%) scale(1);
     opacity: 0.85;
+  }
+}
+
+@keyframes pulse-subtle {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.08);
+    opacity: 0.8;
   }
 }
 
@@ -119,17 +193,21 @@
 }
 
 .animate-float {
-  animation: float-soft 7s ease-in-out infinite;
+  animation: float-soft 6s ease-in-out infinite;
 }
 
 .animate-aurora {
-  animation: aurora 18s ease-in-out infinite;
+  animation: aurora 16s ease-in-out infinite;
+}
+
+.animate-pulse-subtle {
+  animation: pulse-subtle 3s ease-in-out infinite;
 }
 
 /* Toggled by the <Reveal> client component once a section scrolls into view. */
 .reveal-up {
   opacity: 0;
-  transform: translateY(22px);
+  transform: translateY(24px);
   transition:
     opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1),
     transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
@@ -143,7 +221,8 @@
 @media (prefers-reduced-motion: reduce) {
   .animate-fade-up,
   .animate-float,
-  .animate-aurora {
+  .animate-aurora,
+  .animate-pulse-subtle {
     animation: none;
   }
   .reveal-up {

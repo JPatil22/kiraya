@@ -28,17 +28,21 @@ export function ListingFilterBar({
   areas: Area[];
 }) {
   return (
-    <form method="get" action="/listings" className="rounded-xl border bg-card p-4">
+    <form method="get" action="/listings" className="glass-card rounded-2xl border border-border/80 p-5 shadow-sm">
       <div className="mb-4 space-y-1.5">
-        <Label htmlFor="q">Search</Label>
-        <Input
-          id="q"
-          name="q"
-          type="search"
-          placeholder="Area, landmark or anything in the listing — e.g. Baner, Kothrud, parking"
-          defaultValue={filters.q ?? ""}
-          maxLength={80}
-        />
+        <Label htmlFor="q" className="font-semibold text-xs uppercase tracking-wider text-muted-foreground">Search</Label>
+        <div className="relative flex items-center">
+          <Search className="absolute left-3 size-4 text-muted-foreground/60 pointer-events-none" />
+          <Input
+            id="q"
+            name="q"
+            type="search"
+            placeholder="Search area, landmark or society (e.g. Baner, Kharadi, balewadi, parking)..."
+            defaultValue={filters.q ?? ""}
+            maxLength={80}
+            className="pl-9 bg-background/60"
+          />
+        </div>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">

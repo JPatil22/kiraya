@@ -36,7 +36,11 @@ export default async function ShortlistPage() {
   const movedCount = saved.filter((s) => s.changes.length > 0).length;
 
   return (
-    <div className="min-h-dvh">
+    <div className="relative min-h-dvh overflow-hidden bg-background">
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 bg-dot-grid opacity-50 dark:opacity-30 [mask-image:radial-gradient(ellipse_70%_50%_at_50%_0%,#000_60%,transparent_100%)]"
+      />
       <SiteHeader />
 
       <main className="mx-auto max-w-3xl space-y-6 px-6 py-10">

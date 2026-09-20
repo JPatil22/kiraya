@@ -14,6 +14,14 @@ const config: Config = {
       screens: { "2xl": "1200px" },
     },
     extend: {
+      fontFamily: {
+        sans: ["var(--font-sans)", "system-ui", "-apple-system", "BlinkMacSystemFont", "sans-serif"],
+      },
+      boxShadow: {
+        glow: "0 0 32px -4px hsl(var(--primary) / 0.25)",
+        "glow-lg": "0 0 48px -6px hsl(var(--primary) / 0.35)",
+        glass: "0 8px 32px 0 rgba(15, 23, 42, 0.08)",
+      },
       colors: {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
