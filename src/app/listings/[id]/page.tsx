@@ -51,6 +51,7 @@ import { ReportMismatch } from "./report-mismatch";
 import { OwnerControls } from "./owner-controls";
 import { ContactOwner } from "./contact-owner";
 import { SaveButton } from "@/components/listings/save-button";
+import { AdminListingBar } from "@/components/admin/admin-listing-bar";
 import {
   AVAILABILITY_OPTIONS,
   BHK_OPTIONS,
@@ -101,6 +102,7 @@ export default async function ListingDetailPage({
 
   const { user, report: existingReport, exchange, saved } = userWithReport;
   const isOwnListing = user?.id === listing.posted_by;
+  const isAdmin = user?.role === "admin";
 
   // The number is only fetched once an exchange exists — 0010's policy is what
   // makes the row readable at all, so this returns null rather than leaking.
@@ -165,6 +167,19 @@ export default async function ListingDetailPage({
           </Button>
           {user ? <SaveButton propertyId={listing.id} saved={saved} variant="inline" /> : null}
         </div>
+
+        {/* Admin Moderation Bar */}
+        {isAdmin ? (
+          <div className="animate-fade-up" style={{ animationDelay: "30ms" }}>
+            <AdminListingBar
+              propertyId={listing.id}
+              photoCount={photos.length}
+              roomsCovered={listing.rooms_covered}
+              roomsRequired={listing.rooms_required}
+              isStale={listing.is_stale}
+            />
+          </div>
+        ) : null}
 
         {/* Listing Header */}
         <div className="animate-fade-up" style={{ animationDelay: "60ms" }}>
@@ -334,6 +349,35 @@ export default async function ListingDetailPage({
                     </CardContent>
                   </Card>
                 ) : null}
+              </div>
+            ) : null}
+
+            {/* Admin Management Tools (when admin views non-owned listing) */}
+            {isAdmin && !isOwnListing ? (
+              <div className="space-y-3 rounded-xl border border-border/80 bg-card p-4 shadow-sm">
+                <div className="flex items-center justify-between">
+                  <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                    Admin Tools
+                  </p>
+                  <Link
+                    href="/admin/listings"
+                    className="text-xs text-primary hover:underline"
+                  >
+                    All listings →
+                  </Link>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <Button asChild variant="outline" size="sm">
+                    <Link href={`/listings/${listing.id}/photos`}>
+                      <Camera className="size-4 mr-1.5" /> Manage photos
+                    </Link>
+                  </Button>
+                  <Button asChild variant="outline" size="sm">
+                    <Link href={`/listings/${listing.id}/edit`}>
+                      <Pencil className="size-4 mr-1.5" /> Edit listing
+                    </Link>
+                  </Button>
+                </div>
               </div>
             ) : null}
 

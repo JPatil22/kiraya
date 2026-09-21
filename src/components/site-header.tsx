@@ -31,6 +31,7 @@ export async function SiteHeader() {
 
   // Secondary destinations live in the account menu, not spread across the bar.
   const menuItems: NavItem[] = [];
+  menuItems.push({ label: "Direct & Flatmates (₹0 Brokerage)", href: "/direct" });
   if (user) menuItems.push({ label: "Dashboard", href: "/dashboard" });
   if (user) menuItems.push({ label: "Saved", href: "/shortlist" });
   if (showSuggestions) menuItems.push({ label: "Suggestions", href: "/suggestions" });
@@ -54,7 +55,7 @@ export async function SiteHeader() {
     <header className="sticky top-0 z-40 border-b border-border/60 bg-background/80 backdrop-blur-md supports-[backdrop-filter]:bg-background/70 shadow-[0_2px_16px_rgba(0,0,0,0.02)]">
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-6 py-3">
         {/* Brand + the primary destinations. */}
-        <div className="flex items-center gap-4 sm:gap-6">
+        <div className="flex items-center gap-3 sm:gap-5">
           <Link
             href="/"
             className="rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
@@ -65,7 +66,15 @@ export async function SiteHeader() {
             <Button asChild variant="ghost" size="sm" className="font-medium text-muted-foreground hover:text-foreground">
               <Link href="/listings">Browse Flats</Link>
             </Button>
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-primary/20 bg-primary/5 px-2.5 py-0.5 text-[11px] font-medium text-primary">
+            <Button asChild variant="ghost" size="sm" className="font-medium text-emerald-700 dark:text-emerald-400 hover:text-emerald-600 gap-1.5">
+              <Link href="/direct" className="flex items-center gap-1.5">
+                <span>Direct &amp; Flatmates</span>
+                <span className="rounded-full bg-emerald-500/15 px-1.5 py-0.5 text-[10px] font-bold border border-emerald-500/30">
+                  ₹0 Brokerage
+                </span>
+              </Link>
+            </Button>
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-primary/20 bg-primary/5 px-2.5 py-0.5 text-[11px] font-medium text-primary ml-1">
               <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse" />
               Pune
             </span>

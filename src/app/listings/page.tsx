@@ -11,6 +11,8 @@ import { getActiveLocality } from "@/lib/locality";
 import { getCachedPublicListings, PAGE_SIZE } from "@/lib/listings";
 import { listingFilterSchema } from "@/lib/validators";
 
+import { InfiniteListingFeed } from "@/components/listings/infinite-listing-feed";
+
 export const dynamic = "force-dynamic";
 
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
@@ -50,11 +52,7 @@ export default async function ListingsPage({
   // for the whole page rather than one per card.
   const savedIds = user ? await getShortlistIds(supabase, user.id) : null;
 
-  const { listings, total, page, pageCount } = result;
-  const firstOnPage = total === 0 ? 0 : (page - 1) * PAGE_SIZE + 1;
-  const lastOnPage = Math.min(page * PAGE_SIZE, total);
-
-  const freshCount = listings.filter((l) => !l.is_stale).length;
+  const { listings, total, pageCount } = result;
 
   return (
     <div className="relative min-h-dvh overflow-hidden bg-background">
@@ -87,96 +85,20 @@ export default async function ListingsPage({
 
         <ListingFilterBar filters={filters} areas={areas} />
 
-        <div className="flex items-baseline justify-between">
-          <p className="text-sm text-muted-foreground">
-            {total === 0 ? (
-              "No listings"
-            ) : (
-              <>
-                Showing{" "}
-                <span className="font-medium text-foreground">
-                  {firstOnPage}–{lastOnPage}
-                </span>{" "}
-                of {total} · <span className="font-medium text-foreground">{freshCount}</span>{" "}
-                on this page verified recently
-              </>
-            )}
-          </p>
-        </div>
-
         {listings.length === 0 ? (
           <EmptyState hasFilters={hasActiveFilters(filters)} />
         ) : (
-          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            {listings.map((listing) => (
-              <ListingCard
-                key={listing.id}
-                listing={listing}
-                saved={savedIds ? savedIds.has(listing.id) : undefined}
-              />
-            ))}
-          </div>
+          <InfiniteListingFeed
+            initialListings={listings}
+            total={total}
+            pageCount={pageCount}
+            filters={filters}
+            savedListingIds={savedIds ? Array.from(savedIds) : null}
+            localityName={locality?.name}
+          />
         )}
-
-        {pageCount > 1 ? (
-          <Pager page={page} pageCount={pageCount} params={raw} />
-        ) : null}
       </main>
     </div>
-  );
-}
-
-/**
- * Prev/next links that carry the current filters forward. Plain anchors, not a
- * client component — the feed is a server component and the filters already
- * live in the URL, so paging is just another URL.
- */
-function Pager({
-  page,
-  pageCount,
-  params,
-}: {
-  page: number;
-  pageCount: number;
-  params: Record<string, string | string[] | undefined>;
-}) {
-  const href = (n: number) => {
-    const next = new URLSearchParams();
-    for (const [key, value] of Object.entries(params)) {
-      if (key === "page" || value === undefined) continue;
-      next.set(key, Array.isArray(value) ? (value[0] ?? "") : value);
-    }
-    if (n > 1) next.set("page", String(n));
-    const qs = next.toString();
-    return qs ? `/listings?${qs}` : "/listings";
-  };
-
-  return (
-    <nav className="flex items-center justify-between gap-4" aria-label="Pagination">
-      {page > 1 ? (
-        <Button asChild variant="outline" size="sm">
-          <Link href={href(page - 1)} rel="prev">
-            ← Previous
-          </Link>
-        </Button>
-      ) : (
-        <span />
-      )}
-
-      <span className="text-sm text-muted-foreground">
-        Page {page} of {pageCount}
-      </span>
-
-      {page < pageCount ? (
-        <Button asChild variant="outline" size="sm">
-          <Link href={href(page + 1)} rel="next">
-            Next →
-          </Link>
-        </Button>
-      ) : (
-        <span />
-      )}
-    </nav>
   );
 }
 

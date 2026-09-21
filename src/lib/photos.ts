@@ -100,3 +100,27 @@ export function thumbObjectKey(fullKey: string): string {
 
 /** Fixture mode keeps bytes inline; everything else goes to Storage. */
 export const PHOTOS_INLINE = USE_FIXTURES;
+
+/** Batch query photo counts for a list of properties. */
+export async function getPhotoCountsForProperties(
+  supabase: SupabaseClient<Database>,
+  propertyIds: string[],
+): Promise<Record<string, number>> {
+  if (propertyIds.length === 0) return {};
+  const { data, error } = await supabase
+    .from("property_photos")
+    .select("property_id")
+    .in("property_id", propertyIds);
+  logRead("getPhotoCountsForProperties", error);
+
+  const counts: Record<string, number> = {};
+  for (const id of propertyIds) {
+    counts[id] = 0;
+  }
+  for (const row of data ?? []) {
+    if (row.property_id) {
+      counts[row.property_id] = (counts[row.property_id] ?? 0) + 1;
+    }
+  }
+  return counts;
+}

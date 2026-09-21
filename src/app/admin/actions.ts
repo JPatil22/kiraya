@@ -108,6 +108,12 @@ export async function listingMaintenanceAction(
 
   refresh();
   revalidatePath(`/listings/${propertyId}`);
+
+  const redirectTo = formData.get("redirectTo");
+  if (typeof redirectTo === "string" && redirectTo.startsWith("/")) {
+    redirect(redirectTo);
+  }
+
   return null;
 }
 
