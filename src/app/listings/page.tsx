@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Inbox } from "lucide-react";
+import { ArrowRight, Inbox, Sparkles } from "lucide-react";
 import { SiteHeader } from "@/components/site-header";
 import { ListingCard } from "@/components/listings/listing-card";
 import { ListingFilterBar } from "@/components/listings/listing-filters";
@@ -82,6 +82,34 @@ export default async function ListingsPage({
             Every flat is verified physically, stamped with its last confirmation date, and displays the 100% transparent all-in monthly and move-in cost.
           </p>
         </div>
+
+        {/* Switcher to Kiraya Direct & Flatmates */}
+        <Link
+          href="/direct"
+          className="group flex flex-col sm:flex-row items-center justify-between gap-3 rounded-2xl border border-emerald-500/30 bg-emerald-500/5 hover:bg-emerald-500/10 dark:bg-emerald-950/20 dark:hover:bg-emerald-950/30 p-4 transition text-left"
+        >
+          <div className="flex items-center gap-3">
+            <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-emerald-600 text-white shadow-sm shadow-emerald-600/20">
+              <Sparkles className="size-4.5" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="font-bold text-sm text-foreground">
+                  Looking for ₹0 Brokerage &amp; Corporate Flatmates?
+                </span>
+                <span className="rounded-full bg-emerald-600/15 border border-emerald-600/30 px-2 py-0.5 text-[10px] font-bold text-emerald-700 dark:text-emerald-400">
+                  Strictly ₹0 Brokerage
+                </span>
+              </div>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Switch to Kiraya Direct — peer-to-peer shared rooms &amp; direct owner flats for verified working professionals only.
+              </p>
+            </div>
+          </div>
+          <span className="inline-flex items-center gap-1 text-xs font-bold text-emerald-700 dark:text-emerald-400 group-hover:translate-x-0.5 transition-transform shrink-0">
+            Open Kiraya Direct <ArrowRight className="size-3.5" />
+          </span>
+        </Link>
 
         <ListingFilterBar filters={filters} areas={areas} />
 

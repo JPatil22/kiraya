@@ -143,6 +143,14 @@ export default async function LandingPage({
             <Button asChild variant="ghost" size="sm" className="text-xs sm:text-sm font-medium">
               <Link href="/listings">Browse Listings</Link>
             </Button>
+            <Button asChild variant="ghost" size="sm" className="text-xs sm:text-sm font-medium text-emerald-700 dark:text-emerald-400 hover:text-emerald-600 gap-1.5">
+              <Link href="/direct" className="flex items-center gap-1.5">
+                <span>Direct &amp; Flatmates</span>
+                <span className="rounded-full bg-emerald-500/15 px-1.5 py-0.5 text-[10px] font-bold border border-emerald-500/30">
+                  ₹0 Brokerage
+                </span>
+              </Link>
+            </Button>
             <Button asChild size="sm" className="text-xs sm:text-sm font-medium shadow-sm shadow-primary/25">
               <Link href={OPEN_MODE ? "/dashboard" : "/login"}>
                 {OPEN_MODE ? "Sandbox Preview" : "Sign in"}
@@ -239,19 +247,39 @@ export default async function LandingPage({
             </div>
           </div>
 
-          {/* Subtext info */}
-          <p
-            className="animate-fade-up mt-5 text-xs sm:text-sm text-stone-500 dark:text-stone-400"
-            style={{ animationDelay: "320ms" }}
-          >
-            {OPEN_MODE
-              ? "⚡ Open sandbox active · No authentication needed, switch roles directly from the header"
-              : "🔒 One verified phone number · Zero paperwork · No broker spam"}
-          </p>
+          {/* Kiraya Direct & Flatmates Portal Callout */}
+          <div className="animate-fade-up mx-auto mt-7 max-w-xl" style={{ animationDelay: "340ms" }}>
+            <Link
+              href="/direct"
+              className="group flex flex-col sm:flex-row items-center justify-between gap-3 rounded-2xl border border-emerald-500/30 bg-emerald-500/5 dark:bg-emerald-950/20 p-4 shadow-sm transition hover:border-emerald-500/60 hover:bg-emerald-500/10 text-left"
+            >
+              <div className="flex items-center gap-3">
+                <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-emerald-600 text-white shadow-sm shadow-emerald-600/20">
+                  <Sparkles className="size-5" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-bold uppercase tracking-wider text-emerald-800 dark:text-emerald-400">
+                      Kiraya Direct &amp; Flatmates
+                    </span>
+                    <span className="rounded-full bg-emerald-600/15 border border-emerald-600/30 px-2 py-0.5 text-[10px] font-bold text-emerald-700 dark:text-emerald-400">
+                      Strictly ₹0 Brokerage
+                    </span>
+                  </div>
+                  <p className="text-xs text-stone-600 dark:text-stone-300 mt-0.5">
+                    Verified corporate professionals &amp; direct owners only. No brokers, no spam.
+                  </p>
+                </div>
+              </div>
+              <span className="inline-flex items-center gap-1 text-xs font-bold text-emerald-700 dark:text-emerald-400 group-hover:translate-x-0.5 transition-transform shrink-0">
+                Explore Portal <ArrowRight className="size-3.5" />
+              </span>
+            </Link>
+          </div>
 
           {/* Architectural Concrete Listing Showcase Card */}
           <div
-            className="animate-fade-up mx-auto mt-14 max-w-lg"
+            className="animate-fade-up mx-auto mt-10 max-w-lg"
             style={{ animationDelay: "420ms" }}
           >
             <div className="overflow-hidden rounded-2xl border border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-900 text-left shadow-md transition duration-200">
