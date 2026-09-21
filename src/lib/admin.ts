@@ -9,6 +9,7 @@ import type {
   Property,
 } from "@/types/database";
 import { logRead } from "@/lib/errors";
+import { autoPromoteStagedPhotos } from "@/lib/photos";
 
 /**
  * MVP5 — the operator's cockpit.
@@ -138,24 +139,30 @@ export async function reviewListing(
       p_approve: approve,
       p_note: note,
     });
-    return error?.message ?? null;
+    if (error) return error.message;
+  } else {
+    const patch = approve
+      ? { status: "live" as const, last_verified_at: new Date().toISOString(), last_verified_by: adminId }
+      : { status: "rejected" as const };
+
+    const { error } = await supabase.from("properties").update(patch).eq("id", propertyId);
+    if (error) return error.message;
+
+    await logModeration(
+      supabase,
+      adminId,
+      "properties",
+      propertyId,
+      approve ? "approve" : "reject",
+      note,
+    );
   }
 
-  const patch = approve
-    ? { status: "live" as const, last_verified_at: new Date().toISOString(), last_verified_by: adminId }
-    : { status: "rejected" as const };
+  // If approved, auto-promote any unassigned staged photos into property_photos so the live listing shows its photos!
+  if (approve) {
+    await autoPromoteStagedPhotos(supabase, propertyId, adminId);
+  }
 
-  const { error } = await supabase.from("properties").update(patch).eq("id", propertyId);
-  if (error) return error.message;
-
-  await logModeration(
-    supabase,
-    adminId,
-    "properties",
-    propertyId,
-    approve ? "approve" : "reject",
-    note,
-  );
   return null;
 }
 

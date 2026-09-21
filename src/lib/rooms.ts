@@ -108,21 +108,47 @@ export function photoRoomLabel(roomType: RoomType, roomIndex: number, bhk?: BhkT
     const bathrooms = bhk ? BATHROOMS_FOR_BHK[bhk] : 1;
     return bathrooms === 1 ? "Bathroom" : `Bathroom ${roomIndex}`;
   }
-  return ROOM_LABEL[roomType];
+  if (roomType === "exterior" && roomIndex > 1) {
+    return `Building / entrance ${roomIndex}`;
+  }
+  if (roomType === "balcony" && roomIndex > 1) {
+    return `Balcony ${roomIndex}`;
+  }
+  return ROOM_LABEL[roomType] ?? "Property photo";
 }
 
 const slotKey = (roomType: RoomType, roomIndex: number) => `${roomType}:${roomIndex}`;
 
-/** Pair each slot with its photo, if one has been uploaded. */
+/** Pair each slot with its photo, and include any extra photos so none are hidden. */
 export function slotsWithPhotos(
   bhk: BhkType,
   photos: PropertyPhoto[],
 ): { slot: RoomSlot; photo: PropertyPhoto | null }[] {
+  const standardSlots = slotsForBhk(bhk);
   const byKey = new Map(photos.map((p) => [slotKey(p.room_type, p.room_index), p]));
-  return slotsForBhk(bhk).map((slot) => ({
+  const result = standardSlots.map((slot) => ({
     slot,
     photo: byKey.get(slotKey(slot.roomType, slot.roomIndex)) ?? null,
   }));
+
+  // Include any additional photos that are outside the base slots
+  const standardKeys = new Set(standardSlots.map((s) => slotKey(s.roomType, s.roomIndex)));
+  for (const p of photos) {
+    const key = slotKey(p.room_type, p.room_index);
+    if (!standardKeys.has(key)) {
+      result.push({
+        slot: {
+          roomType: p.room_type,
+          roomIndex: p.room_index,
+          label: photoRoomLabel(p.room_type, p.room_index, bhk),
+          required: false,
+        },
+        photo: p,
+      });
+    }
+  }
+
+  return result;
 }
 
 /** Required slots still missing a photo — the honest gap in a listing. */
@@ -131,3 +157,4 @@ export function missingRooms(bhk: BhkType, photos: PropertyPhoto[]): RoomSlot[] 
     .filter(({ slot, photo }) => slot.required && !photo)
     .map(({ slot }) => slot);
 }
+
