@@ -20,9 +20,11 @@ import { Badge } from "@/components/ui/badge";
 import { DirectListingCard } from "./direct-listing-card";
 import { VerificationModal, type VerifiedUser } from "./verification-modal";
 import { ConnectModal } from "./connect-modal";
+import { DirectGateCard } from "./direct-gate-card";
 import {
   INITIAL_DIRECT_LISTINGS,
   getDirectListings,
+  DIRECT_ACCESS_APPROVED_KEY,
   type DirectListing,
   type GenderPreference,
 } from "@/lib/direct";
@@ -32,20 +34,40 @@ export function DirectFeedClient() {
   const [areaFilter, setAreaFilter] = useState<string>("all");
   const [genderFilter, setGenderFilter] = useState<GenderPreference | "all">("all");
 
+  const [hasApprovedAccess, setHasApprovedAccess] = useState<boolean>(false);
+  const [isCheckingAccess, setIsCheckingAccess] = useState<boolean>(true);
   const [verifiedUser, setVerifiedUser] = useState<VerifiedUser | null>(null);
   const [isVerifying, setIsVerifying] = useState(false);
   const [activeListingToConnect, setActiveListingToConnect] = useState<DirectListing | null>(null);
 
-  // Load verification from localStorage on mount
+  // Load verification and approval from localStorage on mount
   useEffect(() => {
     try {
+      const approved = localStorage.getItem(DIRECT_ACCESS_APPROVED_KEY) === "true";
+      setHasApprovedAccess(approved);
       const stored = localStorage.getItem("kiraya_verified_pro");
       if (stored) {
         setVerifiedUser(JSON.parse(stored));
       }
     } catch (e) {
       console.error(e);
+    } finally {
+      setIsCheckingAccess(false);
     }
+  }, []);
+
+  // Listen for admin approval updates across tabs/storage
+  useEffect(() => {
+    const handleSync = () => {
+      const approved = localStorage.getItem(DIRECT_ACCESS_APPROVED_KEY) === "true";
+      setHasApprovedAccess(approved);
+    };
+    window.addEventListener("storage", handleSync);
+    window.addEventListener("kiraya_direct_applications_updated", handleSync);
+    return () => {
+      window.removeEventListener("storage", handleSync);
+      window.removeEventListener("kiraya_direct_applications_updated", handleSync);
+    };
   }, []);
 
   const handleVerified = (user: VerifiedUser) => {
@@ -79,64 +101,51 @@ export function DirectFeedClient() {
 
   const areas = ["all", "Wakad", "Baner", "Hinjewadi", "Kharadi", "Kothrud"];
 
+  if (isCheckingAccess) {
+    return (
+      <div className="flex justify-center items-center py-20 text-muted-foreground text-sm">
+        <span className="size-2 rounded-full bg-primary animate-ping mr-2" />
+        Checking membership clearance...
+      </div>
+    );
+  }
+
+  if (!hasApprovedAccess) {
+    return <DirectGateCard onApproved={() => setHasApprovedAccess(true)} />;
+  }
+
   return (
     <div className="space-y-8">
-      {/* Verification Status Banner */}
-      <div className="rounded-2xl border border-primary/20 bg-primary/5 p-4 shadow-sm backdrop-blur-md">
+      {/* Approved Access Banner */}
+      <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/5 p-4 shadow-sm backdrop-blur-md">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <div className="flex size-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
+            <div className="flex size-10 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-600">
               <ShieldCheck className="size-5" />
             </div>
             <div>
-              {verifiedUser ? (
-                <div>
-                  <div className="flex items-center gap-1.5 font-bold text-sm text-foreground">
-                    <span>{verifiedUser.name}</span>
-                    <Badge variant="outline" className="bg-emerald-500/10 text-emerald-600 border-emerald-500/30 text-[10px] py-0 px-1.5 font-medium">
-                      ✓ Verified at {verifiedUser.company}
-                    </Badge>
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    Verified via {verifiedUser.method === "linkedin" ? "LinkedIn" : "Corporate Email"} · All direct contact numbers unlocked
-                  </p>
-                </div>
-              ) : (
-                <div>
-                  <p className="font-bold text-sm text-foreground">
-                    Professional Verification Gate
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    Direct owners &amp; flatmates require verified identity (LinkedIn / Work Email) to prevent broker spam.
-                  </p>
-                </div>
-              )}
+              <div className="flex items-center gap-2 font-bold text-sm text-foreground">
+                <span>Direct Community Access: Approved</span>
+                <span className="rounded-full bg-emerald-600/15 border border-emerald-600/30 px-2 py-0.5 text-[10px] font-bold text-emerald-700 dark:text-emerald-400">
+                  Strictly ₹0 Brokerage
+                </span>
+              </div>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                All flats are physically inspected &amp; legally verified. Direct WhatsApp &amp; phone contacts unlocked.
+              </p>
             </div>
           </div>
-
-          <div>
-            {verifiedUser ? (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => {
-                  setVerifiedUser(null);
-                  localStorage.removeItem("kiraya_verified_pro");
-                }}
-                className="text-xs text-muted-foreground hover:text-foreground h-8"
-              >
-                Reset Verification
-              </Button>
-            ) : (
-              <Button
-                size="sm"
-                onClick={() => setIsVerifying(true)}
-                className="h-8 gap-1.5 text-xs font-semibold shadow-sm"
-              >
-                <Linkedin className="size-3.5" /> 1-Click Verification
-              </Button>
-            )}
-          </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              localStorage.removeItem(DIRECT_ACCESS_APPROVED_KEY);
+              setHasApprovedAccess(false);
+            }}
+            className="text-xs text-muted-foreground hover:text-foreground h-8"
+          >
+            Relock Portal (Demo Test)
+          </Button>
         </div>
       </div>
 

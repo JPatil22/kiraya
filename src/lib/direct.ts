@@ -407,3 +407,146 @@ export function getDirectListings(filters: DirectFilterOptions = {}): DirectList
 export function getDirectListingById(id: string): DirectListing | undefined {
   return INITIAL_DIRECT_LISTINGS.find((l) => l.id === id);
 }
+
+// --------------------------------------------------------------------------
+// DIRECT ACCESS APPLICATION & IN-PERSON REVIEW SYSTEM
+// --------------------------------------------------------------------------
+
+export type ApplicationKind = "professional" | "owner";
+export type ApplicationStatus = "pending" | "visit_scheduled" | "approved" | "rejected";
+
+export interface LegalChecklist {
+  govtIdVerified: boolean;
+  ownershipBillVerified: boolean;
+  physicalPossessionVerified: boolean;
+}
+
+export interface DirectAccessApplication {
+  id: string;
+  kind: ApplicationKind;
+  name: string;
+  phone: string;
+  status: ApplicationStatus;
+  createdAt: string;
+  reviewedAt?: string;
+  rejectionReason?: string;
+  // Professional fields
+  company?: string;
+  designation?: string;
+  workEmail?: string;
+  linkedinUrl?: string;
+  workMode?: WorkMode;
+  // Owner & Legal Guardian fields
+  ownershipType?: "primary_owner" | "legal_guardian_family";
+  guardianRelationship?: "son" | "daughter" | "spouse" | "parent" | "poa_holder" | "other";
+  registeredOwnerName?: string;
+  society?: string;
+  unitDetails?: string;
+  bhk?: string;
+  expectedRent?: number;
+  tenantCriteria?: string;
+  preferredVisitSlot?: string;
+  checklist?: LegalChecklist;
+}
+
+export const INITIAL_DIRECT_APPLICATIONS: DirectAccessApplication[] = [
+  {
+    id: "app-101",
+    kind: "owner",
+    name: "Ananya Deshmukh",
+    phone: "+91 98230 44120",
+    status: "visit_scheduled",
+    createdAt: "2026-09-20T10:30:00Z",
+    ownershipType: "legal_guardian_family",
+    guardianRelationship: "daughter",
+    registeredOwnerName: "Suresh & Malati Deshmukh (Elderly Parents)",
+    society: "Mont Vert One",
+    unitDetails: "Tower B, Flat 804",
+    bhk: "2bhk",
+    expectedRent: 28000,
+    tenantCriteria: "Corporate IT working professionals only · Family or bachelors · Clean habits",
+    preferredVisitSlot: "Tomorrow (Tuesday) 11:00 AM – 1:00 PM",
+    checklist: {
+      govtIdVerified: true,
+      ownershipBillVerified: true,
+      physicalPossessionVerified: false,
+    },
+  },
+  {
+    id: "app-102",
+    kind: "professional",
+    name: "Rohan Varma",
+    phone: "+91 97110 88234",
+    status: "pending",
+    createdAt: "2026-09-21T09:15:00Z",
+    company: "Google India",
+    designation: "Staff Infrastructure Engineer",
+    workEmail: "rohanvarma@google.com",
+    linkedinUrl: "https://linkedin.com/in/rohan-varma-cloud",
+    workMode: "hybrid",
+  },
+  {
+    id: "app-103",
+    kind: "owner",
+    name: "Vikramaditya Rao",
+    phone: "+91 99401 55670",
+    status: "pending",
+    createdAt: "2026-09-21T11:45:00Z",
+    ownershipType: "primary_owner",
+    registeredOwnerName: "Vikramaditya Rao",
+    society: "Megapolis Mystic",
+    unitDetails: "C-Wing, Flat 1202",
+    bhk: "3bhk",
+    expectedRent: 35000,
+    tenantCriteria: "Strictly working corporate professionals · Non-smokers · Long lease",
+    preferredVisitSlot: "Saturday 4:00 PM – 6:30 PM",
+    checklist: {
+      govtIdVerified: false,
+      ownershipBillVerified: false,
+      physicalPossessionVerified: false,
+    },
+  },
+  {
+    id: "app-104",
+    kind: "professional",
+    name: "Tanvi Mehta",
+    phone: "+91 98860 33112",
+    status: "approved",
+    createdAt: "2026-09-19T14:20:00Z",
+    reviewedAt: "2026-09-19T16:05:00Z",
+    company: "Microsoft",
+    designation: "Senior Product Designer",
+    workEmail: "tanvi.mehta@microsoft.com",
+    linkedinUrl: "https://linkedin.com/in/tanvi-mehta-design",
+    workMode: "remote",
+  },
+];
+
+export const DIRECT_STORAGE_KEY = "kiraya_direct_applications_v1";
+export const DIRECT_ACCESS_APPROVED_KEY = "kiraya_direct_access_approved";
+export const DIRECT_CURRENT_APP_KEY = "kiraya_direct_my_application";
+
+export function getApplicationsFromStorage(): DirectAccessApplication[] {
+  if (typeof window === "undefined") return INITIAL_DIRECT_APPLICATIONS;
+  try {
+    const raw = localStorage.getItem(DIRECT_STORAGE_KEY);
+    if (!raw) {
+      localStorage.setItem(DIRECT_STORAGE_KEY, JSON.stringify(INITIAL_DIRECT_APPLICATIONS));
+      return INITIAL_DIRECT_APPLICATIONS;
+    }
+    return JSON.parse(raw);
+  } catch {
+    return INITIAL_DIRECT_APPLICATIONS;
+  }
+}
+
+export function saveApplicationsToStorage(apps: DirectAccessApplication[]): void {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.setItem(DIRECT_STORAGE_KEY, JSON.stringify(apps));
+    window.dispatchEvent(new Event("kiraya_direct_applications_updated"));
+  } catch (err) {
+    console.error("Failed to save applications", err);
+  }
+}
+
