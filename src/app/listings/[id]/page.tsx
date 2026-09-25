@@ -22,6 +22,7 @@ import { LocationMap } from "@/components/map/location-map";
 import { VisitRecord } from "@/components/listings/visit-record";
 import { DepositContext } from "@/components/listings/deposit-context";
 import { toCoords } from "@/lib/geo";
+import { FormattedDescription } from "@/components/listings/formatted-description";
 import { FreshnessBadge } from "@/components/listings/freshness-badge";
 import { PostedByBadge } from "@/components/listings/posted-by-badge";
 import { CountUp } from "@/components/count-up";
@@ -515,9 +516,7 @@ export default async function ListingDetailPage({
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <p className="whitespace-pre-line text-sm text-foreground/90 leading-relaxed font-normal">
-                    {listing.description}
-                  </p>
+                  <FormattedDescription text={listing.description} />
 
                   <div className="pt-3 border-t border-border/60 flex items-center justify-between gap-3 text-xs text-muted-foreground">
                     <div className="flex items-center gap-2">

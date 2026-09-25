@@ -319,9 +319,10 @@ ${rawText.slice(0, 1500)}
 
 JSON Schema:
 {
-  "title": string (short clean title e.g. "2 BHK Semi Furnished in Wakad"),
+  "title": string (short clean title e.g. "2 BHK Semi-furnished in Wakad"),
+  "cleanDescription": string (a polished, beautifully formatted description of the flat, location, and key amenities, stripped of raw WhatsApp links, asterisks, and phone call lines),
   "rent": number | null (monthly rent integer in rupees),
-  "deposit": number | null (total security deposit integer in rupees),
+  "deposit": number | null (total security deposit integer in rupees; if unstated, estimate 2 months rent),
   "brokerage": number | null (brokerage fee integer in rupees, 0 if "no brokerage", null if unstated),
   "bhk": "1rk" | "1bhk" | "2bhk" | "3bhk" | "4plus",
   "furnishing": "unfurnished" | "semi" | "full",
@@ -342,7 +343,7 @@ JSON Schema:
         model: "openai/gpt-oss-20b",
         messages: [{ role: "user", content: prompt }],
         temperature: 0.1,
-        max_tokens: 350,
+        max_tokens: 500,
       }),
     });
 
@@ -361,9 +362,9 @@ JSON Schema:
 
     return {
       title: (typeof parsed.title === "string" && parsed.title.trim()) || base.title,
-      cleanText: base.cleanText,
+      cleanText: (typeof parsed.cleanDescription === "string" && parsed.cleanDescription.trim()) || base.cleanText,
       rent: typeof parsed.rent === "number" && parsed.rent > 0 ? parsed.rent : base.rent,
-      deposit: typeof parsed.deposit === "number" && parsed.deposit >= 0 ? parsed.deposit : base.deposit,
+      deposit: typeof parsed.deposit === "number" && parsed.deposit >= 0 ? parsed.deposit : (base.deposit ?? (base.rent ? base.rent * 2 : 0)),
       brokerage: typeof parsed.brokerage === "number" && parsed.brokerage >= 0 ? parsed.brokerage : base.brokerage,
       bhk: ["1rk", "1bhk", "2bhk", "3bhk", "4plus"].includes(parsed.bhk) ? parsed.bhk : base.bhk,
       furnishing: ["unfurnished", "semi", "full"].includes(parsed.furnishing) ? parsed.furnishing : base.furnishing,
