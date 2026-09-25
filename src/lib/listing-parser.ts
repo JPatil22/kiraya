@@ -289,3 +289,84 @@ export function parseListingText(rawText: string): ParsedRentalListing {
     sourceName,
   };
 }
+
+/**
+ * Fast sub-second LLM parser via Groq API (openai/gpt-oss-20b).
+ * Falls back safely to regex parsing if GROQ_API_KEY is unset or request fails.
+ */
+export async function parseListingTextAsync(rawText: string): Promise<ParsedRentalListing> {
+  const base = parseListingText(rawText);
+  const apiKey = process.env.GROQ_API_KEY;
+
+  if (!apiKey) return base;
+
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 4500);
+
+    const prompt = `You are an Indian rental post parser. Extract structured details from this Facebook rental post in Pune. Return ONLY a valid JSON object with no markdown formatting or commentary.
+
+Post Text:
+${rawText.slice(0, 1500)}
+
+JSON Schema:
+{
+  "title": string (short clean title e.g. "2 BHK Semi Furnished in Wakad"),
+  "rent": number | null (monthly rent integer in rupees),
+  "deposit": number | null (total security deposit integer in rupees),
+  "brokerage": number | null (brokerage fee integer in rupees, 0 if "no brokerage", null if unstated),
+  "bhk": "1rk" | "1bhk" | "2bhk" | "3bhk" | "4plus",
+  "furnishing": "unfurnished" | "semi" | "full",
+  "occupancy_pref": "family" | "bachelors_male" | "bachelors_female" | "any",
+  "address_line": string | null (society, landmark, locality in Pune),
+  "phone": string | null (10-digit Indian mobile number),
+  "sourceName": string | null (contact person or broker's name if mentioned)
+}`;
+
+    const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+      method: "POST",
+      signal: controller.signal,
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "openai/gpt-oss-20b",
+        messages: [{ role: "user", content: prompt }],
+        temperature: 0.1,
+        max_tokens: 350,
+      }),
+    });
+
+    clearTimeout(timeoutId);
+
+    if (!res.ok) {
+      console.warn(`[groq-parser] API returned ${res.status}`);
+      return base;
+    }
+
+    const data = await res.json();
+    let rawContent = data.choices?.[0]?.message?.content || "";
+    rawContent = rawContent.replace(/```json/g, "").replace(/```/g, "").trim();
+
+    const parsed = JSON.parse(rawContent);
+
+    return {
+      title: (typeof parsed.title === "string" && parsed.title.trim()) || base.title,
+      cleanText: base.cleanText,
+      rent: typeof parsed.rent === "number" && parsed.rent > 0 ? parsed.rent : base.rent,
+      deposit: typeof parsed.deposit === "number" && parsed.deposit >= 0 ? parsed.deposit : base.deposit,
+      brokerage: typeof parsed.brokerage === "number" && parsed.brokerage >= 0 ? parsed.brokerage : base.brokerage,
+      bhk: ["1rk", "1bhk", "2bhk", "3bhk", "4plus"].includes(parsed.bhk) ? parsed.bhk : base.bhk,
+      furnishing: ["unfurnished", "semi", "full"].includes(parsed.furnishing) ? parsed.furnishing : base.furnishing,
+      occupancy_pref: ["family", "bachelors_male", "bachelors_female", "any"].includes(parsed.occupancy_pref) ? parsed.occupancy_pref : base.occupancy_pref,
+      address_line: (typeof parsed.address_line === "string" && parsed.address_line.trim()) || base.address_line,
+      phone: (typeof parsed.phone === "string" && parsed.phone.replace(/\D/g, "").slice(-10)) || base.phone,
+      sourceName: (typeof parsed.sourceName === "string" && parsed.sourceName.trim()) || base.sourceName,
+    };
+  } catch (err) {
+    console.warn("[groq-parser] LLM fallback failed:", (err as Error).message);
+    return base;
+  }
+}
+

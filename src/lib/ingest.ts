@@ -1,6 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/types/database";
-import { parseListingText } from "@/lib/listing-parser";
+import { parseListingText, parseListingTextAsync } from "@/lib/listing-parser";
 import { resolveBrokerage } from "@/lib/brokerage";
 import { PHOTO_BUCKET, MAX_PHOTOS, MAX_PHOTO_BYTES, ACCEPTED_MIME, photoObjectKey } from "@/lib/photos";
 
@@ -182,7 +182,7 @@ export async function ingestListing(
     .maybeSingle();
   if (!locality) throw new Error(`No locality with slug '${localitySlug}'.`);
 
-  const parsed = parseListingText(payload.text);
+  const parsed = await parseListingTextAsync(payload.text);
   const role: "owner" | "broker" = inferRole(payload.text);
 
   const postedBy = await resolvePoster(db, role);
