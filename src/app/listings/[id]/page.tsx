@@ -579,10 +579,6 @@ export default async function ListingDetailPage({
 
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between text-muted-foreground">
-                    <span>Move-in total</span>
-                    <CountUp to={listing.move_in_cost} prefix="₹" className="font-semibold text-foreground" />
-                  </div>
-                  <div className="flex justify-between text-muted-foreground">
                     <span>Flat rent</span>
                     <span className="font-medium text-foreground">{formatINR(listing.rent)}</span>
                   </div>
@@ -593,6 +589,26 @@ export default async function ListingDetailPage({
                   <div className="flex justify-between text-muted-foreground">
                     <span>Security deposit</span>
                     <span className="font-medium text-foreground">{formatINR(listing.deposit)}</span>
+                  </div>
+                  {listing.brokerage > 0 ? (
+                    <div className="flex justify-between text-muted-foreground">
+                      <span>Brokerage</span>
+                      <span className="font-medium text-foreground">{formatINR(listing.brokerage)}</span>
+                    </div>
+                  ) : null}
+                  {listing.one_time_charges > 0 ? (
+                    <div className="flex justify-between text-muted-foreground">
+                      <span>One-time fees</span>
+                      <span className="font-medium text-foreground">{formatINR(listing.one_time_charges)}</span>
+                    </div>
+                  ) : null}
+                  <div className="flex justify-between items-baseline pt-2 border-t border-border/60">
+                    <span className="font-bold text-foreground">Total move-in outlay</span>
+                    <CountUp
+                      to={listing.all_in_monthly + listing.move_in_cost}
+                      prefix="₹"
+                      className="font-extrabold text-base text-foreground tabular-nums"
+                    />
                   </div>
                 </div>
 

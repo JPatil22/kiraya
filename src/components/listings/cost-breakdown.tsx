@@ -101,7 +101,7 @@ export function CostBreakdown({ costs }: { costs: Costs }) {
         <BrokerageLine costs={costs} />
         <Line label="Other one-time charges" amount={costs.one_time_charges} muted />
         <Total
-          label="Move-in cost"
+          label="One-time move-in fees"
           amount={costs.move_in_cost}
           hint="Deposit + brokerage + one-time"
         />
@@ -111,6 +111,16 @@ export function CostBreakdown({ costs }: { costs: Costs }) {
             you pay.
           </p>
         ) : null}
+      </div>
+
+      <div className="sm:col-span-2 rounded-xl border border-border/80 bg-muted/30 p-3.5 flex items-center justify-between gap-3 text-sm">
+        <div>
+          <p className="font-semibold text-foreground">Total cash needed on move-in day</p>
+          <p className="text-xs text-muted-foreground">1st month all-in rent ({formatINR(costs.all_in_monthly)}) + move-in fees ({formatINR(costs.move_in_cost)})</p>
+        </div>
+        <span className="text-lg font-extrabold tabular-nums text-foreground">
+          {formatINR(costs.all_in_monthly + costs.move_in_cost)}
+        </span>
       </div>
     </div>
   );
