@@ -118,29 +118,42 @@ export function VisitScheduler({
         </CardDescription>
       </CardHeader>
 
-      <CardContent className="space-y-3">
-        <form action={propose} className="space-y-3">
+      <CardContent className="space-y-4">
+        <form action={propose} className="space-y-4">
           <input type="hidden" name="contactExchangeId" value={contactExchangeId} />
 
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="space-y-4 sm:grid sm:grid-cols-2 sm:gap-4 sm:space-y-0">
             <div className="space-y-1.5">
-              <Label htmlFor="scheduledFor">When</Label>
+              <Label htmlFor="scheduledFor" className="text-xs font-semibold">
+                When
+              </Label>
               <Input
                 id="scheduledFor"
                 name="scheduledFor"
                 type="datetime-local"
                 min={soonest}
                 required
+                className="h-10 min-w-0"
               />
             </div>
+
             <div className="space-y-1.5">
-              <Label htmlFor="note">Anything to add? (optional)</Label>
-              <Input id="note" name="note" maxLength={500} placeholder="Coming with my sister" />
+              <Label htmlFor="note" className="text-xs font-semibold">
+                Anything to add? <span className="font-normal text-muted-foreground">(optional)</span>
+              </Label>
+              <Input
+                id="note"
+                name="note"
+                maxLength={500}
+                placeholder="e.g. Coming with sister"
+                className="h-10 min-w-0"
+              />
             </div>
           </div>
 
-          <Button type="submit" size="sm" disabled={proposing}>
-            <CalendarClock /> {proposing ? "Proposing…" : "Propose this time"}
+          <Button type="submit" size="default" disabled={proposing} className="gap-2 font-medium">
+            <CalendarClock className="size-4" />
+            {proposing ? "Proposing…" : "Propose this time"}
           </Button>
         </form>
 
