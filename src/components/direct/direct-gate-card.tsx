@@ -286,38 +286,38 @@ export function DirectGateCard({ onApproved }: DirectGateCardProps) {
 
   // Verification Application Form
   return (
-    <div className="mx-auto max-w-3xl rounded-3xl border border-border/80 bg-card/95 p-6 sm:p-10 shadow-2xl backdrop-blur-md space-y-8">
+    <div className="mx-auto max-w-3xl rounded-2xl border border-border/70 bg-card p-6 sm:p-8 shadow-xl space-y-6">
       {/* Header Explainer */}
-      <div className="text-center space-y-3">
-        <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3.5 py-1 text-xs font-semibold text-emerald-700 dark:text-emerald-400 shadow-2xs">
-          <Lock className="size-3.5" /> Closed High-Trust Community · Strictly 0 Brokerage
+      <div className="text-center space-y-2">
+        <div className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-0.5 text-xs font-semibold text-emerald-700 dark:text-emerald-400">
+          <Lock className="size-3" /> Closed High-Trust Community · ₹0 Brokerage
         </div>
 
-        <h2 className="text-3xl font-extrabold tracking-tight text-foreground sm:text-4xl">
-          Membership &amp; Verification Gate
+        <h2 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
+          Membership Clearance Required
         </h2>
 
-        <p className="text-sm leading-relaxed text-muted-foreground max-w-xl mx-auto">
-          To protect tenants and owners from broker spam and unverified strangers, <strong>Kiraya Direct</strong> is strictly gated. Owners are <strong>physically verified in-person</strong> with legal guardianship checks; professionals are verified via LinkedIn and work email.
+        <p className="text-sm leading-relaxed text-muted-foreground max-w-lg mx-auto">
+          To protect tenants and owners from broker spam, <strong>Kiraya Direct</strong> is gated. Owners are physically verified in-person; working professionals are verified via LinkedIn and work email.
         </p>
       </div>
 
       {/* 2-Track Toggle */}
-      <div className="grid grid-cols-2 gap-3 p-1.5 rounded-2xl bg-muted/80 text-xs font-semibold">
+      <div className="grid grid-cols-2 gap-2 p-1 rounded-xl bg-muted/70 text-xs font-medium">
         <button
           type="button"
           onClick={() => setTrack("owner")}
-          className={`flex flex-col sm:flex-row items-center justify-center gap-2 py-3 px-4 rounded-xl transition ${
+          className={`flex flex-col sm:flex-row items-center justify-center gap-2 py-2.5 px-3 rounded-lg transition ${
             track === "owner"
-              ? "bg-card text-foreground font-bold shadow-sm border border-border/80"
+              ? "bg-background text-foreground font-semibold shadow-xs border border-border/60"
               : "text-muted-foreground hover:text-foreground"
           }`}
         >
-          <Home className="size-4.5 text-emerald-600" />
+          <Home className="size-4 text-emerald-600 shrink-0" />
           <div className="text-left">
-            <span className="block text-sm">Property Owner / Guardian</span>
-            <span className="hidden sm:block text-[11px] font-normal text-muted-foreground">
-              In-person verification visit
+            <span className="block text-xs font-semibold">Property Owner / Guardian</span>
+            <span className="hidden sm:block text-[10px] text-muted-foreground">
+              In-person physical verification
             </span>
           </div>
         </button>
@@ -325,16 +325,16 @@ export function DirectGateCard({ onApproved }: DirectGateCardProps) {
         <button
           type="button"
           onClick={() => setTrack("professional")}
-          className={`flex flex-col sm:flex-row items-center justify-center gap-2 py-3 px-4 rounded-xl transition ${
+          className={`flex flex-col sm:flex-row items-center justify-center gap-2 py-2.5 px-3 rounded-lg transition ${
             track === "professional"
-              ? "bg-card text-foreground font-bold shadow-sm border border-border/80"
+              ? "bg-background text-foreground font-semibold shadow-xs border border-border/60"
               : "text-muted-foreground hover:text-foreground"
           }`}
         >
-          <UserCheck className="size-4.5 text-primary" />
+          <UserCheck className="size-4 text-primary shrink-0" />
           <div className="text-left">
-            <span className="block text-sm">Working Professional</span>
-            <span className="hidden sm:block text-[11px] font-normal text-muted-foreground">
+            <span className="block text-xs font-semibold">Working Professional</span>
+            <span className="hidden sm:block text-[10px] text-muted-foreground">
               Corporate email &amp; LinkedIn
             </span>
           </div>
@@ -343,12 +343,12 @@ export function DirectGateCard({ onApproved }: DirectGateCardProps) {
 
       {/* Owner / Legal Guardian Form */}
       {track === "owner" && (
-        <form onSubmit={handleOwnerSubmit} className="space-y-6 pt-1">
+        <form onSubmit={handleOwnerSubmit} className="space-y-5 pt-1">
           {/* Trust Banner */}
-          <div className="flex items-start gap-3 rounded-2xl border border-emerald-500/30 bg-emerald-500/5 p-4 text-xs text-muted-foreground">
-            <ShieldCheck className="size-5 text-emerald-600 shrink-0 mt-0.5" />
+          <div className="flex items-start gap-2.5 rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-3.5 text-xs text-muted-foreground">
+            <ShieldCheck className="size-4 text-emerald-600 shrink-0 mt-0.5" />
             <div>
-              <span className="font-bold text-foreground">Zero Online Paperwork Friction:</span> You don&apos;t need to upload property documents or deed scans here. When our team visits your flat, we will inspect the flat condition, meet you or your guardian, verify a government ID, and verify the society maintenance bill.
+              <span className="font-semibold text-foreground">Zero Online Paperwork Friction:</span> No document uploads required. Our team inspects your flat, meets you or your guardian, and verifies the society bill during the visit.
             </div>
           </div>
 
