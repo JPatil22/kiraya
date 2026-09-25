@@ -29,7 +29,7 @@ export default function DirectPage() {
         {/* Editorial Hero Header */}
         <div className="mx-auto max-w-2xl text-center space-y-2">
           <h1 className="text-3xl font-extrabold tracking-tight sm:text-4xl text-foreground">
-            Direct Homes &amp; Flatmates
+            Kiraya Direct
           </h1>
 
           <p className="text-[15px] leading-relaxed text-muted-foreground">
