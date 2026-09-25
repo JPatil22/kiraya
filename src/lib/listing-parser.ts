@@ -188,11 +188,19 @@ export function parseListingText(rawText: string): ParsedRentalListing {
   // 4. Extract Deposit
   let deposit: number | null = null;
   const depositMatch = text.match(new RegExp(`deposit${SEP}₹?\\s*(\\d{1,3})\\s*[kK]\\b`, "i")) ||
-                        text.match(new RegExp(`deposit${SEP}₹?\\s*(\\d{2,6})`, "i"));
+                        text.match(new RegExp(`deposit${SEP}₹?\\s*(\\d{2,6})`, "i")) ||
+                        text.match(/₹?\s*(\d{1,3})\s*[kK]\s*deposit/i);
   if (depositMatch) {
     const val = parseInt(depositMatch[1], 10);
     deposit = val < 500 ? val * 1000 : val;
+  } else if (/\b(no|zero|nil|without)\s*deposit\b/i.test(text)) {
+    deposit = 0;
   } else if (rent && new RegExp(`deposit${SEP}2\\s*months`, "i").test(text)) {
+    deposit = rent * 2;
+  } else if (rent && new RegExp(`deposit${SEP}1\\s*month`, "i").test(text)) {
+    deposit = rent * 1;
+  } else if (rent) {
+    // Default to 2 months rent (standard Pune deposit) when unstated
     deposit = rent * 2;
   }
 

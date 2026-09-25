@@ -196,7 +196,8 @@ export async function ingestListing(
   // number — the guard's "silence is not zero" rule, applied at review instead.
   const isBroker = role === "broker";
   const feeAmount = isBroker ? (parsed.brokerage ?? 0) : 0;
-  const feeSaidNone = isBroker ? parsed.brokerage == null || parsed.brokerage === 0 : true;
+  // Silence is NOT "no brokerage". Only mark disclosed if explicitly 0 or >0.
+  const feeSaidNone = isBroker ? parsed.brokerage === 0 : true;
   const fee = resolveBrokerage(role, feeAmount, feeSaidNone);
   if (!fee.ok) throw new Error(fee.message);
 
@@ -218,7 +219,7 @@ export async function ingestListing(
       furnishing: parsed.furnishing,
       occupancy_pref: parsed.occupancy_pref,
       rent: parsed.rent ?? 0, // rent is NOT NULL; 0 is a placeholder to fix in review
-      deposit: parsed.deposit ?? 0,
+      deposit: parsed.deposit ?? (parsed.rent ? parsed.rent * 2 : 0),
       maintenance_monthly: 0,
       brokerage: fee.amount,
       brokerage_disclosed: fee.disclosed,
