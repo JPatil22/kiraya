@@ -220,16 +220,22 @@ export function parseListingText(rawText: string): ParsedRentalListing {
       text.match(/(\d+)\s*days?\s*brokerage/i);
     const bAmount =
       text.match(new RegExp(`brokerage${SEP}₹?\\s*(\\d{1,2})\\s*[kK]\\b`, "i")) ||
-      text.match(new RegExp(`brokerage${SEP}₹?\\s*(\\d{3,6})\\b`, "i")) ||
+      text.match(new RegExp(`brokerage${SEP}₹?\\s*(\\d{3,5})\\b`, "i")) ||
       text.match(/₹?\s*(\d{1,2})\s*[kK]\s*brokerage/i) ||
-      text.match(/₹?\s*(\d{3,6})\s*brokerage/i);
+      text.match(/₹?\s*(\d{3,5})\s*brokerage/i);
     if (bMonths && rent) {
       brokerage = Math.round(parseFloat(bMonths[1]) * rent);
     } else if (bDays && rent) {
       brokerage = Math.round((parseInt(bDays[1], 10) / 30) * rent);
     } else if (bAmount) {
       const val = parseInt(bAmount[1], 10);
-      brokerage = val < 200 ? val * 1000 : val;
+      const parsedVal = val < 200 ? val * 1000 : val;
+      // Sanity check: brokerage cannot exceed 1.5x rent or 100,000 INR (prevents phone number digits leakage)
+      if (rent && parsedVal > rent * 1.5) {
+        brokerage = null;
+      } else if (parsedVal <= 100000) {
+        brokerage = parsedVal;
+      }
     }
   }
 
@@ -360,12 +366,16 @@ JSON Schema:
 
     const parsed = JSON.parse(rawContent);
 
+    const rentVal = typeof parsed.rent === "number" && parsed.rent > 0 ? parsed.rent : base.rent;
+    const rawBrokerage = typeof parsed.brokerage === "number" && parsed.brokerage >= 0 ? parsed.brokerage : base.brokerage;
+    const safeBrokerage = (rawBrokerage && rentVal && rawBrokerage > rentVal * 1.5) || (rawBrokerage && rawBrokerage > 100000) ? null : rawBrokerage;
+
     return {
       title: (typeof parsed.title === "string" && parsed.title.trim()) || base.title,
       cleanText: (typeof parsed.cleanDescription === "string" && parsed.cleanDescription.trim()) || base.cleanText,
-      rent: typeof parsed.rent === "number" && parsed.rent > 0 ? parsed.rent : base.rent,
-      deposit: typeof parsed.deposit === "number" && parsed.deposit >= 0 ? parsed.deposit : (base.deposit ?? (base.rent ? base.rent * 2 : 0)),
-      brokerage: typeof parsed.brokerage === "number" && parsed.brokerage >= 0 ? parsed.brokerage : base.brokerage,
+      rent: rentVal,
+      deposit: typeof parsed.deposit === "number" && parsed.deposit >= 0 ? parsed.deposit : (base.deposit ?? (rentVal ? rentVal * 2 : 0)),
+      brokerage: safeBrokerage,
       bhk: ["1rk", "1bhk", "2bhk", "3bhk", "4plus"].includes(parsed.bhk) ? parsed.bhk : base.bhk,
       furnishing: ["unfurnished", "semi", "full"].includes(parsed.furnishing) ? parsed.furnishing : base.furnishing,
       occupancy_pref: ["family", "bachelors_male", "bachelors_female", "any"].includes(parsed.occupancy_pref) ? parsed.occupancy_pref : base.occupancy_pref,
