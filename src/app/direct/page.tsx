@@ -27,12 +27,12 @@ export default function DirectPage() {
 
       <main className="relative mx-auto max-w-6xl space-y-8 px-6 py-10">
         {/* Editorial Hero Header */}
-        <div className="space-y-2">
+        <div className="mx-auto max-w-2xl text-center space-y-2">
           <h1 className="text-3xl font-extrabold tracking-tight sm:text-4xl text-foreground">
             Direct Homes &amp; Flatmates
           </h1>
 
-          <p className="max-w-2xl text-[15px] leading-relaxed text-muted-foreground">
+          <p className="text-[15px] leading-relaxed text-muted-foreground">
             Peer-to-peer rooms in shared apartments and direct-owner flats across Pune tech hubs (Wakad, Baner, Hinjewadi, Kharadi). Gated behind LinkedIn &amp; work email verification so you never deal with brokers.
           </p>
         </div>
