@@ -612,6 +612,7 @@ export default async function ListingDetailPage({
                       }
                       contactName={sourceContact?.name ?? null}
                       sourcedBrokerName={listing.sourced_broker_name}
+                      isSourced={isSourced}
                     />
                   </div>
                 ) : !user ? (

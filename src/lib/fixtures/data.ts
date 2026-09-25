@@ -140,7 +140,7 @@ export const AREAS: Area[] = (
 export const PROFILES: Profile[] = [
   profile("u-tenant", DEV_PHONES.tenant, "Ananya Rao", "tenant"),
   profile("u-owner", DEV_PHONES.owner, "Suresh Kamath", "owner"),
-  profile("u-broker", DEV_PHONES.broker, "Imran Sheikh", "broker"),
+  profile("u-broker", DEV_PHONES.broker, "Verified Broker", "broker"),
   profile("u-admin", DEV_PHONES.admin, "Kiraya Ops", "admin"),
   profile("u-tenant2", "+919000000005", "Priya Nair", "tenant"),
 ];

@@ -6,7 +6,7 @@ export type DevRole = "tenant" | "owner" | "broker" | "admin";
 export const IDENTITY: Record<DevRole, { name: string; phone: string }> = {
   tenant: { name: "Ananya Rao", phone: "+919000000001" },
   owner: { name: "Suresh Kamath", phone: "+919000000002" },
-  broker: { name: "Imran Sheikh", phone: "+919000000003" },
+  broker: { name: "Verified Broker", phone: "+919000000003" },
   admin: { name: "Kiraya Ops", phone: "+919000000004" },
 };
 

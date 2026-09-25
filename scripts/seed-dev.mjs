@@ -60,7 +60,7 @@ const dateIn = (n) => new Date(Date.now() + n * 86_400_000).toISOString().slice(
 const PEOPLE = [
   { key: "tenant", phone: "+919000000001", role: "tenant", name: "Ananya Rao" },
   { key: "owner", phone: "+919000000002", role: "owner", name: "Suresh Kamath" },
-  { key: "broker", phone: "+919000000003", role: "broker", name: "Imran Sheikh" },
+  { key: "broker", phone: "+919000000003", role: "broker", name: "Verified Broker" },
   { key: "admin", phone: "+919000000004", role: "admin", name: "Kiraya Ops" },
   // Extra reporter — two open mismatch reports are what trip the warning badge.
   { key: "tenant2", phone: "+919000000005", role: "tenant", name: "Priya Nair" },

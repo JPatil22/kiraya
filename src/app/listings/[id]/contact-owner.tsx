@@ -25,6 +25,7 @@ export function ContactOwner({
   phone,
   contactName = null,
   sourcedBrokerName = null,
+  isSourced = false,
 }: {
   propertyId: string;
   posterName: string | null;
@@ -42,20 +43,31 @@ export function ContactOwner({
    * unlock too, so it never shows the seeded poster's account name.
    */
   sourcedBrokerName?: string | null;
+  isSourced?: boolean;
 }) {
   const [state, action, pending] = useActionState(requestContact, null);
   const [showMessage, setShowMessage] = useState(false);
 
-  // For a seeded listing the counterparty is the real broker (already public on
-  // the card), not the seeded account that posted it. "Broker" is the no-name
-  // sentinel, so it reads as "the broker".
-  const brokerLabel = sourcedBrokerName
-    ? sourcedBrokerName.trim().toLowerCase() === "broker"
+  const isNamedBroker = (n?: string | null) =>
+    Boolean(n && n.trim() && n.trim().toLowerCase() !== "broker");
+
+  // Real broker name if given on the source post (e.g. "Rajesh", "Yash", "Shreyash").
+  const realName = isNamedBroker(sourcedBrokerName)
+    ? sourcedBrokerName!.trim()
+    : isNamedBroker(contactName)
+      ? contactName!.trim()
+      : null;
+
+  // Fallback title when no real individual name is known.
+  const fallbackTitle =
+    posterRole === "broker" || isSourced || sourcedBrokerName
       ? "the broker"
-      : sourcedBrokerName
-    : null;
-  const who = brokerLabel ?? posterName ?? (posterRole === "broker" ? "the broker" : "the owner");
-  const revealedWho = brokerLabel ?? contactName ?? who;
+      : "the owner";
+
+  // If a real broker name exists, use it. Otherwise, use "the broker" or "the owner".
+  // NEVER use synthetic dev poster names (like "Imran Sheikh") for sourced listings.
+  const who = realName ?? (isSourced ? "the broker" : (posterName ?? fallbackTitle));
+  const revealedWho = realName ?? (isSourced ? "the broker" : (posterName ?? fallbackTitle));
 
   if (unlocked || state?.ok) {
     const href = telHref(phone);
