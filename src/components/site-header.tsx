@@ -31,7 +31,7 @@ export async function SiteHeader() {
 
   // Secondary destinations live in the account menu, not spread across the bar.
   const menuItems: NavItem[] = [];
-  menuItems.push({ label: "Direct & Flatmates (₹0 Brokerage)", href: "/direct" });
+  menuItems.push({ label: "Kiraya Direct (₹0 Brokerage)", href: "/direct" });
   if (user) menuItems.push({ label: "Dashboard", href: "/dashboard" });
   if (user) menuItems.push({ label: "Saved", href: "/shortlist" });
   if (showSuggestions) menuItems.push({ label: "Suggestions", href: "/suggestions" });
@@ -68,7 +68,7 @@ export async function SiteHeader() {
             </Button>
             <Button asChild variant="ghost" size="sm" className="font-medium text-emerald-700 dark:text-emerald-400 hover:text-emerald-600 gap-1.5">
               <Link href="/direct" className="flex items-center gap-1.5">
-                <span>Direct &amp; Flatmates</span>
+                <span>Kiraya Direct</span>
                 <span className="rounded-full bg-emerald-500/15 px-1.5 py-0.5 text-[10px] font-bold border border-emerald-500/30">
                   ₹0 Brokerage
                 </span>
