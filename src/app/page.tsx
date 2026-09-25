@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { redirect } from "next/navigation";
 import {
   ArrowRight,
@@ -285,10 +286,13 @@ export default async function LandingPage({
             <div className="overflow-hidden rounded-2xl border border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-900 text-left shadow-md transition duration-200">
               {/* Photo Preview */}
               <div className="relative aspect-[16/9] w-full overflow-hidden bg-stone-100 dark:bg-stone-800">
-                <img
+                <Image
                   src="/images/hero-apartment.jpg"
                   alt="Modern 2 BHK apartment in Baner Pune"
-                  className="size-full object-cover"
+                  fill
+                  priority
+                  sizes="(max-width: 768px) 100vw, 512px"
+                  className="object-cover"
                 />
                 <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/75 via-black/20 to-transparent" />
 

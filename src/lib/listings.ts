@@ -187,7 +187,7 @@ export function getCachedPublicListings(
 
   return unstable_cache(
     (f: ListingFilters) => getPublicListings(supabase, f),
-    ["public-listings"],
+    ["public-listings", JSON.stringify(filters)],
     { revalidate: 60, tags: [LISTINGS_CACHE_TAG] },
   )(filters);
 }
