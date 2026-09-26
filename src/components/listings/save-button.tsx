@@ -37,13 +37,13 @@ export function SaveButton({
           "flex items-center gap-1.5 rounded-md border text-sm transition-colors",
           "focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
           variant === "overlay"
-            ? "bg-background/90 p-2 shadow-sm hover:bg-background"
+            ? "size-8.5 rounded-full bg-background/80 dark:bg-stone-900/80 backdrop-blur-md border border-border/50 shadow-sm hover:bg-background hover:scale-105 active:scale-95 justify-center"
             : "px-3 py-1.5 hover:bg-muted",
-          isSaved && "border-primary text-primary",
+          isSaved && "border-primary text-primary bg-primary/10 dark:bg-primary/20",
           pending && "opacity-60",
         )}
       >
-        <Bookmark className={cn("size-4", isSaved && "fill-current")} />
+        <Bookmark className={cn("size-4", isSaved && "fill-current text-primary")} />
         {variant === "inline" ? (isSaved ? "Saved" : "Save") : null}
       </button>
     </form>

@@ -33,7 +33,7 @@ export function ListingCard({
         className="flex h-full flex-col overflow-hidden rounded-2xl border border-border/80 bg-card transition-all duration-300 hover:-translate-y-1 hover:border-primary/30 hover:shadow-[0_12px_32px_rgba(15,23,42,0.08),0_0_20px_-4px_hsl(var(--primary)/0.15)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
       >
         {/* Photo is the hook — big, with the price and freshness read straight off it. */}
-        <div className="relative aspect-[4/3] overflow-hidden bg-muted">
+        <div className="relative aspect-[16/10] sm:aspect-[4/3] overflow-hidden bg-muted">
           {listing.cover_photo_path ? (
             /* Storage host + fixture data: URLs both defeat next/image. */
             // eslint-disable-next-line @next/next/no-img-element
@@ -51,25 +51,25 @@ export function ListingCard({
           )}
 
           {/* Scrim so white text and the price sit legibly over any photo. */}
-          <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black/55 via-black/10 to-transparent" />
+          <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
 
           <div className="absolute left-2.5 top-2.5">
             <FreshnessBadge
               daysSinceVerified={listing.days_since_verified}
               isStale={listing.is_stale}
-              className="shadow-sm"
+              className="shadow-sm text-[11px] py-0.5 px-2"
             />
           </div>
 
           <div className="absolute inset-x-3 bottom-2.5 flex items-end justify-between gap-2">
             <div className="text-white drop-shadow-sm">
-              <span className="text-xl font-semibold tabular-nums tracking-tight">
+              <span className="text-lg sm:text-xl font-bold tabular-nums tracking-tight">
                 {formatINR(listing.all_in_monthly)}
               </span>
-              <span className="text-sm font-medium text-white/80">/mo</span>
+              <span className="text-xs sm:text-sm font-medium text-white/85">/mo</span>
             </div>
             {listing.cover_photo_path ? (
-              <span className="flex items-center gap-1 rounded-full bg-black/45 px-2 py-0.5 text-xs font-medium text-white backdrop-blur-sm">
+              <span className="flex items-center gap-1 rounded-full bg-black/50 px-2 py-0.5 text-[11px] font-medium text-white backdrop-blur-sm">
                 <Camera className="size-3" />
                 {listing.rooms_covered}/{listing.rooms_required}
               </span>
@@ -77,8 +77,8 @@ export function ListingCard({
           </div>
         </div>
 
-        <div className="flex flex-1 flex-col p-4">
-          <h2 className="truncate font-semibold leading-snug tracking-tight">{listing.title}</h2>
+        <div className="flex flex-1 flex-col p-3.5 sm:p-4">
+          <h2 className="truncate font-bold text-base sm:text-lg leading-snug tracking-tight text-foreground group-hover:text-primary transition-colors">{listing.title}</h2>
 
           <p className="mt-1 text-[13px] text-muted-foreground">
             {labelFor(BHK_OPTIONS, listing.bhk)} · {labelFor(FURNISHING_OPTIONS, listing.furnishing)}
