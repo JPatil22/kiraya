@@ -640,11 +640,12 @@ async function handleTargetClick(e) {
         msg = (await response.json())?.error || '';
       } catch (e) {}
       console.warn('[Kiraya Extension] Ingest failed:', response.status, msg);
-      floatingBtn.innerHTML = 'Failed \u274c';
+      const shortErr = msg ? msg.slice(0, 30) : `HTTP ${response.status}`;
+      floatingBtn.innerHTML = `Failed: ${shortErr} \u274c`;
     }
   } catch (error) {
     console.error("Kiraya Request Error:", error);
-    floatingBtn.innerHTML = 'Error \u274c';
+    floatingBtn.innerHTML = `Error: ${error.message || 'Network'} \u274c`;
   }
 
   clearTimeout(watchdog);
