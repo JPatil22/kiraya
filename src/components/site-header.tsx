@@ -62,6 +62,22 @@ export async function SiteHeader() {
           >
             <BrandMark />
           </Link>
+          {/* Mobile Quick Nav (<640px) */}
+          <div className="flex sm:hidden items-center gap-1 text-xs">
+            <Link
+              href="/listings"
+              className="rounded-full bg-muted/60 px-2.5 py-1 font-medium text-foreground hover:bg-muted"
+            >
+              Flats
+            </Link>
+            <Link
+              href="/direct"
+              className="rounded-full bg-emerald-500/10 border border-emerald-500/30 px-2.5 py-1 font-semibold text-emerald-700 dark:text-emerald-400"
+            >
+              Direct ₹0
+            </Link>
+          </div>
+
           <div className="hidden sm:flex items-center gap-1">
             <Button asChild variant="ghost" size="sm" className="font-medium text-muted-foreground hover:text-foreground">
               <Link href="/listings">Browse Flats</Link>

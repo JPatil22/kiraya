@@ -693,6 +693,43 @@ export default async function ListingDetailPage({
           </div>
         </div>
       </main>
+
+      {/* Mobile Bottom Sticky Bar (<1024px) */}
+      <div className="fixed bottom-0 inset-x-0 z-40 lg:hidden border-t border-border/80 bg-background/95 p-3.5 backdrop-blur-md shadow-[0_-4px_20px_rgba(0,0,0,0.1)]">
+        <div className="mx-auto flex max-w-md items-center justify-between gap-3">
+          <div>
+            <div className="text-lg font-extrabold text-foreground tabular-nums">
+              {formatINR(listing.all_in_monthly)}
+              <span className="text-xs font-normal text-muted-foreground"> /mo</span>
+            </div>
+            <div className="text-[11px] text-muted-foreground">
+              {formatINR(listing.move_in_cost)} move-in
+            </div>
+          </div>
+          <div className="w-1/2">
+            {user && !isOwnListing && listing.availability !== "rented" ? (
+              <ContactOwner
+                propertyId={listing.id}
+                posterName={listing.posted_by_name}
+                posterRole={listing.posted_by_role}
+                unlocked={Boolean(exchange)}
+                phone={
+                  isSourced
+                    ? sourceContact?.phone ?? null
+                    : sourceContact?.phone ?? poster?.phone ?? null
+                }
+                contactName={sourceContact?.name ?? null}
+                sourcedBrokerName={listing.sourced_broker_name}
+                isSourced={isSourced}
+              />
+            ) : !user ? (
+              <Button asChild className="w-full h-10 font-semibold shadow-sm text-xs">
+                <Link href="/login">Sign in to unlock</Link>
+              </Button>
+            ) : null}
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
