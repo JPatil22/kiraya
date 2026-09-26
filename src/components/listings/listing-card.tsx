@@ -102,7 +102,7 @@ export function ListingCard({
           </p>
 
           {listing.area_name || listing.address_line ? (
-            <p className="mt-2 flex items-center gap-1.5 text-[13px] text-muted-foreground">
+            <p className="mt-2 flex items-center gap-1.5 text-[13px] text-muted-foreground min-w-0">
               <MapPin className="size-3.5 shrink-0" />
               <span className="truncate">
                 {listing.area_name ? (

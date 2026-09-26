@@ -33,16 +33,16 @@ export function PostedByBadge({
     // the credit reads "Broker · via Kiraya" rather than "Broker: Broker".
     const named = sourcedBrokerName.trim().toLowerCase() !== "broker";
     return (
-      <Badge variant="outline" className="gap-1 font-normal">
-        <Megaphone className="size-3.5" />
+      <Badge variant="outline" className="gap-1 font-normal max-w-full truncate">
+        <Megaphone className="size-3.5 shrink-0" />
         {named ? (
-          <>
+          <span className="truncate max-w-[130px] sm:max-w-[180px]">
             Broker: <span className="font-medium">{sourcedBrokerName}</span>
-          </>
+          </span>
         ) : (
           "Broker"
         )}
-        <span className="text-muted-foreground">· via Kiraya</span>
+        <span className="text-muted-foreground hidden sm:inline">· via Kiraya</span>
       </Badge>
     );
   }
