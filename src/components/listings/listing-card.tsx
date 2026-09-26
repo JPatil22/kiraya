@@ -46,8 +46,8 @@ export function ListingCard({
         href={`/listings/${listing.id}`}
         className="flex h-full flex-col overflow-hidden rounded-2xl border border-border/80 bg-card transition-all duration-300 hover:-translate-y-1 hover:border-primary/30 hover:shadow-[0_12px_32px_rgba(15,23,42,0.08),0_0_20px_-4px_hsl(var(--primary)/0.15)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
       >
-        {/* Photo is the hook — big, with the price and freshness read straight off it. */}
-        <div className="relative aspect-[16/9] sm:aspect-[4/3] overflow-hidden bg-muted">
+        {/* Photo is the hook — big 4:3 frame so building and interior photos are never cropped. */}
+        <div className="relative aspect-[4/3] overflow-hidden bg-muted">
           {listing.cover_photo_path ? (
             /* Storage host + fixture data: URLs both defeat next/image. */
             // eslint-disable-next-line @next/next/no-img-element
@@ -92,7 +92,7 @@ export function ListingCard({
         </div>
 
         <div className="flex flex-1 flex-col p-3.5 sm:p-4">
-          <h2 className="truncate font-bold text-base sm:text-lg leading-snug tracking-tight text-foreground group-hover:text-primary transition-colors">
+          <h2 className="line-clamp-2 font-bold text-base sm:text-lg leading-snug tracking-tight text-foreground group-hover:text-primary transition-colors">
             {displayTitle}
           </h2>
 
@@ -102,9 +102,9 @@ export function ListingCard({
           </p>
 
           {listing.area_name || listing.address_line ? (
-            <p className="mt-2 flex items-center gap-1.5 text-[13px] text-muted-foreground min-w-0">
-              <MapPin className="size-3.5 shrink-0" />
-              <span className="truncate">
+            <p className="mt-2 flex items-start gap-1.5 text-[13px] text-muted-foreground min-w-0">
+              <MapPin className="size-3.5 shrink-0 mt-0.5 text-muted-foreground/70" />
+              <span className="line-clamp-2">
                 {listing.area_name ? (
                   <span className="font-medium text-foreground">{listing.area_name}</span>
                 ) : null}
