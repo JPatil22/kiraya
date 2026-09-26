@@ -52,8 +52,8 @@ export async function SiteHeader() {
         </div>
       ) : null}
 
-    <header className="sticky top-0 z-40 border-b border-border/60 bg-background/80 backdrop-blur-md supports-[backdrop-filter]:bg-background/70 shadow-[0_2px_16px_rgba(0,0,0,0.02)]">
-      <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-6 py-3">
+    <header className="sticky top-0 z-40 border-b border-border/60 bg-background/80 backdrop-blur-md supports-[backdrop-filter]:bg-background/70 shadow-[0_2px_16px_rgba(0,0,0,0.02)] overflow-x-hidden">
+      <div className="mx-auto flex max-w-6xl items-center justify-between gap-2 sm:gap-4 px-3.5 sm:px-6 py-2.5 sm:py-3">
         {/* Brand + the primary destinations. */}
         <div className="flex items-center gap-3 sm:gap-5">
           <Link
@@ -98,7 +98,7 @@ export async function SiteHeader() {
         </div>
 
         {/* Action · utilities · you — everything else is grouped, not spread. */}
-        <nav className="flex items-center gap-2">
+        <nav className="flex items-center gap-1.5 sm:gap-2 shrink-0">
           {canPost(role) ? (
             <Button asChild variant="outline" size="sm" className="hidden sm:inline-flex">
               <Link href="/listings/new">Post a property</Link>
@@ -106,14 +106,14 @@ export async function SiteHeader() {
           ) : null}
 
           {user ? (
-            <Button asChild variant="ghost" size="icon" className="relative size-9 rounded-full">
+            <Button asChild variant="ghost" size="icon" className="relative size-8 sm:size-9 rounded-full">
               <Link
                 href="/notifications"
                 aria-label={unread > 0 ? `Activity, ${unread} unread` : "Activity"}
               >
                 <Bell className="size-4" />
                 {unread > 0 ? (
-                  <span className="absolute right-1 top-1 flex size-4 items-center justify-center rounded-full bg-primary text-[10px] font-medium text-primary-foreground">
+                  <span className="absolute right-0.5 top-0.5 flex size-3.5 items-center justify-center rounded-full bg-primary text-[9px] font-medium text-primary-foreground">
                     {unread > 9 ? "9+" : unread}
                   </span>
                 ) : null}
@@ -121,12 +121,16 @@ export async function SiteHeader() {
             </Button>
           ) : null}
 
-          {OPEN_MODE ? <DevRoleSwitcher active={role} /> : null}
+          {OPEN_MODE ? (
+            <div className="hidden md:inline-flex">
+              <DevRoleSwitcher active={role} />
+            </div>
+          ) : null}
 
           {user ? (
             <AccountMenu items={menuItems} roleLabel={role} showSignOut={true} />
           ) : (
-            <Button asChild size="sm">
+            <Button asChild size="sm" className="h-8 sm:h-9 px-3 text-xs sm:text-sm font-semibold shrink-0">
               <Link href="/login">Sign in</Link>
             </Button>
           )}
