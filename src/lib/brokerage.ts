@@ -88,8 +88,23 @@ export function brokerageClaim(listing: {
   brokerage: number;
   brokerage_disclosed: boolean;
   posted_by_role: UserRole | null;
+  description?: string | null;
+  title?: string | null;
 }): BrokerageClaim {
   if (listing.brokerage > 0) return "charged";
-  if (listing.brokerage_disclosed || listing.posted_by_role === "owner") return "none";
-  return "unstated";
+
+  // Owner listings carry no brokerage by definition
+  if (listing.posted_by_role === "owner") return "none";
+
+  // Broker listings: only claim "none" if fee is 0 AND explicitly declared zero in source text
+  if (listing.posted_by_role === "broker") {
+    if (listing.brokerage === 0 && listing.brokerage_disclosed) {
+      const text = `${listing.title ?? ""} ${listing.description ?? ""}`;
+      const explicitZero = /\b(no|zero|nil|without)\s*brokerage\b/i.test(text);
+      if (explicitZero) return "none";
+    }
+    return "unstated";
+  }
+
+  return listing.brokerage_disclosed && listing.brokerage === 0 ? "none" : "unstated";
 }

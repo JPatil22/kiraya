@@ -22,6 +22,7 @@ export function ListingCard({
   const photoWarning = listing.cover_photo_path
     ? photoAgeWarning(listing.cover_photo_captured_at, listing.last_verified_at)
     : null;
+  const claim = brokerageClaim(listing);
 
   return (
     <div className="group relative h-full">
@@ -106,13 +107,18 @@ export function ListingCard({
               role={listing.posted_by_role}
               sourcedBrokerName={listing.sourced_broker_name}
             />
-            {listing.posted_by_role === "broker" && brokerageClaim(listing) === "none" ? (
-              <Badge variant="outline" className="text-success">
+            {listing.posted_by_role === "broker" && claim === "charged" ? (
+              <Badge variant="outline" className="text-foreground border-border/80">
+                Brokerage: {formatINR(listing.brokerage)}
+              </Badge>
+            ) : null}
+            {claim === "none" ? (
+              <Badge variant="outline" className="text-success border-success/30 bg-success/5 font-medium">
                 No brokerage
               </Badge>
             ) : null}
-            {brokerageClaim(listing) === "unstated" ? (
-              <Badge variant="outline" className="gap-1 text-warning">
+            {listing.posted_by_role === "broker" && claim === "unstated" ? (
+              <Badge variant="outline" className="gap-1 text-warning border-warning/30 bg-warning/5">
                 <AlertTriangle className="size-3.5" />
                 Brokerage not stated
               </Badge>
