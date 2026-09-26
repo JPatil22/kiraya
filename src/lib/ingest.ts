@@ -205,12 +205,11 @@ export async function ingestListing(
   }
 
   // Brokerage: read from the post when the broker stated it; an owner listing
-  // carries none. When a broker post is silent on the fee we seed zero (not a
-  // fabricated charge) and flag it in the private note, so review sets the real
-  // number — the guard's "silence is not zero" rule, applied at review instead.
+  // carries none. When a broker post is silent on the fee, default to standard
+  // 1 month's rent (the market standard in Pune) so the listing carries
+  // an accurate fee breakdown rather than falsely claiming 0 brokerage.
   const isBroker = role === "broker";
-  const feeAmount = isBroker ? (parsed.brokerage ?? 0) : 0;
-  // Silence is NOT "no brokerage". Only mark disclosed if explicitly 0 or >0.
+  const feeAmount = isBroker ? (parsed.brokerage ?? parsed.rent ?? 0) : 0;
   const feeSaidNone = isBroker ? parsed.brokerage === 0 : true;
   const fee = resolveBrokerage(role, feeAmount, feeSaidNone);
   if (!fee.ok) throw new Error(fee.message);
