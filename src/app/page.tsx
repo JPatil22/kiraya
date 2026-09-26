@@ -23,6 +23,7 @@ import { Badge } from "@/components/ui/badge";
 import { BrandMark } from "@/components/brand-mark";
 import { Reveal } from "@/components/reveal";
 import { CountUp } from "@/components/count-up";
+import { SiteHeader } from "@/components/site-header";
 import { ACTIVE_LOCALITY_SLUG } from "@/lib/locality";
 import { OPEN_MODE } from "@/lib/open-mode";
 
@@ -126,40 +127,8 @@ export default async function LandingPage({
         }}
       />
 
-      {/* Top Navbar */}
-      <header className="sticky top-0 z-40 border-b border-border/60 bg-background/80 backdrop-blur-md shadow-[0_2px_16px_rgba(0,0,0,0.02)]">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-3.5">
-          <Link
-            href="/"
-            className="rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
-          >
-            <BrandMark />
-          </Link>
-
-          <div className="flex items-center gap-2 sm:gap-3">
-            <span className="hidden md:inline-flex items-center gap-1.5 rounded-full border border-primary/20 bg-primary/5 px-2.5 py-0.5 text-xs font-medium text-primary">
-              <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse" />
-              {localityName} Live
-            </span>
-            <Button asChild variant="ghost" size="sm" className="text-xs sm:text-sm font-medium">
-              <Link href="/listings">Browse Listings</Link>
-            </Button>
-            <Button asChild variant="ghost" size="sm" className="text-xs sm:text-sm font-medium text-emerald-700 dark:text-emerald-400 hover:text-emerald-600 gap-1.5">
-              <Link href="/direct" className="flex items-center gap-1.5">
-                <span>Direct &amp; Flatmates</span>
-                <span className="rounded-full bg-emerald-500/15 px-1.5 py-0.5 text-[10px] font-bold border border-emerald-500/30">
-                  ₹0 Brokerage
-                </span>
-              </Link>
-            </Button>
-            <Button asChild size="sm" className="text-xs sm:text-sm font-medium shadow-sm shadow-primary/25">
-              <Link href={OPEN_MODE ? "/dashboard" : "/login"}>
-                {OPEN_MODE ? "Sandbox Preview" : "Sign in"}
-              </Link>
-            </Button>
-          </div>
-        </div>
-      </header>
+      {/* Shared Responsive Top Navbar */}
+      <SiteHeader />
 
       {/* Hero Section — Editorial & Architectural */}
       <section className="relative overflow-hidden border-b border-border/70 bg-stone-50/50 dark:bg-stone-950/20">

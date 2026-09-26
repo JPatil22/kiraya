@@ -15,8 +15,8 @@ export function BrandMark({ className }: { className?: string }) {
       </span>
       <span className="inline-flex items-baseline gap-1.5">
         <span className="font-bold text-foreground tracking-tight text-base sm:text-lg">किराया</span>
-        <span aria-hidden className="text-sm font-light text-muted-foreground/30">|</span>
-        <span className="font-semibold text-muted-foreground tracking-tight text-sm sm:text-base">Kiraya</span>
+        <span aria-hidden className="hidden sm:inline text-sm font-light text-muted-foreground/30">|</span>
+        <span className="hidden sm:inline font-semibold text-muted-foreground tracking-tight text-sm sm:text-base">Kiraya</span>
       </span>
     </span>
   );
