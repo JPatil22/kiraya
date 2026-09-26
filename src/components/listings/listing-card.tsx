@@ -11,6 +11,15 @@ import { formatINR } from "@/lib/utils";
 import { SaveButton } from "./save-button";
 import type { ListingPublic } from "@/types/database";
 
+function cleanDisplayTitle(rawTitle: string): string {
+  if (!rawTitle) return "";
+  const cleaned = rawTitle
+    .replace(/^(\s*(no|zero)\s*brokerage\s*[:\-|•]\s*)/i, "")
+    .replace(/^(\s*(for\s*rent|flat\s*for\s*rent|direct\s*owner)\s*[:\-|•]\s*)/i, "")
+    .trim();
+  return cleaned || rawTitle;
+}
+
 export function ListingCard({
   listing,
   saved,
@@ -23,6 +32,7 @@ export function ListingCard({
     ? photoAgeWarning(listing.cover_photo_captured_at, listing.last_verified_at)
     : null;
   const claim = brokerageClaim(listing);
+  const displayTitle = cleanDisplayTitle(listing.title);
 
   return (
     <div className="group relative h-full">
@@ -82,7 +92,9 @@ export function ListingCard({
         </div>
 
         <div className="flex flex-1 flex-col p-3.5 sm:p-4">
-          <h2 className="truncate font-bold text-base sm:text-lg leading-snug tracking-tight text-foreground group-hover:text-primary transition-colors">{listing.title}</h2>
+          <h2 className="truncate font-bold text-base sm:text-lg leading-snug tracking-tight text-foreground group-hover:text-primary transition-colors">
+            {displayTitle}
+          </h2>
 
           <p className="mt-1 text-[13px] text-muted-foreground">
             {labelFor(BHK_OPTIONS, listing.bhk)} · {labelFor(FURNISHING_OPTIONS, listing.furnishing)}
