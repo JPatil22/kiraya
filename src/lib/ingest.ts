@@ -104,26 +104,12 @@ const PHOTO_MIME = new Set(ACCEPTED_MIME);
  * reactions as tiny thumbnails — so anything that isn't a real JPEG/PNG/WebP is
  * skipped (not counted as a failure), keeping the staged set to actual photos.
  */
-/** Upgrade a Facebook CDN image URL to fetch the full uncropped high-res original instead of low-res feed thumbnails. */
-function upgradeFacebookImageUrl(url: string): string {
-  try {
-    const u = new URL(url);
-    if (u.hostname.includes("fbcdn.net")) {
-      u.searchParams.delete("stp");
-    }
-    return u.toString();
-  } catch {
-    return url;
-  }
-}
-
 async function stageOnePhoto(
   db: SupabaseClient<Database>,
   propertyId: string,
-  rawUrl: string,
+  url: string,
 ): Promise<StageOutcome> {
-  if (!rawUrl.startsWith("http")) return { key: null, skipped: true };
-  const url = upgradeFacebookImageUrl(rawUrl);
+  if (!url.startsWith("http")) return { key: null, skipped: true };
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 8000);
   const short = url.slice(0, 90);
