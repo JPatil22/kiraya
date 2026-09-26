@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { format } from "date-fns";
 import {
   AlertTriangle,
@@ -76,6 +76,11 @@ export default async function ListingDetailPage({
   const supabase = await getDataClient();
   const listing = await getPublicListing(supabase, id);
   if (!listing) notFound();
+
+  const sessionUser = await getSessionUser(supabase);
+  if (!sessionUser) {
+    redirect(`/login?redirectTo=/listings/${id}`);
+  }
 
   // Postgres numerics arrive as strings through PostgREST often enough to matter.
   const coords = toCoords(listing.latitude, listing.longitude);
