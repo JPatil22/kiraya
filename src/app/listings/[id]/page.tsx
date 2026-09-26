@@ -158,7 +158,7 @@ export default async function ListingDetailPage({
 
       <SiteHeader />
 
-      <main className="relative mx-auto max-w-6xl space-y-6 px-6 py-8">
+      <main className="relative mx-auto max-w-6xl space-y-6 px-4 sm:px-6 pt-4 sm:pt-8 pb-28 lg:pb-8">
         {/* Top Navigation / Breadcrumb */}
         <div className="animate-fade-up flex items-center justify-between">
           <Button asChild variant="ghost" size="sm" className="-ml-3 hover:bg-primary/5">

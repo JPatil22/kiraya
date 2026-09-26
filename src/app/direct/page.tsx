@@ -25,7 +25,7 @@ export default function DirectPage() {
 
       <SiteHeader />
 
-      <main className="relative mx-auto max-w-6xl space-y-8 px-6 py-10">
+      <main className="relative mx-auto max-w-6xl space-y-6 sm:space-y-8 px-4 sm:px-6 py-6 sm:py-10">
         {/* Editorial Hero Header */}
         <div className="mx-auto max-w-2xl text-center space-y-2">
           <h1 className="text-3xl font-extrabold tracking-tight sm:text-4xl text-foreground">

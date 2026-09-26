@@ -69,16 +69,16 @@ export default async function ListingsPage({
 
       <SiteHeader />
 
-      <main className="relative mx-auto max-w-6xl space-y-8 px-6 py-10">
+      <main className="relative mx-auto max-w-6xl space-y-6 sm:space-y-8 px-4 sm:px-6 py-6 sm:py-10">
         <div>
           <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-3 py-1 text-xs font-semibold text-primary mb-3">
             <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse" />
             Verified City Feed
           </div>
-          <h1 className="text-3xl font-extrabold tracking-tight sm:text-4xl">
+          <h1 className="text-2xl font-extrabold tracking-tight sm:text-4xl">
             Rentals in {locality?.name ?? "your locality"}
           </h1>
-          <p className="mt-2 max-w-2xl text-[15px] leading-relaxed text-muted-foreground">
+          <p className="mt-1.5 max-w-2xl text-sm sm:text-[15px] leading-relaxed text-muted-foreground">
             Every flat is verified physically, stamped with its last confirmation date, and displays the 100% transparent all-in monthly and move-in cost.
           </p>
         </div>
@@ -86,14 +86,14 @@ export default async function ListingsPage({
         {/* Switcher to Kiraya Direct & Flatmates */}
         <Link
           href="/direct"
-          className="group flex flex-col sm:flex-row items-center justify-between gap-3 rounded-2xl border border-emerald-500/30 bg-emerald-500/5 hover:bg-emerald-500/10 dark:bg-emerald-950/20 dark:hover:bg-emerald-950/30 p-4 transition text-left"
+          className="group flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 rounded-2xl border border-emerald-500/30 bg-emerald-500/5 hover:bg-emerald-500/10 dark:bg-emerald-950/20 dark:hover:bg-emerald-950/30 p-3.5 sm:p-4 transition text-left"
         >
           <div className="flex items-center gap-3">
             <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-emerald-600 text-white shadow-sm shadow-emerald-600/20">
               <Sparkles className="size-4.5" />
             </div>
             <div>
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <span className="font-bold text-sm text-foreground">
                   Looking for ₹0 Brokerage &amp; Corporate Flatmates?
                 </span>

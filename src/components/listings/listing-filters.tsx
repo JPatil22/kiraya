@@ -28,8 +28,9 @@ export function ListingFilterBar({
   areas: Area[];
 }) {
   return (
-    <form method="get" action="/listings" className="glass-card rounded-2xl border border-border/80 p-5 shadow-sm">
-      <div className="mb-4 space-y-1.5">
+    <form method="get" action="/listings" className="glass-card rounded-2xl border border-border/80 p-4 sm:p-5 shadow-sm space-y-4">
+      {/* Search Input Bar */}
+      <div className="space-y-1.5">
         <Label htmlFor="q" className="font-semibold text-xs uppercase tracking-wider text-muted-foreground">Search</Label>
         <div className="relative flex items-center">
           <Search className="absolute left-3 size-4 text-muted-foreground/60 pointer-events-none" />
@@ -37,15 +38,16 @@ export function ListingFilterBar({
             id="q"
             name="q"
             type="search"
-            placeholder="Search area, landmark or society (e.g. Baner, Kharadi, balewadi, parking)..."
+            placeholder="Search area, society or landmark (e.g. Baner, Kharadi, Wakad)..."
             defaultValue={filters.q ?? ""}
             maxLength={80}
-            className="pl-9 bg-background/60"
+            className="pl-9 bg-background/60 text-sm h-10"
           />
         </div>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      {/* Filter Fields Grid */}
+      <div className="grid gap-3.5 sm:grid-cols-2 lg:grid-cols-4">
         <div className="space-y-1.5">
           <Label htmlFor="area">Area</Label>
           <FieldSelect
