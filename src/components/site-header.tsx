@@ -52,7 +52,7 @@ export async function SiteHeader() {
         </div>
       ) : null}
 
-    <header className="sticky top-0 z-40 border-b border-border/60 bg-background/80 backdrop-blur-md supports-[backdrop-filter]:bg-background/70 shadow-[0_2px_16px_rgba(0,0,0,0.02)] overflow-x-hidden">
+    <header className="sticky top-0 z-40 border-b border-border/60 bg-background/80 backdrop-blur-md supports-[backdrop-filter]:bg-background/70 shadow-[0_2px_16px_rgba(0,0,0,0.02)]">
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-2 sm:gap-4 px-3.5 sm:px-6 py-2.5 sm:py-3">
         {/* Brand + the primary destinations. */}
         <div className="flex items-center gap-3 sm:gap-5">
