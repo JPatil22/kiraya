@@ -196,7 +196,11 @@ export async function ingestListing(
   // an accurate fee breakdown rather than falsely claiming 0 brokerage.
   const isBroker = role === "broker";
   const feeAmount = isBroker ? (parsed.brokerage ?? parsed.rent ?? 0) : 0;
-  const feeSaidNone = isBroker ? parsed.brokerage === 0 : true;
+  // If a broker post is silent on brokerage AND rent is unstated/0, treat saidNone as true
+  // for the pending_review placeholder so resolveBrokerage does not throw on 0 fee.
+  const feeSaidNone = isBroker
+    ? parsed.brokerage === 0 || (parsed.brokerage == null && !parsed.rent)
+    : true;
   const fee = resolveBrokerage(role, feeAmount, feeSaidNone);
   if (!fee.ok) throw new Error(fee.message);
 
