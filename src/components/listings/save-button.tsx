@@ -26,7 +26,7 @@ export function SaveButton({
   const label = isSaved ? "Saved — tap to remove" : "Save this listing";
 
   return (
-    <form action={action} className={variant === "overlay" ? "absolute right-3 top-3 z-10" : ""}>
+    <form action={action} className="inline-block">
       <input type="hidden" name="propertyId" value={propertyId} />
       <button
         type="submit"

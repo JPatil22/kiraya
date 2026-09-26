@@ -26,14 +26,18 @@ export function ListingCard({
 
   return (
     <div className="group relative h-full">
-      {saved === undefined ? null : <SaveButton propertyId={listing.id} saved={saved} />}
+      {saved === undefined ? null : (
+        <div className="absolute right-2.5 top-2.5 z-20">
+          <SaveButton propertyId={listing.id} saved={saved} />
+        </div>
+      )}
 
       <Link
         href={`/listings/${listing.id}`}
         className="flex h-full flex-col overflow-hidden rounded-2xl border border-border/80 bg-card transition-all duration-300 hover:-translate-y-1 hover:border-primary/30 hover:shadow-[0_12px_32px_rgba(15,23,42,0.08),0_0_20px_-4px_hsl(var(--primary)/0.15)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
       >
         {/* Photo is the hook — big, with the price and freshness read straight off it. */}
-        <div className="relative aspect-[16/10] sm:aspect-[4/3] overflow-hidden bg-muted">
+        <div className="relative aspect-[16/9] sm:aspect-[4/3] overflow-hidden bg-muted">
           {listing.cover_photo_path ? (
             /* Storage host + fixture data: URLs both defeat next/image. */
             // eslint-disable-next-line @next/next/no-img-element
