@@ -24,7 +24,6 @@ import { DepositContext } from "@/components/listings/deposit-context";
 import { toCoords } from "@/lib/geo";
 import { FormattedDescription } from "@/components/listings/formatted-description";
 import { FreshnessBadge } from "@/components/listings/freshness-badge";
-import { LiveWatcherBadge } from "@/components/listings/live-watcher-badge";
 import { PostedByBadge } from "@/components/listings/posted-by-badge";
 import { CountUp } from "@/components/count-up";
 import { Badge } from "@/components/ui/badge";
@@ -246,11 +245,6 @@ export default async function ListingDetailPage({
                 : "Verified physically by Kiraya."}
             </p>
           ) : null}
-        </div>
-
-        {/* Live Watchers Activity Badge */}
-        <div className="animate-fade-up" style={{ animationDelay: "90ms" }}>
-          <LiveWatcherBadge propertyId={listing.id} variant="detailed" />
         </div>
 
         {/* Hero Photo Gallery */}
