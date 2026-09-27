@@ -3,6 +3,7 @@ import { format } from "date-fns";
 import { AlertTriangle, Camera, ImageOff, MapPin } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { FreshnessBadge } from "./freshness-badge";
+import { LiveWatcherBadge } from "./live-watcher-badge";
 import { PostedByBadge } from "./posted-by-badge";
 import { brokerageClaim } from "@/lib/brokerage";
 import { AVAILABILITY_OPTIONS, BHK_OPTIONS, FURNISHING_OPTIONS, labelFor } from "@/lib/constants";
@@ -67,12 +68,13 @@ export function ListingCard({
           {/* Scrim so white text and the price sit legibly over any photo. */}
           <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
 
-          <div className="absolute left-2.5 top-2.5">
+          <div className="absolute left-2.5 top-2.5 flex flex-wrap items-center gap-1.5 z-10">
             <FreshnessBadge
               daysSinceVerified={listing.days_since_verified}
               isStale={listing.is_stale}
               className="shadow-sm text-[11px] py-0.5 px-2"
             />
+            <LiveWatcherBadge propertyId={listing.id} variant="compact" />
           </div>
 
           <div className="absolute inset-x-3 bottom-2.5 flex items-end justify-between gap-2">

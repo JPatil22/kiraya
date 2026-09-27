@@ -24,6 +24,7 @@ import { BrandMark } from "@/components/brand-mark";
 import { Reveal } from "@/components/reveal";
 import { CountUp } from "@/components/count-up";
 import { SiteHeader } from "@/components/site-header";
+import { PeopleHelpedSection } from "@/components/people-helped-section";
 import { ACTIVE_LOCALITY_SLUG } from "@/lib/locality";
 import { OPEN_MODE } from "@/lib/open-mode";
 
@@ -462,6 +463,9 @@ export default async function LandingPage({
             ))}
           </div>
         </section>
+
+        {/* People Helped & Community Impact Section */}
+        <PeopleHelpedSection />
 
         {/* Tenant Journey Steps */}
         <section className="border-t border-border/60 py-20">
