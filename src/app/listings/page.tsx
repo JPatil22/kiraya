@@ -111,21 +111,6 @@ export default async function ListingsPage({
           </span>
         </Link>
 
-        {/* Live Viewer Activity Banner */}
-        <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-emerald-500/25 bg-emerald-500/5 px-4 py-2.5 text-xs text-emerald-900 dark:text-emerald-200 shadow-2xs">
-          <div className="flex items-center gap-2">
-            <span className="relative flex size-2">
-              <span className="absolute inline-flex size-full animate-ping rounded-full bg-emerald-400 opacity-75" />
-              <span className="relative inline-flex size-2 rounded-full bg-emerald-500" />
-            </span>
-            <span className="font-bold text-emerald-800 dark:text-emerald-300">Live Viewer Activity:</span>
-            <span>2 people browsing verified Pune flats right now</span>
-          </div>
-          <span className="text-[11px] text-emerald-700/80 dark:text-emerald-400/80 font-medium">
-            Zero telemarketer phone leaks guaranteed
-          </span>
-        </div>
-
         <ListingFilterBar filters={filters} areas={areas} />
 
         {listings.length === 0 ? (

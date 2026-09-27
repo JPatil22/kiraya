@@ -24,7 +24,6 @@ import { BrandMark } from "@/components/brand-mark";
 import { Reveal } from "@/components/reveal";
 import { CountUp } from "@/components/count-up";
 import { SiteHeader } from "@/components/site-header";
-import { PeopleHelpedSection } from "@/components/people-helped-section";
 import { ACTIVE_LOCALITY_SLUG } from "@/lib/locality";
 import { OPEN_MODE } from "@/lib/open-mode";
 
@@ -340,9 +339,6 @@ export default async function LandingPage({
           </div>
         </div>
       </section>
-
-      {/* Day 4 Launch Progress & Community Impact Section */}
-      <PeopleHelpedSection />
 
       {/* Trust & Truth Proof Strip */}
       <section className="border-b border-border/60 bg-muted/20 py-8">
