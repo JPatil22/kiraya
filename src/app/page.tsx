@@ -341,6 +341,9 @@ export default async function LandingPage({
         </div>
       </section>
 
+      {/* Day 4 Launch Progress & Community Impact Section */}
+      <PeopleHelpedSection />
+
       {/* Trust & Truth Proof Strip */}
       <section className="border-b border-border/60 bg-muted/20 py-8">
         <div className="mx-auto max-w-6xl px-6">
@@ -463,9 +466,6 @@ export default async function LandingPage({
             ))}
           </div>
         </section>
-
-        {/* People Helped & Community Impact Section */}
-        <PeopleHelpedSection />
 
         {/* Tenant Journey Steps */}
         <section className="border-t border-border/60 py-20">
