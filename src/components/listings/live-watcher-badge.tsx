@@ -1,19 +1,26 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Eye, Flame, ShieldCheck } from "lucide-react";
+import { Flame, ShieldCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 /**
- * Returns a modest, realistic viewer count (1-3) appropriate for early launch phase.
+ * Returns a modest, realistic viewer count (1-4) or null for some cards so not
+ * every single card carries the badge simultaneously.
  */
-function getInitialWatcherCount(id: string): number {
+function getWatcherInfo(id: string): { count: number; show: boolean } {
   let hash = 0;
   for (let i = 0; i < id.length; i++) {
     hash = (hash << 5) - hash + id.charCodeAt(i);
     hash |= 0;
   }
-  return 1 + (Math.abs(hash) % 3); // Returns 1, 2, or 3
+  const absHash = Math.abs(hash);
+  
+  // Show badge on ~60% of listings so the feed feels natural and uncluttered
+  const show = absHash % 10 < 6; 
+  const count = 1 + (absHash % 4); // Returns 1, 2, 3, or 4
+
+  return { count, show };
 }
 
 export function LiveWatcherBadge({
@@ -25,7 +32,10 @@ export function LiveWatcherBadge({
   variant?: "compact" | "detailed";
   className?: string;
 }) {
-  const [count, setCount] = useState<number>(() => getInitialWatcherCount(propertyId));
+  const [{ count, show }] = useState(() => getWatcherInfo(propertyId));
+
+  // If this card isn't picked for active badge, render nothing (prevents repetitive clutter)
+  if (!show && variant === "compact") return null;
 
   if (variant === "compact") {
     return (
@@ -40,7 +50,7 @@ export function LiveWatcherBadge({
           <span className="relative inline-flex size-2 rounded-full bg-emerald-500" />
         </span>
         <Flame className="size-3 text-emerald-600 dark:text-emerald-400 fill-emerald-500/30" />
-        <span>{count} looking now</span>
+        <span>{count} {count === 1 ? "person" : "people"} looking</span>
       </span>
     );
   }
