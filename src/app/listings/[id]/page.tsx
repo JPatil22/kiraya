@@ -619,7 +619,7 @@ export default async function ListingDetailPage({
 
                 {/* Direct Contact Owner or Unlock */}
                 {user && !isOwnListing && listing.availability !== "rented" ? (
-                  <div className="pt-2 border-t border-border/60">
+                  <div id="contact-card" className="pt-2 border-t border-border/60 scroll-mt-24">
                     <ContactOwner
                       propertyId={listing.id}
                       posterName={listing.posted_by_name}
@@ -711,9 +711,10 @@ export default async function ListingDetailPage({
               {formatINR(listing.move_in_cost)} move-in
             </div>
           </div>
-          <div className="w-1/2">
+          <div className="w-1/2 shrink-0">
             {user && !isOwnListing && listing.availability !== "rented" ? (
               <ContactOwner
+                compact
                 propertyId={listing.id}
                 posterName={listing.posted_by_name}
                 posterRole={listing.posted_by_role}

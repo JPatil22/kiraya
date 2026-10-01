@@ -26,6 +26,7 @@ export function ContactOwner({
   contactName = null,
   sourcedBrokerName = null,
   isSourced = false,
+  compact = false,
 }: {
   propertyId: string;
   posterName: string | null;
@@ -44,6 +45,12 @@ export function ContactOwner({
    */
   sourcedBrokerName?: string | null;
   isSourced?: boolean;
+  /**
+   * Button only, for the mobile bottom bar. The full card (with the privacy
+   * note) still renders in the page body, so nothing is hidden — just not
+   * repeated in a strip that has to stay small.
+   */
+  compact?: boolean;
 }) {
   const [state, action, pending] = useActionState(requestContact, null);
   const [showMessage, setShowMessage] = useState(false);
@@ -68,6 +75,35 @@ export function ContactOwner({
   // NEVER use synthetic dev poster names (like "Imran Sheikh") for sourced listings.
   const who = realName ?? (isSourced ? "the broker" : (posterName ?? fallbackTitle));
   const revealedWho = realName ?? (isSourced ? "the broker" : (posterName ?? fallbackTitle));
+
+  if (compact) {
+    const isUnlocked = unlocked || state?.ok;
+    const href = isUnlocked ? telHref(phone) : null;
+    if (isUnlocked) {
+      return href ? (
+        <Button asChild className="h-10 w-full font-semibold">
+          <a href={href}>
+            <Phone /> Call {phone}
+          </a>
+        </Button>
+      ) : (
+        <Button asChild variant="outline" className="h-10 w-full">
+          <a href="#contact-card">See contact</a>
+        </Button>
+      );
+    }
+    return (
+      <form action={action}>
+        <input type="hidden" name="propertyId" value={propertyId} />
+        <Button type="submit" disabled={pending} className="h-10 w-full font-semibold">
+          <Phone /> {pending ? "Getting…" : "Get contact"}
+        </Button>
+        {state?.error ? (
+          <p className="mt-1 text-[11px] text-destructive">{state.error}</p>
+        ) : null}
+      </form>
+    );
+  }
 
   if (unlocked || state?.ok) {
     const href = telHref(phone);
