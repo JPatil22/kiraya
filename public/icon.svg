@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#4F46E5"/>
+      <stop offset="100%" stop-color="#3730A3"/>
+    </linearGradient>
+    <linearGradient id="borderGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#818CF8" stop-opacity="0.6"/>
+      <stop offset="100%" stop-color="#312E81" stop-opacity="0.8"/>
+    </linearGradient>
+  </defs>
+  <!-- Background squircle -->
+  <rect x="8" y="8" width="496" height="496" rx="116" fill="url(#bg)" stroke="url(#borderGrad)" stroke-width="12"/>
+  <!-- Devanagari Ki Mark -->
+  <text x="50%" y="54%" text-anchor="middle" dominant-baseline="middle"
+        fill="#FFFFFF" font-family="'Nirmala UI', 'Mangal', 'Segoe UI', -apple-system, sans-serif"
+        font-weight="800" font-size="250"
+        style="text-shadow: 0 4px 12px rgba(15, 23, 42, 0.35);">कि</text>
+</svg>

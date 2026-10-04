@@ -1,0 +1,28 @@
+import type { MetadataRoute } from "next";
+
+export default function manifest(): MetadataRoute.Manifest {
+  return {
+    name: "Kiraya — Verified Zero-Brokerage Rentals",
+    short_name: "Kiraya",
+    description:
+      "Tenant-first zero-brokerage rental platform in Pune. Verified flats and direct flatmates.",
+    start_url: "/",
+    display: "standalone",
+    background_color: "#0B0F19",
+    theme_color: "#4F46E5",
+    icons: [
+      {
+        src: "/web-app-manifest-192x192.png",
+        sizes: "192x192",
+        type: "image/png",
+        purpose: "maskable",
+      },
+      {
+        src: "/web-app-manifest-512x512.png",
+        sizes: "512x512",
+        type: "image/png",
+        purpose: "maskable",
+      },
+    ],
+  };
+}
