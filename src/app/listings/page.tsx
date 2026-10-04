@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, Inbox, Sparkles } from "lucide-react";
+import { ArrowRight, Inbox, MapPin, Sparkles } from "lucide-react";
 import { SiteHeader } from "@/components/site-header";
 import { ListingCard } from "@/components/listings/listing-card";
 import { ListingFilterBar } from "@/components/listings/listing-filters";
@@ -51,6 +51,23 @@ export default async function ListingsPage({
   // Only signed-in people get a save affordance, and it costs one extra query
   // for the whole page rather than one per card.
   const savedIds = user ? await getShortlistIds(supabase, user.id) : null;
+
+  // Check if search query or selected area matches a known locality hub
+  const matchedArea = areas.find((a) => {
+    if (filters.area && filters.area !== "any" && (a.slug === filters.area || a.id === filters.area)) {
+      return true;
+    }
+    if (filters.q) {
+      const qLower = filters.q.toLowerCase().trim();
+      return (
+        a.slug.toLowerCase() === qLower ||
+        a.name.toLowerCase() === qLower ||
+        qLower.includes(a.name.toLowerCase()) ||
+        qLower.includes(a.slug.toLowerCase())
+      );
+    }
+    return false;
+  });
 
   const { listings, total, pageCount } = result;
 
@@ -110,6 +127,30 @@ export default async function ListingsPage({
             Open Kiraya Direct <ArrowRight className="size-3.5" />
           </span>
         </Link>
+
+        {matchedArea && (
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-2xl border border-primary/20 bg-primary/5 p-3.5 sm:p-4 transition">
+            <div className="flex items-center gap-3">
+              <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                <MapPin className="size-4.5" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-foreground">
+                  Explore complete rent benchmarks &amp; verified inventory in {matchedArea.name}
+                </p>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  View average rents, deposit ranges, BHK splits, and neighborhood insights.
+                </p>
+              </div>
+            </div>
+            <Link
+              href={`/rent/pune/${matchedArea.slug}`}
+              className="inline-flex items-center gap-1 text-xs font-bold text-primary hover:underline shrink-0"
+            >
+              Open {matchedArea.name} Locality Hub <ArrowRight className="size-3.5" />
+            </Link>
+          </div>
+        )}
 
         <ListingFilterBar filters={filters} areas={areas} />
 

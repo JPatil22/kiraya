@@ -69,20 +69,54 @@ export const metadata: Metadata = {
 
 const jsonLd = {
   "@context": "https://schema.org",
-  "@type": "RealEstateAgent",
-  name: "Kiraya",
-  url: siteUrl,
-  logo: `${siteUrl}/images/hero-apartment.jpg`,
-  description:
-    "Kiraya is a tenant-first zero-brokerage rental platform operating in Pune, India. Connecting working professionals directly with verified owners and shared flatmates in Wakad, Baner, Hinjewadi, and Kharadi.",
-  address: {
-    "@type": "PostalAddress",
-    addressLocality: "Pune",
-    addressRegion: "Maharashtra",
-    addressCountry: "IN",
-  },
-  areaServed: ["Wakad", "Baner", "Hinjewadi", "Kharadi", "Kothrud", "Pune"],
-  priceRange: "₹₹",
+  "@graph": [
+    {
+      "@type": "WebSite",
+      "@id": `${siteUrl}/#website`,
+      name: "Kiraya",
+      url: siteUrl,
+      description:
+        "Tenant-first zero-brokerage rental platform in Pune. Verified flats and direct flatmates.",
+      potentialAction: {
+        "@type": "SearchAction",
+        target: {
+          "@type": "EntryPoint",
+          urlTemplate: `${siteUrl}/listings?q={search_term_string}`,
+        },
+        "query-input": "required name=search_term_string",
+      },
+    },
+    {
+      "@type": "RealEstateAgent",
+      "@id": `${siteUrl}/#organization`,
+      name: "Kiraya",
+      url: siteUrl,
+      logo: `${siteUrl}/images/hero-apartment.jpg`,
+      description:
+        "Kiraya is a tenant-first zero-brokerage rental platform operating in Pune, India. Connecting working professionals directly with verified owners and shared flatmates in Wakad, Baner, Hinjewadi, and Kharadi.",
+      address: {
+        "@type": "PostalAddress",
+        addressLocality: "Pune",
+        addressRegion: "Maharashtra",
+        addressCountry: "IN",
+      },
+      areaServed: [
+        "Wakad",
+        "Baner",
+        "Hinjewadi",
+        "Kharadi",
+        "Kothrud",
+        "Viman Nagar",
+        "Aundh",
+        "Balewadi",
+        "Magarpatta",
+        "Hadapsar",
+        "Pimple Saudagar",
+        "Pune",
+      ],
+      priceRange: "₹₹",
+    },
+  ],
 };
 
 export default function RootLayout({
