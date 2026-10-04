@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { format } from "date-fns";
 import { AlertTriangle, Camera, ImageOff, MapPin } from "lucide-react";
@@ -23,10 +24,12 @@ function cleanDisplayTitle(rawTitle: string): string {
 export function ListingCard({
   listing,
   saved,
+  priority = false,
 }: {
   listing: ListingPublic;
   /** Omitted when nobody is signed in — no save affordance for a stranger. */
   saved?: boolean;
+  priority?: boolean;
 }) {
   const photoWarning = listing.cover_photo_path
     ? photoAgeWarning(listing.cover_photo_captured_at, listing.last_verified_at)
@@ -49,14 +52,21 @@ export function ListingCard({
         {/* Photo is the hook — big 4:3 frame so building and interior photos are never cropped. */}
         <div className="relative aspect-[4/3] overflow-hidden bg-muted">
           {listing.cover_photo_path ? (
-            /* Storage host + fixture data: URLs both defeat next/image. */
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={photoUrl(listing.cover_photo_thumb_path ?? listing.cover_photo_path)}
-              alt=""
-              loading="lazy"
-              className="size-full object-cover transition duration-500 group-hover:scale-[1.04]"
-            />
+            (() => {
+              const src = photoUrl(listing.cover_photo_thumb_path ?? listing.cover_photo_path);
+              const isDataUrl = src.startsWith("data:");
+              return (
+                <Image
+                  src={src}
+                  alt={displayTitle || "Apartment rental in Pune"}
+                  fill
+                  priority={priority}
+                  unoptimized={isDataUrl}
+                  sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 380px"
+                  className="size-full object-cover transition duration-500 group-hover:scale-[1.04]"
+                />
+              );
+            })()
           ) : (
             <div className="flex size-full flex-col items-center justify-center gap-1 text-muted-foreground/50">
               <ImageOff className="size-7" />

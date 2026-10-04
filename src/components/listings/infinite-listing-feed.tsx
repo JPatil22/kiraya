@@ -114,10 +114,11 @@ export function InfiniteListingFeed({
 
       {/* Grid of Listings */}
       <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-        {listings.map((listing) => (
+        {listings.map((listing, index) => (
           <ListingCard
             key={listing.id}
             listing={listing}
+            priority={index === 0}
             saved={savedSet ? savedSet.has(listing.id) : undefined}
           />
         ))}

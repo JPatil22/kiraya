@@ -234,10 +234,11 @@ export default async function LocalityFacetPage({ params }: PageProps) {
 
           {listings.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {listings.map((item) => (
+              {listings.map((item, idx) => (
                 <ListingCard
                   key={item.id}
                   listing={item}
+                  priority={idx === 0}
                   saved={savedIds ? savedIds.has(item.id) : undefined}
                 />
               ))}

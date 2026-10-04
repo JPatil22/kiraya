@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import Image from "next/image";
 import { format } from "date-fns";
 import { CameraOff, ChevronLeft, ChevronRight, Clock, Maximize2, X } from "lucide-react";
 import { photoAgeWarning, photoUrl } from "@/lib/photos";
@@ -193,17 +194,33 @@ function Frame({
       onClick={onClick}
       className="group relative cursor-pointer overflow-hidden rounded-xl border border-border/70 bg-card transition hover:border-primary/50 hover:shadow-md"
     >
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src={photoUrl(photo.storage_path)}
-        alt={label}
-        loading={priority ? "eager" : "lazy"}
+      <div
         className={
           compact
-            ? "aspect-square w-full bg-muted object-cover transition duration-300 group-hover:scale-105"
-            : "aspect-[16/10] w-full bg-muted object-cover transition duration-300 group-hover:scale-102"
+            ? "relative aspect-square w-full bg-muted overflow-hidden"
+            : "relative aspect-[16/10] w-full bg-muted overflow-hidden"
         }
-      />
+      >
+        {(() => {
+          const src = photoUrl(photo.storage_path);
+          const isDataUrl = src.startsWith("data:");
+          return (
+            <Image
+              src={src}
+              alt={label}
+              fill
+              priority={priority}
+              unoptimized={isDataUrl}
+              sizes={
+                compact
+                  ? "(max-width: 640px) 50vw, 260px"
+                  : "(max-width: 768px) 100vw, 760px"
+              }
+              className="object-cover transition duration-300 group-hover:scale-105"
+            />
+          );
+        })()}
+      </div>
 
       {/* Expand Hover Badge */}
       <div className="absolute right-3 top-3 rounded-full bg-black/50 p-1.5 text-white opacity-0 transition duration-200 group-hover:opacity-100 backdrop-blur-xs">
