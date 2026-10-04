@@ -148,6 +148,61 @@ const jsonLd = {
       ],
       priceRange: "₹₹",
     },
+    {
+      "@type": "ItemList",
+      "@id": `${siteUrl}/#navigation`,
+      name: "Main Sitelinks Navigation",
+      itemListElement: [
+        {
+          "@type": "SiteNavigationElement",
+          position: 1,
+          name: "Kiraya Direct (₹0 Brokerage)",
+          description:
+            "Peer-to-peer flatmates and verified owner rentals for working professionals.",
+          url: `${siteUrl}/direct`,
+        },
+        {
+          "@type": "SiteNavigationElement",
+          position: 2,
+          name: "Verified Rentals in Pune",
+          description:
+            "Browse physically verified 1BHK, 2BHK, and 3BHK rental apartments in Pune.",
+          url: `${siteUrl}/listings`,
+        },
+        {
+          "@type": "SiteNavigationElement",
+          position: 3,
+          name: "Flats for Rent in Wakad",
+          description:
+            "Verified zero-brokerage apartments and direct owner flats in Wakad, Pune.",
+          url: `${siteUrl}/rent/pune/wakad`,
+        },
+        {
+          "@type": "SiteNavigationElement",
+          position: 4,
+          name: "Flats for Rent in Baner",
+          description:
+            "Verified zero-brokerage flats and rental homes in Baner, Pune.",
+          url: `${siteUrl}/rent/pune/baner`,
+        },
+        {
+          "@type": "SiteNavigationElement",
+          position: 5,
+          name: "Flats for Rent in Hinjewadi",
+          description:
+            "Verified flats near Hinjewadi Phase 1, 2, and 3 IT parks.",
+          url: `${siteUrl}/rent/pune/hinjewadi`,
+        },
+        {
+          "@type": "SiteNavigationElement",
+          position: 6,
+          name: "Flats for Rent in Kharadi",
+          description:
+            "Verified rental apartments and shared flats in Kharadi, Pune.",
+          url: `${siteUrl}/rent/pune/kharadi`,
+        },
+      ],
+    },
   ],
 };
 

@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowRight, Inbox, MapPin, Sparkles } from "lucide-react";
 import { SiteHeader } from "@/components/site-header";
@@ -14,6 +15,12 @@ import { listingFilterSchema } from "@/lib/validators";
 import { InfiniteListingFeed } from "@/components/listings/infinite-listing-feed";
 
 export const dynamic = "force-dynamic";
+
+export const metadata: Metadata = {
+  title: "Verified Rentals in Pune — Zero Brokerage Apartments & Flats",
+  description:
+    "Browse physically verified 1BHK, 2BHK, and 3BHK rental apartments in Pune. Strictly 100% verified availability, zero broker spam, and direct owner connections.",
+};
 
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
 
