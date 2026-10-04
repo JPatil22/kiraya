@@ -208,7 +208,7 @@ export default async function LandingPage({
               {PUNE_LOCALITIES.slice(0, 5).map((loc) => (
                 <Link
                   key={loc.slug}
-                  href={`/listings?area=${loc.slug}`}
+                  href={`/rent/pune/${loc.slug}`}
                   className="rounded-md border border-stone-200 dark:border-stone-800 bg-white/80 dark:bg-stone-900/80 px-2.5 py-1 text-stone-700 dark:text-stone-300 transition hover:border-stone-400 dark:hover:border-stone-600 hover:text-stone-900 dark:hover:text-stone-100 shadow-2xs"
                 >
                   {loc.name}
@@ -441,7 +441,7 @@ export default async function LandingPage({
             {PUNE_LOCALITIES.map((loc, i) => (
               <Reveal key={loc.name} delay={i * 70}>
                 <Link
-                  href={`/listings?area=${loc.slug}`}
+                  href={`/rent/pune/${loc.slug}`}
                   className="glass-card group block rounded-xl p-5 hover:border-primary/40"
                 >
                   <div className="flex items-center justify-between">
@@ -546,6 +546,39 @@ export default async function LandingPage({
               </Link>
             </div>
           </div>
+
+          {/* Pune Neighborhood Directory (SEO Silo) */}
+          <div className="mt-8 pt-6 border-t border-border/40 space-y-3">
+            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              Verified Zero-Brokerage Flats Across Pune
+            </p>
+            <div className="flex flex-wrap gap-x-4 gap-y-1.5 text-xs text-muted-foreground">
+              <Link href="/rent/pune/wakad" className="hover:text-primary transition-colors">Flats in Wakad</Link>
+              <span>·</span>
+              <Link href="/rent/pune/baner" className="hover:text-primary transition-colors">Flats in Baner</Link>
+              <span>·</span>
+              <Link href="/rent/pune/hinjewadi" className="hover:text-primary transition-colors">Flats in Hinjewadi</Link>
+              <span>·</span>
+              <Link href="/rent/pune/kharadi" className="hover:text-primary transition-colors">Flats in Kharadi</Link>
+              <span>·</span>
+              <Link href="/rent/pune/kothrud" className="hover:text-primary transition-colors">Flats in Kothrud</Link>
+              <span>·</span>
+              <Link href="/rent/pune/viman-nagar" className="hover:text-primary transition-colors">Flats in Viman Nagar</Link>
+              <span>·</span>
+              <Link href="/rent/pune/aundh" className="hover:text-primary transition-colors">Flats in Aundh</Link>
+              <span>·</span>
+              <Link href="/rent/pune/balewadi" className="hover:text-primary transition-colors">Flats in Balewadi</Link>
+              <span>·</span>
+              <Link href="/rent/pune/magarpatta" className="hover:text-primary transition-colors">Flats in Magarpatta</Link>
+              <span>·</span>
+              <Link href="/rent/pune/hadapsar" className="hover:text-primary transition-colors">Flats in Hadapsar</Link>
+              <span>·</span>
+              <Link href="/rent/pune/pimple-saudagar" className="hover:text-primary transition-colors">Flats in Pimple Saudagar</Link>
+              <span>·</span>
+              <Link href="/rent/pune/koregaon-park" className="hover:text-primary transition-colors">Flats in Koregaon Park</Link>
+            </div>
+          </div>
+
           <div className="mt-8 pt-6 border-t border-border/40 text-center text-xs text-muted-foreground">
             © {new Date().getFullYear()} Kiraya. All rights reserved. Built for truth.
           </div>
