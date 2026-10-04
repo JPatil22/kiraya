@@ -12,6 +12,7 @@ import { friendlyDbError } from "@/lib/errors";
 import { CONTACT_DAILY_LIMIT, countRecentExchanges, getMyExchange } from "@/lib/contact";
 import { checkboxOn, getPosterRole, resolveBrokerage } from "@/lib/brokerage";
 import { parseLocation } from "@/lib/geo";
+import { notifyGoogleIndexing } from "@/lib/google-indexing";
 import type { AvailabilityStatus, BhkType } from "@/types/database";
 
 export type MismatchState = { error?: string; ok?: boolean } | null;
@@ -160,6 +161,12 @@ export async function confirmListing(
     .eq("id", propertyId);
 
   if (updateError) return { error: friendlyDbError(updateError) };
+
+  if (availability === "rented") {
+    void notifyGoogleIndexing(propertyId, "URL_DELETED");
+  } else if (availability === "available") {
+    void notifyGoogleIndexing(propertyId, "URL_UPDATED");
+  }
 
   revalidatePath(`/listings/${propertyId}`);
   revalidatePath("/listings");

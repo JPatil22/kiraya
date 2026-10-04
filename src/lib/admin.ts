@@ -10,6 +10,7 @@ import type {
 } from "@/types/database";
 import { logRead } from "@/lib/errors";
 import { autoPromoteStagedPhotos } from "@/lib/photos";
+import { notifyGoogleIndexing } from "@/lib/google-indexing";
 
 /**
  * MVP5 — the operator's cockpit.
@@ -161,6 +162,7 @@ export async function reviewListing(
   // If approved, auto-promote any unassigned staged photos into property_photos so the live listing shows its photos!
   if (approve) {
     await autoPromoteStagedPhotos(supabase, propertyId, adminId);
+    void notifyGoogleIndexing(propertyId, "URL_UPDATED");
   }
 
   return null;

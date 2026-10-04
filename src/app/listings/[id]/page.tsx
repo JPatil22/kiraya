@@ -1,5 +1,6 @@
+import type { Metadata } from "next";
 import Link from "next/link";
-import { notFound, redirect } from "next/navigation";
+import { notFound } from "next/navigation";
 import { format } from "date-fns";
 import {
   AlertTriangle,
@@ -12,6 +13,7 @@ import {
   History,
   Info,
   KeyRound,
+  Lock,
   MapPin,
   Pencil,
   ReceiptText,
@@ -64,6 +66,64 @@ import {
 
 export const dynamic = "force-dynamic";
 
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}): Promise<Metadata> {
+  const { id } = await params;
+  const supabase = await getDataClient();
+  const listing = await getPublicListing(supabase, id);
+  if (!listing) {
+    return {
+      title: "Listing Not Found | Kiraya",
+    };
+  }
+
+  const bhkLabel = labelFor(BHK_OPTIONS, listing.bhk);
+  const furnishingLabel = labelFor(FURNISHING_OPTIONS, listing.furnishing);
+  const areaName = listing.area_name ?? "Pune";
+  const rentFormatted = formatINR(listing.all_in_monthly);
+  const depositFormatted = formatINR(listing.deposit);
+  const isZeroBrokerage = listing.brokerage === 0;
+  const brokerageKeyword = isZeroBrokerage ? "Zero Brokerage" : "Disclosed Brokerage";
+
+  const title = `${bhkLabel} Flat for Rent in ${areaName}, Pune — ${rentFormatted}/mo | Kiraya`;
+  const description = `Verified ${bhkLabel} flat for rent in ${areaName}, Pune. Monthly rent: ${rentFormatted}, Security deposit: ${depositFormatted}. Furnishing: ${furnishingLabel}. ${brokerageKeyword}, physically verified with 100% itemized pricing.`;
+
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://www.kirayah.xyz";
+  const pageUrl = `${siteUrl}/listings/${id}`;
+
+  return {
+    title,
+    description,
+    keywords: [
+      `${bhkLabel} flat rent ${areaName}`,
+      `flats for rent in ${areaName} pune`,
+      `rent in ${areaName}`,
+      "zero brokerage flats pune",
+      "verified flats pune",
+      "kiraya rentals",
+    ],
+    openGraph: {
+      title,
+      description,
+      url: pageUrl,
+      type: "website",
+      locale: "en_IN",
+      siteName: "Kiraya",
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+    },
+    alternates: {
+      canonical: pageUrl,
+    },
+  };
+}
+
 export default async function ListingDetailPage({
   params,
   searchParams,
@@ -76,11 +136,6 @@ export default async function ListingDetailPage({
   const supabase = await getDataClient();
   const listing = await getPublicListing(supabase, id);
   if (!listing) notFound();
-
-  const sessionUser = await getSessionUser(supabase);
-  if (!sessionUser) {
-    redirect(`/login?redirectTo=/listings/${id}`);
-  }
 
   // Postgres numerics arrive as strings through PostgREST often enough to matter.
   const coords = toCoords(listing.latitude, listing.longitude);
@@ -96,18 +151,21 @@ export default async function ListingDetailPage({
     getPublicAccuracy(supabase, id),
     getReportsForProperty(supabase, id),
     getSessionUser(supabase).then(async (u) => {
-      const isOther = Boolean(u) && u!.id !== listing.posted_by;
+      if (!u) {
+        return { user: null, report: null, exchange: null, saved: false };
+      }
+      const isOther = u.id !== listing.posted_by;
       const [report, exchange, saved] = await Promise.all([
-        isOther ? getMyOpenReport(supabase, id, u!.id) : null,
-        isOther ? getMyExchange(supabase, id, u!.id) : null,
-        u ? isShortlisted(supabase, u.id, id) : false,
+        isOther ? getMyOpenReport(supabase, id, u.id) : null,
+        isOther ? getMyExchange(supabase, id, u.id) : null,
+        isShortlisted(supabase, u.id, id),
       ]);
       return { user: u, report, exchange, saved };
     }),
   ]);
 
   const { user, report: existingReport, exchange, saved } = userWithReport;
-  const isOwnListing = user?.id === listing.posted_by;
+  const isOwnListing = Boolean(user) && user?.id === listing.posted_by;
   const isAdmin = user?.role === "admin";
 
   // The number is only fetched once an exchange exists — 0010's policy is what
@@ -145,11 +203,60 @@ export default async function ListingDetailPage({
     (isVisitDone(visit) ||
       Date.parse(exchange!.created_at) <= Date.now() - ASK_AFTER_DAYS * 86_400_000);
 
-  // Posting your own listing doesn't entitle you to report it.
   const canReport = Boolean(user) && !isOwnListing;
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://www.kirayah.xyz";
+  const listingJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "RealEstateListing",
+    name: listing.title,
+    description:
+      listing.description ||
+      `${labelFor(BHK_OPTIONS, listing.bhk)} flat for rent in ${listing.area_name || "Pune"}`,
+    url: `${siteUrl}/listings/${id}`,
+    datePosted: listing.created_at,
+    offers: {
+      "@type": "Offer",
+      price: listing.all_in_monthly,
+      priceCurrency: "INR",
+      priceSpecification: {
+        "@type": "UnitPriceSpecification",
+        price: listing.all_in_monthly,
+        priceCurrency: "INR",
+        unitText: "MONTH",
+      },
+      deposit: listing.deposit,
+      brokerageFee:
+        listing.brokerage === 0 ? "₹0 (Zero Brokerage)" : formatINR(listing.brokerage),
+      advancePayment: listing.move_in_cost,
+      availability:
+        listing.availability === "available"
+          ? "https://schema.org/InStock"
+          : "https://schema.org/OutOfStock",
+    },
+    contentLocation: {
+      "@type": "PostalAddress",
+      addressLocality: listing.area_name || "Pune",
+      addressRegion: "Maharashtra",
+      addressCountry: "IN",
+      ...(listing.address_line ? { streetAddress: listing.address_line } : {}),
+    },
+    ...(coords
+      ? {
+          geo: {
+            "@type": "GeoCoordinates",
+            latitude: coords.lat,
+            longitude: coords.lng,
+          },
+        }
+      : {}),
+  };
 
   return (
     <div className="relative min-h-dvh overflow-hidden bg-background">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(listingJsonLd) }}
+      />
       {/* Background ambient lighting with fluid auroras */}
       <div
         aria-hidden
@@ -203,12 +310,18 @@ export default async function ListingDetailPage({
             <Badge variant={listing.availability === "available" ? "secondary" : "outline"}>
               {labelFor(AVAILABILITY_OPTIONS, listing.availability)}
             </Badge>
-            <PostedByBadge
-              role={listing.posted_by_role}
-              name={listing.posted_by_name}
-              showName
-              sourcedBrokerName={listing.sourced_broker_name}
-            />
+            {user ? (
+              <PostedByBadge
+                role={listing.posted_by_role}
+                name={listing.posted_by_name}
+                showName
+                sourcedBrokerName={listing.sourced_broker_name}
+              />
+            ) : (
+              <Badge variant="outline" className="gap-1 font-medium text-xs">
+                {listing.posted_by_role === "owner" ? "Direct Owner Listing" : "Verified Listing"}
+              </Badge>
+            )}
             {listing.has_warning ? (
               <Badge variant="destructive" className="gap-1">
                 <AlertTriangle className="size-3.5" />
@@ -399,24 +512,58 @@ export default async function ListingDetailPage({
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <CostBreakdown costs={listing} />
-                {accuracy ? <VisitRecord accuracy={accuracy} /> : null}
+                {user ? (
+                  <>
+                    <CostBreakdown costs={listing} />
+                    {accuracy ? <VisitRecord accuracy={accuracy} /> : null}
 
-                {depositContext ? (
-                  <DepositContext
-                    context={depositContext}
-                    bhkLabel={labelFor(BHK_OPTIONS, listing.bhk)}
-                    localityName={listing.area_name ?? "this part of the city"}
-                  />
-                ) : null}
+                    {depositContext ? (
+                      <DepositContext
+                        context={depositContext}
+                        bhkLabel={labelFor(BHK_OPTIONS, listing.bhk)}
+                        localityName={listing.area_name ?? "this part of the city"}
+                      />
+                    ) : null}
 
-                {priceContext ? (
-                  <PriceContext
-                    context={priceContext}
-                    bhkLabel={labelFor(BHK_OPTIONS, listing.bhk)}
-                    localityName={listing.area_name ?? "this part of the city"}
-                  />
-                ) : null}
+                    {priceContext ? (
+                      <PriceContext
+                        context={priceContext}
+                        bhkLabel={labelFor(BHK_OPTIONS, listing.bhk)}
+                        localityName={listing.area_name ?? "this part of the city"}
+                      />
+                    ) : null}
+                  </>
+                ) : (
+                  <div className="space-y-4">
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <div className="rounded-xl border border-dashed border-border/80 bg-muted/20 p-4">
+                        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Monthly Rent</p>
+                        <p className="mt-1 text-2xl font-extrabold text-foreground flex items-center gap-1.5">
+                          <Lock className="size-5 text-primary" />
+                          <span>₹••,•••</span>
+                          <span className="text-xs font-normal text-muted-foreground">/mo</span>
+                        </p>
+                        <p className="mt-1 text-xs text-muted-foreground">Sign in to unlock exact rent &amp; maintenance.</p>
+                      </div>
+                      <div className="rounded-xl border border-dashed border-border/80 bg-muted/10 p-4 flex flex-col justify-between">
+                        <div>
+                          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Move-in Breakdown</p>
+                          <p className="mt-1 text-sm font-medium text-muted-foreground flex items-center gap-1.5">
+                            <Lock className="size-3.5 text-primary" />
+                            <span>Deposit &amp; move-in fees locked</span>
+                          </p>
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-2">Sign in to view exact security deposit, brokerage status &amp; itemized charges.</p>
+                      </div>
+                    </div>
+                    <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 text-center">
+                      <p className="text-xs font-semibold text-foreground">Want the 100% itemized deposit &amp; price benchmark?</p>
+                      <Button asChild size="sm" className="mt-2.5 font-semibold">
+                        <Link href={`/login?redirectTo=/listings/${listing.id}`}>Sign in with Mobile (OTP)</Link>
+                      </Button>
+                    </div>
+                  </div>
+                )}
               </CardContent>
             </Card>
 
@@ -433,7 +580,7 @@ export default async function ListingDetailPage({
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                   <div className="rounded-xl border border-border/70 bg-muted/30 p-3">
                     <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                      Availability
+                       Availability
                     </p>
                     <p className="mt-1 text-sm font-semibold text-foreground flex items-center gap-1.5">
                       <CalendarDays className="size-4 text-primary" />
@@ -468,11 +615,16 @@ export default async function ListingDetailPage({
                     <MapPin className="size-4 text-primary shrink-0 mt-0.5" />
                     <div>
                       <p className="font-semibold text-foreground">
-                        {listing.area_name ?? "Locality"}
+                        {listing.area_name ?? "Locality in Pune"}
                       </p>
-                      {listing.address_line ? (
+                      {user && listing.address_line ? (
                         <p className="text-muted-foreground text-xs mt-0.5">
                           {listing.address_line}
+                        </p>
+                      ) : !user ? (
+                        <p className="text-muted-foreground text-xs mt-0.5 flex items-center gap-1">
+                          <Lock className="size-3 text-primary" />
+                          <span>Exact building & society unlocked after sign in</span>
                         </p>
                       ) : null}
                     </div>
@@ -569,52 +721,96 @@ export default async function ListingDetailPage({
               {/* Pricing & Primary Action Card */}
               <div className="glass-card rounded-2xl border border-primary/25 p-6 shadow-xl shadow-primary/5 hover:border-primary/40 transition-all duration-300 space-y-5">
                 <div className="flex items-baseline justify-between border-b border-border/60 pb-4">
-                  <div>
-                    <CountUp
-                      to={listing.all_in_monthly}
-                      prefix="₹"
-                      className="text-3xl font-extrabold tabular-nums tracking-tight text-foreground"
-                    />
-                    <span className="text-sm font-medium text-muted-foreground"> /month</span>
-                  </div>
+                  {user ? (
+                    <div>
+                      <CountUp
+                        to={listing.all_in_monthly}
+                        prefix="₹"
+                        className="text-3xl font-extrabold tabular-nums tracking-tight text-foreground"
+                      />
+                      <span className="text-sm font-medium text-muted-foreground"> /month</span>
+                    </div>
+                  ) : (
+                    <div>
+                      <span className="text-2xl sm:text-3xl font-extrabold tracking-tight text-foreground flex items-center gap-1.5">
+                        <Lock className="size-5 text-primary" />
+                        <span>₹••,•••</span>
+                        <span className="text-sm font-normal text-muted-foreground">/mo</span>
+                      </span>
+                    </div>
+                  )}
                   <Badge variant="outline" className="font-semibold text-emerald-600 dark:text-emerald-400 border-emerald-500/30 bg-emerald-500/10">
-                    All-in cost
+                    {user ? "All-in cost" : "Rent locked"}
                   </Badge>
                 </div>
 
                 <div className="space-y-2 text-sm">
-                  <div className="flex justify-between text-muted-foreground">
-                    <span>Flat rent</span>
-                    <span className="font-medium text-foreground">{formatINR(listing.rent)}</span>
-                  </div>
-                  <div className="flex justify-between text-muted-foreground">
-                    <span>Maintenance</span>
-                    <span className="font-medium text-foreground">{formatINR(listing.maintenance_monthly)}</span>
-                  </div>
-                  <div className="flex justify-between text-muted-foreground">
-                    <span>Security deposit</span>
-                    <span className="font-medium text-foreground">{formatINR(listing.deposit)}</span>
-                  </div>
-                  {listing.brokerage > 0 ? (
+                  {user ? (
                     <div className="flex justify-between text-muted-foreground">
-                      <span>Brokerage</span>
-                      <span className="font-medium text-foreground">{formatINR(listing.brokerage)}</span>
+                      <span>Flat rent</span>
+                      <span className="font-medium text-foreground">{formatINR(listing.rent)}</span>
                     </div>
-                  ) : null}
-                  {listing.one_time_charges > 0 ? (
+                  ) : (
                     <div className="flex justify-between text-muted-foreground">
-                      <span>One-time fees</span>
-                      <span className="font-medium text-foreground">{formatINR(listing.one_time_charges)}</span>
+                      <span>Flat rent</span>
+                      <span className="text-xs font-medium text-muted-foreground flex items-center gap-1">
+                        <Lock className="size-3 text-primary" /> Sign in to view
+                      </span>
                     </div>
-                  ) : null}
-                  <div className="flex justify-between items-baseline pt-2 border-t border-border/60">
-                    <span className="font-bold text-foreground">Total move-in outlay</span>
-                    <CountUp
-                      to={listing.all_in_monthly + listing.move_in_cost}
-                      prefix="₹"
-                      className="font-extrabold text-base text-foreground tabular-nums"
-                    />
-                  </div>
+                  )}
+                  {user ? (
+                    <>
+                      <div className="flex justify-between text-muted-foreground">
+                        <span>Maintenance</span>
+                        <span className="font-medium text-foreground">{formatINR(listing.maintenance_monthly)}</span>
+                      </div>
+                      <div className="flex justify-between text-muted-foreground">
+                        <span>Security deposit</span>
+                        <span className="font-medium text-foreground">{formatINR(listing.deposit)}</span>
+                      </div>
+                      {listing.brokerage > 0 ? (
+                        <div className="flex justify-between text-muted-foreground">
+                          <span>Brokerage</span>
+                          <span className="font-medium text-foreground">{formatINR(listing.brokerage)}</span>
+                        </div>
+                      ) : null}
+                      {listing.one_time_charges > 0 ? (
+                        <div className="flex justify-between text-muted-foreground">
+                          <span>One-time fees</span>
+                          <span className="font-medium text-foreground">{formatINR(listing.one_time_charges)}</span>
+                        </div>
+                      ) : null}
+                      <div className="flex justify-between items-baseline pt-2 border-t border-border/60">
+                        <span className="font-bold text-foreground">Total move-in outlay</span>
+                        <CountUp
+                          to={listing.all_in_monthly + listing.move_in_cost}
+                          prefix="₹"
+                          className="font-extrabold text-base text-foreground tabular-nums"
+                        />
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="flex justify-between text-muted-foreground">
+                        <span>Maintenance</span>
+                        <span className="text-xs font-medium text-muted-foreground flex items-center gap-1">
+                          <Lock className="size-3 text-primary" /> Included in monthly
+                        </span>
+                      </div>
+                      <div className="flex justify-between text-muted-foreground">
+                        <span>Security deposit</span>
+                        <span className="text-xs font-medium text-muted-foreground flex items-center gap-1">
+                          <Lock className="size-3 text-primary" /> Sign in to view
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-baseline pt-2 border-t border-border/60">
+                        <span className="font-bold text-foreground">Move-in fees</span>
+                        <span className="text-xs font-medium text-muted-foreground flex items-center gap-1">
+                          <Lock className="size-3 text-primary" /> Locked
+                        </span>
+                      </div>
+                    </>
+                  )}
                 </div>
 
                 {/* Direct Contact Owner or Unlock */}
@@ -636,9 +832,12 @@ export default async function ListingDetailPage({
                     />
                   </div>
                 ) : !user ? (
-                  <div className="pt-2 border-t border-border/60">
+                  <div className="pt-3 border-t border-border/60 space-y-2.5 text-center">
+                    <p className="text-xs text-muted-foreground leading-relaxed">
+                      Verified owner phone number and move-in itemization are reserved for signed-in tenants.
+                    </p>
                     <Button asChild className="w-full h-11 font-semibold shadow-sm">
-                      <Link href="/login">Sign in to unlock phone number</Link>
+                      <Link href={`/login?redirectTo=/listings/${listing.id}`}>Sign in with Mobile to unlock</Link>
                     </Button>
                   </div>
                 ) : null}
@@ -703,12 +902,22 @@ export default async function ListingDetailPage({
       <div className="fixed bottom-0 inset-x-0 z-40 lg:hidden border-t border-border/80 bg-background/95 p-3.5 backdrop-blur-md shadow-[0_-4px_20px_rgba(0,0,0,0.1)]">
         <div className="mx-auto flex max-w-md items-center justify-between gap-3">
           <div>
-            <div className="text-lg font-extrabold text-foreground tabular-nums">
-              {formatINR(listing.all_in_monthly)}
-              <span className="text-xs font-normal text-muted-foreground"> /mo</span>
+            <div className="text-lg font-extrabold text-foreground tabular-nums flex items-center gap-1">
+              {user ? (
+                <>
+                  {formatINR(listing.all_in_monthly)}
+                  <span className="text-xs font-normal text-muted-foreground"> /mo</span>
+                </>
+              ) : (
+                <>
+                  <Lock className="size-3.5 text-primary" />
+                  <span>₹••,•••</span>
+                  <span className="text-xs font-normal text-muted-foreground"> /mo</span>
+                </>
+              )}
             </div>
             <div className="text-[11px] text-muted-foreground">
-              {formatINR(listing.move_in_cost)} move-in
+              {user ? `${formatINR(listing.move_in_cost)} move-in` : "Rent & deposit locked"}
             </div>
           </div>
           <div className="w-1/2 shrink-0">
@@ -730,7 +939,7 @@ export default async function ListingDetailPage({
               />
             ) : !user ? (
               <Button asChild className="w-full h-10 font-semibold shadow-sm text-xs">
-                <Link href="/login">Sign in to unlock</Link>
+                <Link href={`/login?redirectTo=/listings/${listing.id}`}>Sign in to unlock</Link>
               </Button>
             ) : null}
           </div>
