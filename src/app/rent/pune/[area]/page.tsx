@@ -115,11 +115,65 @@ export default async function LocalityHubPage({ params }: PageProps) {
     ],
   };
 
+  // Schema.org FAQPage for Generative AI Q&A optimization
+  const faqJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: [
+      {
+        "@type": "Question",
+        name: `What is the average rent for flats in ${stats.areaName}, Pune?`,
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: `The average monthly rent for flats in ${stats.areaName} is approximately ${formatINR(stats.avgRent)}, with prices ranging between ${formatINR(stats.minRent)} and ${formatINR(stats.maxRent)} depending on BHK size and furnishing.`,
+        },
+      },
+      {
+        "@type": "Question",
+        name: `Are there zero brokerage rental flats in ${stats.areaName}?`,
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: `Yes, Kiraya lists direct owner rental properties in ${stats.areaName} with zero brokerage fees, 100% itemized pricing transparency, and verified physical details.`,
+        },
+      },
+      {
+        "@type": "Question",
+        name: `What is the typical security deposit for a flat in ${stats.areaName}?`,
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: `The median security deposit for rental flats in ${stats.areaName} is approximately ${formatINR(stats.avgDeposit)}, typically equivalent to 2 to 3 months of monthly rent.`,
+        },
+      },
+    ],
+  };
+
+  // Schema.org ItemList for catalog indexability
+  const itemListJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    name: `Flats for Rent in ${stats.areaName}, Pune`,
+    numberOfItems: listings.length,
+    itemListElement: listings.map((item, index) => ({
+      "@type": "ListItem",
+      position: index + 1,
+      name: item.title,
+      url: `${siteUrl}/listings/${item.id}`,
+    })),
+  };
+
   return (
     <div className="relative min-h-dvh overflow-hidden bg-background">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListJsonLd) }}
       />
 
       {/* Ambient background decoration */}

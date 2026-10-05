@@ -47,7 +47,7 @@ import { getReportsForProperty } from "@/lib/history";
 import { OwnerReply } from "./owner-reply";
 import { PriceContext } from "@/components/listings/price-context";
 import { VisitAsk } from "@/components/visits/visit-ask";
-import { getPhotos } from "@/lib/photos";
+import { getPhotos, photoUrl } from "@/lib/photos";
 import { UpdateTimeline } from "@/components/listings/update-timeline";
 import { PhotoGallery } from "@/components/listings/photo-gallery";
 import { ReportMismatch } from "./report-mismatch";
@@ -205,15 +205,24 @@ export default async function ListingDetailPage({
 
   const canReport = Boolean(user) && !isOwnListing;
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://www.kirayah.xyz";
+  const lastModDate = listing.last_verified_at || listing.created_at;
   const listingJsonLd = {
     "@context": "https://schema.org",
-    "@type": "RealEstateListing",
+    "@type": ["RealEstateListing", "Apartment"],
     name: listing.title,
     description:
       listing.description ||
       `${labelFor(BHK_OPTIONS, listing.bhk)} flat for rent in ${listing.area_name || "Pune"}`,
     url: `${siteUrl}/listings/${id}`,
     datePosted: listing.created_at,
+    dateModified: lastModDate,
+    numberOfRooms: listing.bhk === "1bhk" ? 1 : listing.bhk === "2bhk" ? 2 : listing.bhk === "3bhk" ? 3 : 1,
+    image: photos.map((p) => photoUrl(p.storage_path)),
+    author: {
+      "@type": "Organization",
+      name: "Kiraya",
+      url: siteUrl,
+    },
     offers: {
       "@type": "Offer",
       price: listing.all_in_monthly,
