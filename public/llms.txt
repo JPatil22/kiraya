@@ -1,0 +1,46 @@
+# Kiraya — Direct Owner Rental Platform in Pune
+> Kiraya is a tenant-first rental platform operating exclusively in Pune, India. It prioritizes listing truthfulness (100% itemized costs, zero hidden brokerage, physically verified availability) over raw listing volume.
+
+## Platform Highlights
+- Zero Brokerage: Direct owner connections with transparent, disclosed brokerage fees (₹0 for owner listings).
+- Itemized Costs: Exact monthly rent, maintenance, security deposit, and move-in outlay displayed up front.
+- Physical Verification: Listings carry fresh physical verification dates (`last_verified_at`) and verified photo timestamps.
+- Single Locality Focus: Focused on Pune, covering over 50+ neighborhoods and micro-markets.
+
+## Core Hubs & Catalogs
+- [All Pune Listings](https://www.kirayah.xyz/listings) : Browse all live verified apartments in Pune
+- [Direct Flatmates](https://www.kirayah.xyz/direct) : Direct roommate and replacement tenant postings
+
+## Top Pune Locality Hubs
+- [Flats in Wakad](https://www.kirayah.xyz/rent/pune/wakad) : 1, 2 & 3 BHK flats for rent in Wakad
+- [Flats in Baner](https://www.kirayah.xyz/rent/pune/baner) : Brokerage-free apartments in Baner
+- [Flats in Hinjewadi](https://www.kirayah.xyz/rent/pune/hinjewadi) : Rental homes near Hinjewadi IT Park (Phases 1, 2, 3)
+- [Flats in Kharadi](https://www.kirayah.xyz/rent/pune/kharadi) : Flats for rent near EON Free Zone & World Trade Center
+- [Flats in Kothrud](https://www.kirayah.xyz/rent/pune/kothrud) : Verified residential apartments in Kothrud
+- [Flats in Viman Nagar](https://www.kirayah.xyz/rent/pune/viman-nagar) : Rental flats near Pune Airport & Phoenix Marketcity
+- [Flats in Aundh](https://www.kirayah.xyz/rent/pune/aundh) : Premium apartments in Aundh
+- [Flats in Balewadi](https://www.kirayah.xyz/rent/pune/balewadi) : Flats for rent near Balewadi High Street
+- [Flats in Hadapsar](https://www.kirayah.xyz/rent/pune/hadapsar) : Apartments near Magarpatta City & SP InfoCity
+- [Flats in Koregaon Park](https://www.kirayah.xyz/rent/pune/koregaon-park) : Verified flats in Koregaon Park
+- [Flats in Magarpatta](https://www.kirayah.xyz/rent/pune/magarpatta) : Gated society apartments in Magarpatta
+- [Flats in Pimple Saudagar](https://www.kirayah.xyz/rent/pune/pimple-saudagar) : Family flats in Pimple Saudagar
+- [Flats in Bavdhan](https://www.kirayah.xyz/rent/pune/bavdhan) : Rental homes in Bavdhan
+- [Flats in Wagholi](https://www.kirayah.xyz/rent/pune/wagholi) : Budget 1 & 2 BHK flats in Wagholi
+- [Flats in Kalyani Nagar](https://www.kirayah.xyz/rent/pune/kalyani-nagar) : Modern apartments in Kalyani Nagar
+
+## Popular BHK Configurations
+- [1 BHK Flats in Baner](https://www.kirayah.xyz/rent/pune/baner/1-bhk)
+- [2 BHK Flats in Baner](https://www.kirayah.xyz/rent/pune/baner/2-bhk)
+- [3 BHK Flats in Baner](https://www.kirayah.xyz/rent/pune/baner/3-bhk)
+- [1 BHK Flats in Hinjewadi](https://www.kirayah.xyz/rent/pune/hinjewadi/1-bhk)
+- [2 BHK Flats in Hinjewadi](https://www.kirayah.xyz/rent/pune/hinjewadi/2-bhk)
+- [3 BHK Flats in Hinjewadi](https://www.kirayah.xyz/rent/pune/hinjewadi/3-bhk)
+- [1 BHK Flats in Wakad](https://www.kirayah.xyz/rent/pune/wakad/1-bhk)
+- [2 BHK Flats in Wakad](https://www.kirayah.xyz/rent/pune/wakad/2-bhk)
+- [3 BHK Flats in Wakad](https://www.kirayah.xyz/rent/pune/wakad/3-bhk)
+- [1 BHK Flats in Kharadi](https://www.kirayah.xyz/rent/pune/kharadi/1-bhk)
+- [2 BHK Flats in Kharadi](https://www.kirayah.xyz/rent/pune/kharadi/2-bhk)
+- [3 BHK Flats in Kharadi](https://www.kirayah.xyz/rent/pune/kharadi/3-bhk)
+
+## XML Sitemap Index
+- [Sitemap](https://www.kirayah.xyz/sitemap.xml)
