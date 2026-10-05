@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { ArrowLeft, Building2, ChevronRight, Home, MapPin, ShieldCheck, Sparkles, TrendingUp, Wallet } from "lucide-react";
 import { SiteHeader } from "@/components/site-header";
 import { ListingCard } from "@/components/listings/listing-card";
+import { LocalityFaq } from "@/components/seo/locality-faq";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { getDataClient, getSessionUser } from "@/lib/auth";
@@ -368,6 +369,17 @@ export default async function LocalityHubPage({ params }: PageProps) {
             </div>
           )}
         </section>
+
+        {/* Locality FAQs & AI Overview Snippet Guide */}
+        <LocalityFaq
+          areaName={stats.areaName}
+          avgRent={stats.avgRent}
+          minRent={stats.minRent}
+          maxRent={stats.maxRent}
+          avgDeposit={stats.avgDeposit}
+          totalListings={stats.totalListings}
+          zone={stats.zone}
+        />
 
         {/* Adjacent Neighborhood Links (Internal Linking Silo) */}
         {stats.nearbyAreas.length > 0 ? (
