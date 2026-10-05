@@ -112,11 +112,22 @@ export async function generateMetadata({
       type: "website",
       locale: "en_IN",
       siteName: "Kiraya",
+      images: [
+        {
+          url: `${siteUrl}/api/og?title=${encodeURIComponent(title)}&area=${encodeURIComponent(areaName)}&rent=${encodeURIComponent(rentFormatted)}&bhk=${encodeURIComponent(bhkLabel)}`,
+          width: 1200,
+          height: 630,
+          alt: title,
+        },
+      ],
     },
     twitter: {
       card: "summary_large_image",
       title,
       description,
+      images: [
+        `${siteUrl}/api/og?title=${encodeURIComponent(title)}&area=${encodeURIComponent(areaName)}&rent=${encodeURIComponent(rentFormatted)}&bhk=${encodeURIComponent(bhkLabel)}`,
+      ],
     },
     alternates: {
       canonical: pageUrl,
@@ -217,7 +228,12 @@ export default async function ListingDetailPage({
     datePosted: listing.created_at,
     dateModified: lastModDate,
     numberOfRooms: listing.bhk === "1bhk" ? 1 : listing.bhk === "2bhk" ? 2 : listing.bhk === "3bhk" ? 3 : 1,
-    image: photos.map((p) => photoUrl(p.storage_path)),
+    image: photos.map((p) => ({
+      "@type": "ImageObject",
+      contentUrl: photoUrl(p.storage_path),
+      name: `${listing.title} - ${p.room_type || "interior"}`,
+      caption: p.caption || `Verified photo of ${p.room_type || "apartment"} in ${listing.area_name || "Pune"}`,
+    })),
     author: {
       "@type": "Organization",
       name: "Kiraya",

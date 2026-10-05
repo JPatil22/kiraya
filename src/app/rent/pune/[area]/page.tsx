@@ -57,11 +57,22 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       type: "website",
       locale: "en_IN",
       siteName: "Kiraya",
+      images: [
+        {
+          url: `${siteUrl}/api/og?title=${encodeURIComponent(title)}&area=${encodeURIComponent(stats.areaName)}&rent=${encodeURIComponent(formatINR(stats.avgRent))}`,
+          width: 1200,
+          height: 630,
+          alt: title,
+        },
+      ],
     },
     twitter: {
       card: "summary_large_image",
       title,
       description,
+      images: [
+        `${siteUrl}/api/og?title=${encodeURIComponent(title)}&area=${encodeURIComponent(stats.areaName)}&rent=${encodeURIComponent(formatINR(stats.avgRent))}`,
+      ],
     },
     alternates: {
       canonical: canonicalUrl,

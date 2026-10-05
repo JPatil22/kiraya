@@ -67,6 +67,7 @@ export function PhotoGallery({
       <Frame
         label={cover.slot.label}
         photo={cover.photo!}
+        bhk={bhk}
         lastVerifiedAt={lastVerifiedAt}
         priority
         onClick={() => setActivePhotoIndex(0)}
@@ -80,6 +81,7 @@ export function PhotoGallery({
               <Frame
                 label={slot.label}
                 photo={photo!}
+                bhk={bhk}
                 lastVerifiedAt={lastVerifiedAt}
                 compact
                 onClick={() => setActivePhotoIndex(idx + 1)}
@@ -175,6 +177,7 @@ export function PhotoGallery({
 function Frame({
   label,
   photo,
+  bhk,
   lastVerifiedAt,
   compact,
   priority,
@@ -182,6 +185,7 @@ function Frame({
 }: {
   label: string;
   photo: PropertyPhoto;
+  bhk?: BhkType;
   lastVerifiedAt: string | null;
   compact?: boolean;
   priority?: boolean;
@@ -207,7 +211,7 @@ function Frame({
           return (
             <Image
               src={src}
-              alt={label}
+              alt={`Verified ${label} photo - ${bhk ? bhk.toUpperCase() : "flat"} for rent in Pune`}
               fill
               priority={priority}
               unoptimized={isDataUrl}
